@@ -1,5 +1,5 @@
 // Kalender.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './Kalender.css';
@@ -8,8 +8,9 @@ const Kalender = () => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
   const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
 
-  const hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']; // Singkatan
+  const hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const bulan = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -29,34 +30,34 @@ const Kalender = () => {
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    setIsOpen(false); // Tutup setelah pilih
+    setIsOpen(false);
   };
 
   const formatDate = (date) => {
     return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  // Dapatkan semua tanggal dalam grid (termasuk akhir bulan lalu & awal bulan depan)
+  // Dapatkan semua tanggal dalam grid (termasuk bulan lalu & depan)
   const getCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
+    const firstDay = new Date(year, month, 1).getDay();
     const lastDayPrevMonth = new Date(year, month, 0).getDate();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Tanggal akhir bulan lalu (untuk grid)
+    // Tanggal akhir bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({ date: lastDayPrevMonth - i, isCurrentMonth: false });
     }
 
     // Tanggal bulan ini
-    for (let date = 1; date <= totalDays; date++) {
-      days.push({ date, isCurrentMonth: true });
+    for (let d = 1; d <= totalDays; d++) {
+      days.push({ date: d, isCurrentMonth: true });
     }
 
-    // Lengkapi grid (7x6 = 42 cell)
+    // Tanggal awal bulan depan
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       days.push({ date: i, isCurrentMonth: false });
@@ -69,13 +70,24 @@ const Kalender = () => {
   const currentMonthName = bulan[selectedDate.getMonth()];
   const currentYear = selectedDate.getFullYear();
 
+  // Close dropdown jika klik di luar
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className="kalender-container">
+    <div className="kalender-container" ref={wrapperRef}>
       <h2>Kalender</h2>
 
-      {/* Tombol Navigasi dan Dropdown */}
+      {/* Navigasi dan Dropdown */}
       <div className="datepicker-dropdown">
-        <button onClick={handlePrevMonth} className="nav-btn">
+        <button onClick={handlePrevMonth} className="nav-btn" aria-label="Bulan sebelumnya">
           ⬅️
         </button>
 
@@ -83,7 +95,7 @@ const Kalender = () => {
           <button
             className="date-display-btn"
             onClick={() => setIsOpen(!isOpen)}
-            onBlur={() => setTimeout(() => setIsOpen(false), 200)} // Tutup saat klik luar
+            aria-expanded={isOpen}
           >
             {formatDate(selectedDate)}
           </button>
@@ -94,19 +106,18 @@ const Kalender = () => {
                 inline
                 selected={selectedDate}
                 onChange={handleDateChange}
-                onCalendarClose={() => setIsOpen(false)}
-                onCalendarOpen={() => setIsOpen(true)}
+                dateFormat="dd/MM/yyyy"
               />
             </div>
           )}
         </div>
 
-        <button onClick={handleNextMonth} className="nav-btn">
+        <button onClick={handleNextMonth} className="nav-btn" aria-label="Bulan berikutnya">
           ➡️
         </button>
       </div>
 
-      {/* Nama Hari */}
+      {/* Header Hari */}
       <div className="hari-header">
         {hari.map((nama) => (
           <div key={nama} className="hari-cell header">
@@ -117,23 +128,26 @@ const Kalender = () => {
 
       {/* Grid Kalender */}
       <div className="kalender-grid">
-        {calendarDays.map((day, index) => (
-          <div
-            key={index}
-            className={`kalender-date ${
-              day.isCurrentMonth ? 'current' : 'other-month'
-            } ${
-              selectedDate.getDate() === day.date &&
-              selectedDate.getMonth() === selectedDate.getMonth() &&
-              selectedDate.getFullYear() === currentYear &&
-              day.isCurrentMonth
-                ? 'selected'
-                : ''
-            }`}
-          >
-            {day.date}
-          </div>
-        ))}
+        {calendarDays.map((day, index) => {
+          const isToday = day.isCurrentMonth &&
+            day.date === today.getDate() &&
+            selectedDate.getMonth() === today.getMonth() &&
+            selectedDate.getFullYear() === today.getFullYear();
+
+          const isSelected = day.isCurrentMonth &&
+            day.date === selectedDate.getDate();
+
+          return (
+            <div
+              key={index}
+              className={`kalender-date ${
+                day.isCurrentMonth ? 'current' : 'other-month'
+              } ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+            >
+              {day.date}
+            </div>
+          );
+        })}
       </div>
 
       <p className="month-info">
