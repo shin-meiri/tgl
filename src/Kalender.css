@@ -135,3 +135,29 @@
   color: #555;
   margin-top: 15px;
 }
+/* Styling flatpickr agar lebih bersih */
+.flatpickr-calendar {
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.flatpickr-months .flatpickr-month {
+  padding: 10px;
+}
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flatpickr-day.today {
+  border-color: #007bff;
+  }
