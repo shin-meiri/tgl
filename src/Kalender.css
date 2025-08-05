@@ -161,3 +161,11 @@
 .flatpickr-day.today {
   border-color: #007bff;
   }
+
+/* Kalender.css */
+.kalender-date.today {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  border: 1px solid #0056b3;
+  }
