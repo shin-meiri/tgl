@@ -1,22 +1,21 @@
 /* Kalender.css */
-.kalender-container {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+.calendar-container {
   max-width: 400px;
-  margin: 0 auto;
-  text-align: center;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
 }
 
-.kalender-container h2 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.calendar-navigation {
+.calendar-header {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  margin-bottom: 15px;
 }
 
 .nav-btn {
@@ -30,7 +29,7 @@
 }
 
 .nav-btn:hover {
-  background-color: #f0f0f0;
+  background-color: #e0e0e0;
 }
 
 .nav-btn:disabled {
@@ -38,17 +37,24 @@
   cursor: not-allowed;
 }
 
-.flatpickr-input {
-  padding: 8px 12px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.date-input {
   text-align: center;
+  font-size: 16px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
   width: 150px;
   outline: none;
 }
 
-.flatpickr-input:focus {
+.date-input:focus {
   border-color: #007bff;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
 }
+
+.current-date-display {
+  text-align: center;
+  font-size: 16px;
+  color: #333;
+  margin-top: 10px;
+  }
