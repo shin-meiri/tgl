@@ -119,12 +119,17 @@
   text-align: center;
   padding: 10px 0;
   font-weight: 600;
-  color: #333;
   border-bottom: 1px solid #ddd;
 }
 
 .hari-label {
   font-size: 0.85rem;
+  color: #333;
+}
+
+.hari-label.sunday {
+  color: #d32f2f;
+  font-weight: bold;
 }
 
 /* Grid Tanggal */
@@ -143,17 +148,31 @@
   justify-content: center;
   font-size: 0.9rem;
   color: #222;
+  transition: background-color 0.2s;
 }
 
-.date-box.empty {
-  background-color: #fafafa;
-  color: transparent;
+.date-box:hover {
+  background-color: #f0f0f0;
+  font-weight: 500;
 }
 
+/* Tanggal di luar bulan saat ini */
+.date-box.outside {
+  color: #aaa;
+  background-color: #fafafa !important;
+}
+
+/* Hari Minggu (dalam bulan ini) */
+.date-box.sunday {
+  color: #d32f2f !important;
+  font-weight: 500;
+}
+
+/* Loading */
 .loading {
   text-align: center;
   padding: 10px;
   font-size: 0.9rem;
   color: #666;
   background-color: #f8f9fa;
-                        }
+}
