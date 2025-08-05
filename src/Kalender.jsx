@@ -19,7 +19,7 @@ const Kalender = () => {
   // Rentang tahun: ±5 dari tahun sekarang
   const currentYear = today.getFullYear();
   const yearOptions = [];
-  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+  for (let year = currentYear - 1900; year <= currentYear + 3000; year++) {
     yearOptions.push(year);
   }
 
