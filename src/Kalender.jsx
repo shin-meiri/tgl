@@ -12,31 +12,56 @@ const Kalender = () => {
   const [loading, setLoading] = useState(false);
 
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  const bulanNama = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-  ];
-
+  const bulanNama = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const bulanPanjang = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Generate hari dalam bulan
   const generateCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
+
     const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const daysCount = new Date(year, month + 1, 0).getDate();
 
-    const days = Array(firstDay).fill(null);
-    for (let day = 1; day <= daysCount; day++) {
-      days.push(day);
+    const days = [];
+
+    // Tanggal dari bulan sebelumnya (hanya untuk mengisi grid)
+    const prevMonth = new Date(year, month, 0).getDate(); // akhir bulan lalu
+    for (let i = firstDay - 1; i >= 0; i--) {
+      days.unshift({
+        date: prevMonth - i,
+        isCurrentMonth: false,
+        dayOfWeek: (6 - i) % 7, // hari sebelum 1
+      });
     }
+
+    // Tanggal bulan ini
+    for (let day = 1; day <= daysCount; day++) {
+      const dayOfWeek = new Date(year, month, day).getDay();
+      days.push({
+        date: day,
+        isCurrentMonth: true,
+        dayOfWeek,
+      });
+    }
+
+    // Tambahkan tanggal dari bulan depan jika belum penuh 6 baris
+    const totalCells = days.length;
+    const remaining = 42 - totalCells; // 6 baris x 7 = 42
+    for (let day = 1; day <= remaining; day++) {
+      const dayOfWeek = new Date(year, month + 1, day).getDay();
+      days.push({
+        date: day,
+        isCurrentMonth: false,
+        dayOfWeek,
+      });
+    }
+
     setDaysInMonth(days);
   };
 
-  // Navigasi
   const prevMonth = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -53,13 +78,11 @@ const Kalender = () => {
     });
   };
 
-  // Buka picker bulan
   const openMonthPicker = () => {
     setTempYear(currentDate.getFullYear());
     setShowMonthPicker(true);
   };
 
-  // Pilih bulan dari grid
   const selectMonth = (monthIndex) => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -70,7 +93,6 @@ const Kalender = () => {
     setShowMonthPicker(false);
   };
 
-  // Update tahun dari input
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
@@ -88,7 +110,6 @@ const Kalender = () => {
     }
   };
 
-  // Simulasi API call saat bulan berubah
   useEffect(() => {
     setLoading(true);
     axios
@@ -98,7 +119,6 @@ const Kalender = () => {
       .finally(() => setLoading(false));
   }, [currentDate]);
 
-  // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
   }, [currentDate]);
@@ -108,7 +128,7 @@ const Kalender = () => {
 
   return (
     <div className="kalender-container">
-      {/* Header dengan navigasi */}
+      {/* Header navigasi */}
       <div className="kalender-header">
         <button className="nav-btn" onClick={prevMonth} aria-label="Bulan Sebelumnya">
           ⬅️
@@ -123,11 +143,10 @@ const Kalender = () => {
         </button>
       </div>
 
-      {/* Picker Bulan dan Tahun (muncul saat diklik) */}
+      {/* Picker Bulan & Tahun */}
       {showMonthPicker && (
-        <div className="month-picker-overlay">
+        <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="month-picker">
-            {/* Input Tahun */}
             <div className="year-input">
               <input
                 type="number"
@@ -142,7 +161,6 @@ const Kalender = () => {
               />
             </div>
 
-            {/* Grid 3x4 Bulan */}
             <div className="months-grid">
               {bulanNama.map((bulan, index) => (
                 <div
@@ -161,15 +179,23 @@ const Kalender = () => {
       {/* Header Hari */}
       <div className="hari-header">
         {hariNama.map(hari => (
-          <div key={hari} className="hari-label">{hari}</div>
+          <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
+            {hari}
+          </div>
         ))}
       </div>
 
       {/* Grid Tanggal */}
       <div className="dates-grid">
-        {daysInMonth.map((day, index) => (
-          <div key={index} className={`date-box ${day ? '' : 'empty'}`}>
-            {day}
+        {daysInMonth.map((dayObj, index) => (
+          <div
+            key={index}
+            className={`date-box
+              ${!dayObj.isCurrentMonth ? 'outside' : ''}
+              ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
+            `}
+          >
+            {dayObj.date}
           </div>
         ))}
       </div>
