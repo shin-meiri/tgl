@@ -18,10 +18,10 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (5 hari)
+  // Pasaran Jawa
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Nama weton (contoh sederhana, bisa dikembangkan)
+  // Weton mapping
   const wetonNama = {
     'Minggu_Legi': 'Wage',
     'Senin_Legi': 'Keliwon',
@@ -64,23 +64,23 @@ const Kalender = () => {
     'Sabtu_Kliwon': 'Legi'
   };
 
-  // Hitung pasaran berdasarkan tanggal
-  const getPasaran = (date) => {
-    const epoch = new Date('2024-03-24'); // Contoh: 24 Maret 2024 = Legi
+  // Fungsi getPasaran - dibungkus useCallback
+  const getPasaran = useCallback((date) => {
+    const epoch = new Date('2024-03-24'); // Referensi: 24 Maret 2024 = Legi
     const diffTime = date.getTime() - epoch.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const index = diffDays % 5;
     return pasaran[(index % 5 + 5) % 5]; // Handle negatif
-  };
+  }, []);
 
-  // Dapatkan nama weton
-  const getWeton = (date) => {
+  // Fungsi getWeton - dibungkus useCallback
+  const getWeton = useCallback((date) => {
     const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
     const pasaranName = getPasaran(date);
     return wetonNama[`${dayName}_${pasaranName}`] || pasaranName;
-  };
+  }, [getPasaran, wetonNama]); // ✅ Dependency: getPasaran & wetonNama (konstan)
 
-  // Fungsi generate kalender — dibungkus useCallback agar bisa jadi dependency
+  // Fungsi utama generate kalender
   const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -130,9 +130,9 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, []);
+  }, [getPasaran, getWeton]); // ✅ Dependency: getPasaran dan getWeton
 
-  // Navigasi
+  // Navigasi bulan
   const prevMonth = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -181,19 +181,19 @@ const Kalender = () => {
     }
   };
 
-  // Fetch data dari API
+  // Fetch API (contoh)
   useEffect(() => {
     setLoading(true);
     axios
       .get('https://jsonplaceholder.typicode.com/posts', { params: { _limit: 1 } })
       .catch(err => console.warn('API gagal:', err))
       .finally(() => setLoading(false));
-  }, [currentDate]); // Hanya berjalan saat currentDate berubah
+  }, [currentDate]);
 
   // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate, generateCalendarDays]); // ✅ generateCalendarDays sekarang aman karena dibungkus useCallback
+  }, [currentDate, generateCalendarDays]);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
