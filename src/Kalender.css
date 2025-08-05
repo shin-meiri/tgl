@@ -2,29 +2,30 @@
 .kalender-container {
   width: 320px;
   margin: 20px auto;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   background-color: #fff;
+  position: relative;
 }
 
 .kalender-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 15px;
-  background-color: #007bff;
+  padding: 12px 10px;
+  background: linear-gradient(135deg, #007bff, #0056b3);
   color: white;
 }
 
 .nav-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   cursor: pointer;
-  padding: 0 10px;
+  padding: 0 8px;
   transition: transform 0.2s;
 }
 
@@ -32,34 +33,106 @@
   transform: scale(1.1);
 }
 
-.month-year {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: bold;
+.month-display {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 120px;
 }
 
+.month-display:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Picker Bulan & Tahun */
+.month-picker-overlay {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  width: 280px;
+  padding: 12px;
+}
+
+.month-picker {
+  text-align: center;
+}
+
+.year-input {
+  margin-bottom: 12px;
+}
+
+.year-edit {
+  width: 80px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.year-edit:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.months-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.month-cell {
+  padding: 8px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.month-cell:hover {
+  background-color: #e9ecef;
+  transform: scale(0.95);
+}
+
+.month-cell.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Header Hari */
 .hari-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background-color: #f8f9fa;
+  background-color: #f1f3f5;
   text-align: center;
   padding: 10px 0;
-  font-weight: bold;
-  color: #495057;
-  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 1px solid #ddd;
 }
 
 .hari-label {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
+/* Grid Tanggal */
 .dates-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
-  background-color: #dee2e6;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  background-color: #ddd;
 }
 
 .date-box {
@@ -69,11 +142,11 @@
   align-items: center;
   justify-content: center;
   font-size: 0.9rem;
-  color: #212529;
+  color: #222;
 }
 
 .date-box.empty {
-  background-color: #f8f9fa;
+  background-color: #fafafa;
   color: transparent;
 }
 
@@ -81,6 +154,6 @@
   text-align: center;
   padding: 10px;
   font-size: 0.9rem;
-  color: #6c757d;
+  color: #666;
   background-color: #f8f9fa;
-  }
+                        }
