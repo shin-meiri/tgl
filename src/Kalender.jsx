@@ -1,5 +1,5 @@
 // Kalender.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
@@ -42,18 +42,23 @@ const Kalender = () => {
   const getCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const lastDayPrevMonth = new Date(year, month, 0).getDate();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
+    // Tanggal akhir bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({ date: lastDayPrevMonth - i, isCurrentMonth: false });
     }
+
+    // Tanggal bulan ini
     for (let d = 1; d <= totalDays; d++) {
       days.push({ date: d, isCurrentMonth: true });
     }
+
+    // Tanggal awal bulan depan
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       days.push({ date: i, isCurrentMonth: false });
@@ -67,7 +72,7 @@ const Kalender = () => {
   const currentYearDisplay = selectedDate.getFullYear();
 
   // Close flatpickr jika klik di luar
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setIsOpen(false);
@@ -96,25 +101,29 @@ const Kalender = () => {
               altInput: true,
               altFormat: 'j F Y',
               allowInput: false,
-              clickOpens: isOpen,
-              onOpen: () => setIsOpen(true),
-              onClose: () => setIsOpen(false),
+              clickOpens: true,
               animate: true,
-              minDate: '01-01-1900',
-              maxDate: '31-12-3000',
-              // Enable fast month/year pick
+              minDate: '1900-01-01',
+              maxDate: '3000-12-31',
+              // 🔥 Aktifkan dropdown bulan & tahun
               monthSelectorType: 'dropdown',
               yearSelectorType: 'dropdown',
               showMonths: 1,
+              // 🔥 Scrollable dropdown
+              yearDropdownItemNumber: 15,
+              scrollableYear: true,
+              scrollableMonth: true,
+              // Tampilkan "Today" button
+              // showMonths: 1,
             }}
-            render={({ defaultValue, value, ...props }, ref) => {
+            render={({ value, ...props }, ref) => {
               return (
                 <input
                   ref={ref}
                   className="date-display-btn"
                   value={formatDate(selectedDate)}
-                  onClick={() => setIsOpen(!isOpen)}
                   readOnly
+                  onClick={() => setIsOpen(!isOpen)}
                 />
               );
             }}
@@ -138,6 +147,7 @@ const Kalender = () => {
       {/* Grid Kalender */}
       <div className="kalender-grid">
         {calendarDays.map((day, index) => {
+          // ✅ Perbaiki: Bandingkan dengan `today` asli
           const isToday =
             day.isCurrentMonth &&
             day.date === today.getDate() &&
