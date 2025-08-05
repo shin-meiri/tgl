@@ -1,5 +1,5 @@
 // Kalender.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
@@ -7,8 +7,6 @@ import './Kalender.css';
 const Kalender = () => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef(null);
 
   const hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
   const bulan = [
@@ -34,15 +32,15 @@ const Kalender = () => {
     }
   };
 
+  // Format tanggal untuk tampilan (contoh: 5 Agustus 2025)
   const formatDate = (date) => {
     return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  // Dapatkan semua tanggal dalam grid
   const getCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
+    const firstDay = new Date(year, month, 1).getDay();
     const lastDayPrevMonth = new Date(year, month, 0).getDate();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
@@ -71,19 +69,8 @@ const Kalender = () => {
   const currentMonthName = bulan[selectedDate.getMonth()];
   const currentYearDisplay = selectedDate.getFullYear();
 
-  // Close flatpickr jika klik di luar
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
-    <div className="kalender-container" ref={wrapperRef}>
+    <div className="kalender-container">
       <h2>Kalender</h2>
 
       {/* Navigasi dan Flatpickr */}
@@ -97,25 +84,34 @@ const Kalender = () => {
             value={selectedDate}
             onChange={handleDateChange}
             options={{
-              dateFormat: 'd F Y',
+              dateFormat: 'd F Y', // Internal format
               altInput: true,
-              altFormat: 'j F Y',
+              altFormat: 'j F Y', // Tampilan di input: 5 Agustus 2025
               allowInput: false,
               clickOpens: true,
               animate: true,
-              minDate: '1900-01-01',
-              maxDate: '3000-12-31',
+              minDate: '01-01-1900',
+              maxDate: '31-12-3000',
+
               // 🔥 Aktifkan dropdown bulan & tahun
               monthSelectorType: 'dropdown',
               yearSelectorType: 'dropdown',
               showMonths: 1,
-              // 🔥 Scrollable dropdown
-              yearDropdownItemNumber: 15,
-              scrollableYear: true,
-              scrollableMonth: true,
-              // Tampilkan "Today" button
-              // showMonths: 1,
+
+              // Localization (opsional)
+              locale: {
+                firstDayOfWeek: 1, // Senin sebagai hari pertama
+                weekdays: {
+                  shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                  longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+                },
+                months: {
+                  shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                  longhand: bulan,
+                },
+              },
             }}
+            // Render custom input agar lebih konsisten
             render={({ value, ...props }, ref) => {
               return (
                 <input
@@ -123,7 +119,7 @@ const Kalender = () => {
                   className="date-display-btn"
                   value={formatDate(selectedDate)}
                   readOnly
-                  onClick={() => setIsOpen(!isOpen)}
+                  placeholder="Pilih tanggal"
                 />
               );
             }}
@@ -147,7 +143,6 @@ const Kalender = () => {
       {/* Grid Kalender */}
       <div className="kalender-grid">
         {calendarDays.map((day, index) => {
-          // ✅ Perbaiki: Bandingkan dengan `today` asli
           const isToday =
             day.isCurrentMonth &&
             day.date === today.getDate() &&
