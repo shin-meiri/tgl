@@ -9,14 +9,16 @@ const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [data, setData] = useState([]);
 
-  // Nama hari dalam bahasa Indonesia
+  // Nama hari dan bulan dalam bahasa Indonesia
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Fungsi navigasi bulan
+  // Format: 15 Agustus 2025
+  const displayDate = `${currentDate.getDate()} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
   const goToPrevMonth = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -33,7 +35,7 @@ const Kalender = () => {
     });
   };
 
-  // Ambil data dari API (contoh)
+  // Ambil data dari API saat bulan berubah
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,7 +55,7 @@ const Kalender = () => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  // Dapatkan hari pertama bulan (0 = Minggu, 1 = Senin, dst.)
+  // Dapatkan hari pertama bulan (0 = Minggu)
   const getFirstDayOfMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
@@ -61,13 +63,11 @@ const Kalender = () => {
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
 
-  // Array tanggal untuk ditampilkan
+  // Array tanggal untuk grid
   const daysArray = [];
-  // Tambahkan kosong untuk hari sebelum tanggal 1
   for (let i = 0; i < firstDay; i++) {
     daysArray.push(null);
   }
-  // Tambahkan tanggal 1 sampai akhir bulan
   for (let date = 1; date <= daysInMonth; date++) {
     daysArray.push(date);
   }
@@ -76,29 +76,29 @@ const Kalender = () => {
     <div className="kalender-container">
       <h2>Kalender Bulanan</h2>
 
-      {/* Navigasi Bulan */}
+      {/* Navigasi Bulan dengan Format Nama Bulan */}
       <div className="navigation">
         <button onClick={goToPrevMonth} className="nav-btn prev">
           ⬅️
         </button>
         <span className="current-month">
-          {currentDate.getDate()}/{currentDate.getMonth() + 1}/{currentDate.getFullYear()}
+          {displayDate}
         </span>
         <button onClick={goToNextMonth} className="nav-btn next">
           ➡️
         </button>
       </div>
 
-      {/* Nama Hari */}
+      {/* Header Hari: Minggu - Sabtu */}
       <div className="days-header">
-        {days.map(hari => (
+        {days.map((hari) => (
           <div key={hari} className="day-header">
             {hari}
           </div>
         ))}
       </div>
 
-      {/* Grid Tanggal */}
+      {/* Grid Tanggal Kalender */}
       <div className="dates-grid">
         {daysArray.map((date, index) => (
           <div key={index} className="date-cell">
@@ -107,7 +107,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Flatpickr tersembunyi (opsional, bisa digunakan untuk pilih tanggal) */}
+      {/* Flatpickr Inline (opsional) */}
       <div className="flatpickr-wrapper">
         <Flatpickr
           value={currentDate}
@@ -121,7 +121,7 @@ const Kalender = () => {
         <h3>Data dari API (Contoh)</h3>
         {data.length > 0 ? (
           <ul>
-            {data.map(item => (
+            {data.map((item) => (
               <li key={item.id}>{item.title}</li>
             ))}
           </ul>
