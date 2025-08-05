@@ -16,6 +16,13 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
+  // Rentang tahun: ±5 dari tahun sekarang
+  const currentYear = today.getFullYear();
+  const yearOptions = [];
+  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+    yearOptions.push(year);
+  }
+
   const handlePrevMonth = () => {
     const newDate = new Date(selectedDate);
     newDate.setMonth(newDate.getMonth() - 1);
@@ -37,7 +44,7 @@ const Kalender = () => {
     return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  // Dapatkan semua tanggal dalam grid (termasuk bulan lalu & depan)
+  // Dapatkan semua tanggal dalam grid
   const getCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -68,7 +75,7 @@ const Kalender = () => {
 
   const calendarDays = getCalendarDays(selectedDate);
   const currentMonthName = bulan[selectedDate.getMonth()];
-  const currentYear = selectedDate.getFullYear();
+  const currentYearDisplay = selectedDate.getFullYear();
 
   // Close dropdown jika klik di luar
   React.useEffect(() => {
@@ -107,6 +114,16 @@ const Kalender = () => {
                 selected={selectedDate}
                 onChange={handleDateChange}
                 dateFormat="dd/MM/yyyy"
+                showYearDropdown
+                yearDropdownItemNumber={11} // Jumlah item yang ditampilkan
+                scrollableYearDropdown
+                minDate={new Date(currentYear - 5, 0, 1)}
+                maxDate={new Date(currentYear + 5, 11, 31)}
+                yearItemNumber={11}
+                dropdownMode="scroll"
+                // Optional: tambah pilih bulan
+                showMonthDropdown
+                monthDropdownItemNumber={12}
               />
             </div>
           )}
@@ -129,13 +146,14 @@ const Kalender = () => {
       {/* Grid Kalender */}
       <div className="kalender-grid">
         {calendarDays.map((day, index) => {
-          const isToday = day.isCurrentMonth &&
+          const isToday =
+            day.isCurrentMonth &&
             day.date === today.getDate() &&
             selectedDate.getMonth() === today.getMonth() &&
             selectedDate.getFullYear() === today.getFullYear();
 
-          const isSelected = day.isCurrentMonth &&
-            day.date === selectedDate.getDate();
+          const isSelected =
+            day.isCurrentMonth && day.date === selectedDate.getDate();
 
           return (
             <div
@@ -151,7 +169,7 @@ const Kalender = () => {
       </div>
 
       <p className="month-info">
-        Bulan: <strong>{currentMonthName} {currentYear}</strong>
+        Bulan: <strong>{currentMonthName} {currentYearDisplay}</strong>
       </p>
     </div>
   );
