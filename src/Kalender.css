@@ -7,6 +7,7 @@
   border: 1px solid #ddd;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
 }
 
 .kalender-container h2 {
@@ -42,21 +43,19 @@
   background: #0056b3;
 }
 
-.current-date {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  background-color: #f0f8ff;
-  border: 1px solid #ccc;
+.today-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
   border-radius: 8px;
-  font-weight: bold;
-  color: #007bff;
+  font-size: 14px;
   cursor: pointer;
-  user-select: none;
+  font-weight: bold;
 }
 
-.current-date:hover {
-  background-color: #e0f7ff;
+.today-btn:hover {
+  background: #218838;
 }
 
 /* Header Hari */
@@ -64,15 +63,14 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .hari-cell {
   text-align: center;
   font-weight: bold;
-  color: #333;
+  color: #007bff;
   font-size: 14px;
-  padding: 8px;
 }
 
 /* Grid Kalender */
@@ -80,39 +78,42 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
+  margin-bottom: 15px;
 }
 
 .kalender-date {
-  padding: 10px;
+  padding: 10px 0;
   text-align: center;
-  border: 1px solid #eee;
-  background-color: #f9f9f9;
+  border-radius: 6px;
   font-size: 14px;
-  border-radius: 5px;
   color: #333;
 }
 
-.kalender-date.outside {
-  font-size: 10px; /* Lebih kecil untuk tanggal di luar bulan */
+.kalender-date.current {
+  background-color: #f0f8ff;
+  font-weight: 500;
+}
+
+.kalender-date.other {
+  font-size: 12px; /* Lebih kecil untuk tanggal di luar bulan */
   color: #aaa;
-  background-color: #f0f0f0;
 }
 
-.kalender-date.today {
-  background-color: #007bff;
-  color: white;
-  font-weight: bold;
-}
-
-/* Judul bulan */
-.bulan-kalender h3 {
+/* Label bulan */
+.month-label {
   text-align: center;
-  color: #007bff;
-  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+  margin-top: 10px;
 }
 
-/* Sembunyikan flatpickr asli */
+/* Sembunyikan flatpickr default UI kecuali inline */
 .flatpickr-calendar {
-  border-radius: 10px !important;
+  margin-top: 10px;
+  border-radius: 8px;
   overflow: hidden;
+}
+
+.flatpickr-day {
+  font-size: 13px !important;
 }
