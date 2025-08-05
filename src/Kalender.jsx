@@ -1,65 +1,42 @@
 // Kalender.jsx
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Impor CSS flatpickr
+import 'flatpickr/dist/flatpickr.min.css'; // Import default style flatpickr
 import axios from 'axios';
 import './Kalender.css';
 
 const Kalender = () => {
-  const calendarRef = useRef(null);
+  const inputRef = useRef(null);
   const flatpickrInstance = useRef(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Fungsi untuk memperbarui tampilan tanggal
-  const updateDisplayDate = (date) => {
-    const formatted = flatpickr.formatDate(date, 'm/d/Y');
-    calendarRef.current.value = formatted;
+  // Format tanggal: 5/8/2025
+  const formatDate = (date) => {
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
+  // Update tampilan tanggal
+  const updateDateDisplay = (date) => {
     setCurrentDate(new Date(date));
+    // Contoh: kirim request ke API saat tanggal berubah
+    axios.get(`/api/data?date=${date.toISOString().split('T')[0]}`)
+      .then(response => console.log('Data:', response.data))
+      .catch(err => console.error('Error fetching data:', err));
   };
 
-  // Navigasi ke tanggal sebelumnya
-  const goToPrev = () => {
-    const prevDate = new Date(currentDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    updateDisplayDate(prevDate);
-    fetchData(prevDate);
-  };
-
-  // Navigasi ke tanggal berikutnya
-  const goToNext = () => {
-    const nextDate = new Date(currentDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    updateDisplayDate(nextDate);
-    fetchData(nextDate);
-  };
-
-  // Ambil data dari API berdasarkan tanggal (contoh)
-  const fetchData = async (date) => {
-    const formattedDate = flatpickr.formatDate(date, 'Y-m-d');
-    try {
-      const response = await axios.get(
-        `https://jsonplaceholder.typicode.com/posts?date=${formattedDate}`
-      );
-      console.log('Data dari API:', response.data);
-    } catch (error) {
-      console.error('Gagal mengambil data:', error);
-    }
-  };
-
+  // Inisialisasi flatpickr
   useEffect(() => {
-    // Inisialisasi flatpickr
-    flatpickrInstance.current = flatpickr(calendarRef.current, {
-      dateFormat: 'm/d/Y',
+    flatpickrInstance.current = flatpickr(inputRef.current, {
+      dateFormat: 'd/m/Y',
       defaultDate: currentDate,
       onChange: (selectedDates) => {
-        setCurrentDate(selectedDates[0]);
-        fetchData(selectedDates[0]);
+        if (selectedDates.length > 0) {
+          updateDateDisplay(selectedDates[0]);
+        }
       },
       allowInput: true,
-      clickOpens: false, // Kita handle klik manual jika perlu
     });
 
-    // Cleanup saat komponen di-unmount
     return () => {
       if (flatpickrInstance.current) {
         flatpickrInstance.current.destroy();
@@ -67,29 +44,40 @@ const Kalender = () => {
     };
   }, []);
 
-  // Sinkronisasi input dengan state
-  useEffect(() => {
-    if (flatpickrInstance.current) {
-      flatpickrInstance.current.setDate(currentDate);
-    }
-  }, [currentDate]);
+  // Navigasi ke hari sebelumnya
+  const goToPrevDay = () => {
+    const prevDay = new Date(currentDate);
+    prevDay.setDate(prevDay.getDate() - 1);
+    flatpickrInstance.current.setDate(prevDay);
+    updateDateDisplay(prevDay);
+  };
+
+  // Navigasi ke hari berikutnya
+  const goToNextDay = () => {
+    const nextDay = new Date(currentDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    flatpickrInstance.current.setDate(nextDay);
+    updateDateDisplay(nextDay);
+  };
 
   return (
-    <div className="kalender-container">
-      <h2>Kalender Interaktif</h2>
-      <div className="calendar-navigation">
-        <button className="nav-btn prev" onClick={goToPrev} aria-label="Previous">
+    <div className="calendar-container">
+      <div className="calendar-header">
+        <button onClick={goToPrevDay} className="nav-btn prev-btn">
           ⬅️
         </button>
         <input
           type="text"
-          ref={calendarRef}
-          className="flatpickr-input"
+          ref={inputRef}
+          className="date-input"
           placeholder="Pilih tanggal"
         />
-        <button className="nav-btn next" onClick={goToNext} aria-label="Next">
+        <button onClick={goToNextDay} className="nav-btn next-btn">
           ➡️
         </button>
+      </div>
+      <div className="current-date-display">
+        Tanggal Dipilih: <strong>{formatDate(currentDate)}</strong>
       </div>
     </div>
   );
