@@ -1,104 +1,91 @@
 // Kalender.jsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Import default CSS dari flatpickr
+import 'flatpickr/dist/flatpickr.min.css'; // Impor CSS flatpickr
 import axios from 'axios';
 import './Kalender.css';
 
 const Kalender = () => {
   const calendarRef = useRef(null);
   const flatpickrInstance = useRef(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
 
-  // Format tanggal sebagai "M/D/YYYY"
-  const formatDate = (date) => {
-    return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+  // Fungsi untuk navigasi ke bulan sebelumnya
+  const goToPrevMonth = () => {
+    if (flatpickrInstance.current) {
+      flatpickrInstance.current.changeMonth(-1);
+    }
   };
 
-  // Ambil data dari API (contoh dummy)
-  const fetchData = (date) => {
-    const formattedDate = date.toISOString().split('T')[0];
-    axios
-      .get(`https://jsonplaceholder.typicode.com/posts?date=${formattedDate}`)
-      .then((res) => {
-        setEvents(res.data.slice(0, 3)); // ambil 3 contoh data
-      })
-      .catch((err) => {
-        console.error('Error fetching data:', err);
-        setEvents([]);
-      });
+  // Fungsi untuk navigasi ke bulan berikutnya
+  const goToNextMonth = () => {
+    if (flatpickrInstance.current) {
+      flatpickrInstance.current.changeMonth(1);
+    }
+  };
+
+  // Fungsi untuk mendapatkan data dari API (contoh)
+  const fetchData = async (date) => {
+    try {
+      const response = await axios.get(
+        `https://jsonplaceholder.typicode.com/posts?date=${date.toISOString()}`
+      );
+      console.log('Data dari API:', response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
   };
 
   useEffect(() => {
-    // Inisialisasi Flatpickr
-    flatpickrInstance.current = flatpickr(calendarRef.current, {
+    const today = new Date();
+    const fp = flatpickr(calendarRef.current, {
       inline: true,
+      dateFormat: 'Y-m-d',
+      defaultDate: today,
       onChange: (selectedDates) => {
-        setCurrentDate(selectedDates[0]);
-        fetchData(selectedDates[0]);
+        if (selectedDates.length > 0) {
+          fetchData(selectedDates[0]);
+        }
       },
-      defaultDate: currentDate,
+      onReady: (selectedDates, dateStr, instance) => {
+        // Simpan instance flatpickr agar bisa digunakan untuk navigasi
+        flatpickrInstance.current = instance;
+      },
     });
 
-    // Load data awal
-    fetchData(currentDate);
+    // Simpan instance di useRef
+    flatpickrInstance.current = fp;
 
+    // Cleanup saat komponen di-unmount
     return () => {
-      if (flatpickrInstance.current) {
-        flatpickrInstance.current.destroy();
+      if (fp) {
+        fp.destroy();
       }
     };
   }, []);
 
-  // Navigasi ke bulan sebelumnya
-  const goToPrevMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    flatpickrInstance.current?.jumpToDate(newDate);
-    setCurrentDate(newDate);
-    fetchData(newDate);
-  };
-
-  // Navigasi ke bulan berikutnya
-  const goToNextMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    flatpickrInstance.current?.jumpToDate(newDate);
-    setCurrentDate(newDate);
-    fetchData(newDate);
-  };
-
   return (
     <div className="calendar-container">
       <div className="calendar-header">
-        <button className="nav-button prev" onClick={goToPrevMonth}>
+        <button className="nav-btn prev" onClick={goToPrevMonth}>
           ⬅️
         </button>
-        <span className="current-date-display">
-          {formatDate(currentDate)}
+        <span className="current-month">
+          {flatpickrInstance.current
+            ? flatpickrInstance.current.formatDate(
+                flatpickrInstance.current.currentMonthDate,
+                'F Y'
+              )
+            : new Date().toLocaleDateString('id-ID', {
+                month: 'long',
+                year: 'numeric',
+              })}
         </span>
-        <button className="nav-button next" onClick={goToNextMonth}>
+        <button className="nav-btn next" onClick={goToNextMonth}>
           ➡️
         </button>
       </div>
 
-      <div className="calendar-body">
-        <div ref={calendarRef}></div>
-      </div>
-
-      <div className="event-list">
-        <h4>Events on {formatDate(currentDate)}:</h4>
-        {events.length > 0 ? (
-          <ul>
-            {events.map((event, index) => (
-              <li key={index}>Post ID: {event.id}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No events found.</p>
-        )}
-      </div>
+      <div ref={calendarRef} className="flatpickr-calendar"></div>
     </div>
   );
 };
