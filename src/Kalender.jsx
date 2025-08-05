@@ -1,5 +1,5 @@
 // Kalender.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
@@ -18,9 +18,10 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (5 hari)
+  // Pasaran Jawa
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-  // Weton lengkap (gabungan hari + pasaran)
+
+  // Weton (contoh nama, bisa disesuaikan)
   const wetonNama = {
     'Minggu_Legi': 'Wage',
     'Senin_Legi': 'Keliwon',
@@ -63,24 +64,24 @@ const Kalender = () => {
     'Sabtu_Kliwon': 'Legi'
   };
 
-  // Fungsi hitung pasaran (Neptu 5)
+  // Fungsi hitung pasaran
   const getPasaran = (date) => {
-    const time = date.getTime();
-    const epoch = new Date('2024-03-24'); // Contoh: 24 Maret 2024 = Legi
-    const diffTime = time - epoch.getTime();
+    const epoch = new Date('2024-03-24'); // Legi
+    const diffTime = date.getTime() - epoch.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const index = diffDays % 5;
     return pasaran[index >= 0 ? index : index + 5];
   };
 
-  // Hitung nama weton
+  // Fungsi hitung weton
   const getWeton = (date) => {
     const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
     const pasaranName = getPasaran(date);
     return wetonNama[`${dayName}_${pasaranName}`] || pasaranName;
   };
 
-  const generateCalendarDays = (date) => {
+  // Fungsi generate kalender (dibungkus useCallback)
+  const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
 
@@ -89,7 +90,7 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan sebelumnya
+    // Tanggal bulan lalu
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const d = new Date(year, month - 1, prevMonthLastDay - i);
@@ -114,9 +115,9 @@ const Kalender = () => {
       });
     }
 
-    // Tanggal dari bulan depan
+    // Tanggal bulan depan
     const total = days.length;
-    const remaining = 42 - total; // 6 baris x 7
+    const remaining = 42 - total;
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
       days.push({
@@ -129,8 +130,9 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  };
+  }, [getPasaran, getWeton]); // Dependency: fungsi pembantu
 
+  // Navigasi
   const prevMonth = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -147,6 +149,7 @@ const Kalender = () => {
     });
   };
 
+  // Buka picker
   const openMonthPicker = () => {
     setTempYear(currentDate.getFullYear());
     setShowMonthPicker(true);
@@ -179,17 +182,19 @@ const Kalender = () => {
     }
   };
 
+  // API call
   useEffect(() => {
     setLoading(true);
     axios
       .get('https://jsonplaceholder.typicode.com/posts', { params: { _limit: 1 } })
-      .catch(err => console.warn('API gagal:', err))
+      .catch(err => console.warn('API error:', err))
       .finally(() => setLoading(false));
-  }, [currentDate]);
+  }, [currentDate]); // Hanya currentDate yang memicu API
 
+  // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate]);
+  }, [currentDate, generateCalendarDays]); // ✅ Sekarang aman: generateCalendarDays di-dependency
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -211,7 +216,7 @@ const Kalender = () => {
         </button>
       </div>
 
-      {/* Picker Bulan & Tahun */}
+      {/* Month Picker */}
       {showMonthPicker && (
         <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="month-picker">
