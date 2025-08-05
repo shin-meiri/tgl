@@ -1,7 +1,7 @@
 // Kalender.jsx
 import React, { useState, useRef } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import Flatpickr from 'react-flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
 
 const Kalender = () => {
@@ -28,9 +28,10 @@ const Kalender = () => {
     setSelectedDate(newDate);
   };
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-    setIsOpen(false);
+  const handleDateChange = (dates) => {
+    if (dates.length > 0) {
+      setSelectedDate(dates[0]);
+    }
   };
 
   const formatDate = (date) => {
@@ -47,17 +48,12 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal akhir bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({ date: lastDayPrevMonth - i, isCurrentMonth: false });
     }
-
-    // Tanggal bulan ini
     for (let d = 1; d <= totalDays; d++) {
       days.push({ date: d, isCurrentMonth: true });
     }
-
-    // Tanggal awal bulan depan
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       days.push({ date: i, isCurrentMonth: false });
@@ -70,7 +66,7 @@ const Kalender = () => {
   const currentMonthName = bulan[selectedDate.getMonth()];
   const currentYearDisplay = selectedDate.getFullYear();
 
-  // Close dropdown jika klik di luar
+  // Close flatpickr jika klik di luar
   React.useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -85,41 +81,47 @@ const Kalender = () => {
     <div className="kalender-container" ref={wrapperRef}>
       <h2>Kalender</h2>
 
-      {/* Navigasi dan Dropdown */}
+      {/* Navigasi dan Flatpickr */}
       <div className="datepicker-dropdown">
-        <button onClick={handlePrevMonth} className="nav-btn" aria-label="Bulan sebelumnya">
+        <button onClick={handlePrevMonth} className="nav-btn">
           ⬅️
         </button>
 
         <div className="datepicker-wrapper">
-          <button
-            className="date-display-btn"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-expanded={isOpen}
-          >
-            {formatDate(selectedDate)}
-          </button>
-
-          {isOpen && (
-            <div className="datepicker-popup">
-              <DatePicker
-                inline
-                selected={selectedDate}
-                onChange={handleDateChange}
-                dateFormat="dd/MM/yyyy"
-                showYearDropdown
-                showMonthDropdown
-                scrollableYearDropdown
-                yearDropdownItemNumber={15}
-                dropdownMode="scroll"
-                minDate={new Date(1900, 0, 1)}
-                maxDate={new Date(3000, 11, 31)}
-              />
-            </div>
-          )}
+          <Flatpickr
+            value={selectedDate}
+            onChange={handleDateChange}
+            options={{
+              dateFormat: 'd F Y',
+              altInput: true,
+              altFormat: 'j F Y',
+              allowInput: false,
+              clickOpens: isOpen,
+              onOpen: () => setIsOpen(true),
+              onClose: () => setIsOpen(false),
+              animate: true,
+              minDate: '01-01-1900',
+              maxDate: '31-12-3000',
+              // Enable fast month/year pick
+              monthSelectorType: 'dropdown',
+              yearSelectorType: 'dropdown',
+              showMonths: 1,
+            }}
+            render={({ defaultValue, value, ...props }, ref) => {
+              return (
+                <input
+                  ref={ref}
+                  className="date-display-btn"
+                  value={formatDate(selectedDate)}
+                  onClick={() => setIsOpen(!isOpen)}
+                  readOnly
+                />
+              );
+            }}
+          />
         </div>
 
-        <button onClick={handleNextMonth} className="nav-btn" aria-label="Bulan berikutnya">
+        <button onClick={handleNextMonth} className="nav-btn">
           ➡️
         </button>
       </div>
