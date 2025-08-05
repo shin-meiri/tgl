@@ -1,7 +1,7 @@
 // Kalender.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import flatpickr from 'flatpickr';
+//import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css'; // Impor tema flatpickr
 import './Kalender.css';
 
