@@ -1,0 +1,61 @@
+/* Kalender.css */
+.kalender-container {
+  max-width: 400px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.kalender-container h2 {
+  text-align: center;
+  color: #333;
+}
+
+/* Header Hari */
+.hari-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.hari-cell.header {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 5px;
+}
+
+/* Grid Kalender */
+.kalender-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.kalender-date {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #eee;
+  background-color: #f9f9f9;
+  font-size: 14px;
+  border-radius: 5px;
+}
+
+.kalender-date.empty {
+  background-color: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.kalender-date.today {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  }
