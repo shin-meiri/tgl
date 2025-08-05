@@ -1,11 +1,12 @@
-import Kalender from './Kalender'; // Sesuaikan path
+import React from 'react';
+import Kalender from './Kalender';
 
 function App() {
   return (
-    <div>
+    <div className="App">
       <Kalender />
     </div>
   );
 }
 
-export default App; // ✅ Ini wajib ada!
+export default App;
