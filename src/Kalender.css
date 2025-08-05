@@ -1,123 +1,86 @@
 /* Kalender.css */
 .kalender-container {
-  max-width: 800px;
+  width: 320px;
   margin: 20px auto;
-  padding: 20px;
   font-family: 'Arial', sans-serif;
-  background-color: #f9f9f9;
+  border: 1px solid #ddd;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
 }
 
-.kalender-container h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-}
-
-/* Navigasi Bulan */
-.navigation {
+.kalender-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
 }
 
 .nav-btn {
-  background: #007bff;
-  color: white;
+  background: none;
   border: none;
-  padding: 10px 15px;
-  border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: background 0.3s ease;
+  padding: 0 10px;
+  transition: transform 0.2s;
 }
 
 .nav-btn:hover {
-  background: #0056b3;
+  transform: scale(1.1);
 }
 
-.current-month {
+.month-year {
+  margin: 0;
   font-size: 1.2rem;
   font-weight: bold;
-  color: #333;
 }
 
-/* Header Hari */
-.days-header {
+.hari-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  background-color: #f8f9fa;
   text-align: center;
+  padding: 10px 0;
   font-weight: bold;
-  color: #007bff;
-  margin-bottom: 10px;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.hari-label {
   font-size: 0.9rem;
 }
 
-.day-header {
-  padding: 8px;
-  background-color: #eef7ff;
-  border-radius: 4px;
-}
-
-/* Grid Tanggal */
 .dates-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 20px;
+  gap: 1px;
+  background-color: #dee2e6;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
-.date-cell {
+.date-box {
+  background-color: #fff;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
   font-size: 0.9rem;
-  color: #333;
+  color: #212529;
 }
 
-.date-cell:hover {
-  background-color: #f0f8ff;
-  cursor: pointer;
+.date-box.empty {
+  background-color: #f8f9fa;
+  color: transparent;
 }
 
-.date-cell:not(:empty) {
-  font-weight: 500;
-}
-
-/* Flatpickr Wrapper */
-.flatpickr-wrapper {
-  margin-top: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* API Data */
-.api-data {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f0f8ff;
-  border-radius: 8px;
+.loading {
+  text-align: center;
+  padding: 10px;
   font-size: 0.9rem;
-}
-
-.api-data h3 {
-  margin-top: 0;
-  color: #007bff;
-}
-
-.api-data ul {
-  padding-left: 20px;
-}
-
-.api-data li {
-  margin: 5px 0;
-  color: #555;
-}
+  color: #6c757d;
+  background-color: #f8f9fa;
+  }
