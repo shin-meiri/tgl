@@ -4,25 +4,6 @@ import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
 
-// Fungsi hitung weton Jawa
-const getWeton = (date) => {
-  const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const pasaran = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'];
-
-  // 1 Jan 1900 = Senin Pahing (acuan kalender Jawa)
-  const epoch = new Date('1900-01-01');
-  const diff = Math.floor((date - epoch) / (1000 * 60 * 60 * 24));
-
-  const hariIndex = diff % 7;
-  const pasaranIndex = diff % 5;
-
-  return {
-    hari: hari[hariIndex],
-    pasaran: pasaran[pasaranIndex],
-    weton: `${hari[hariIndex]} ${pasaran[pasaranIndex]}`
-  };
-};
-
 const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -31,11 +12,31 @@ const Kalender = () => {
   const [loading, setLoading] = useState(false);
 
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const hariPanjang = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const bulanNama = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const bulanPanjang = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
+
+  // Patokan: 1 Maret 1938 = 1 Rejeb 1870 Jawa = Minggu Legi
+  const EPOCH_JAWA_DATE = new Date(1938, 2, 1); // 1 Maret 1938
+  const EPOCH_HARI = 0; // Minggu
+  const EPOCH_PASARAN = 0; // Legi
+
+  // Fungsi hitung pasaran
+  const getWeton = (date) => {
+    const selisihHari = Math.floor((date - EPOCH_JAWA_DATE) / (1000 * 60 * 60 * 24));
+    const hari = (EPOCH_HARI + selisihHari) % 7;
+    const pasaranIndex = (EPOCH_PASARAN + selisihHari) % 5;
+    return {
+      hari: hariPanjang[hari],
+      pasaran: pasaran[pasaranIndex],
+      hariSingkat: hariNama[hari],
+      hariMinggu: hari === 0,
+    };
+  };
 
   const generateCalendarDays = (date) => {
     const year = date.getFullYear();
@@ -46,44 +47,42 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan lalu
+    // Tanggal dari bulan sebelumnya
     const prevMonth = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const prevDate = new Date(year, month - 1, prevMonth - i);
-      const { weton } = getWeton(prevDate);
+      const { pasaran: pasaranVal } = getWeton(prevDate);
       days.unshift({
         date: prevMonth - i,
         isCurrentMonth: false,
         dayOfWeek: (6 - i) % 7,
-        weton
+        pasaran: pasaranVal,
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
       const fullDate = new Date(year, month, day);
-      const { weton } = getWeton(fullDate);
-      const dayOfWeek = fullDate.getDay();
+      const { dayOfWeek, pasaran: pasaranVal } = getWeton(fullData);
       days.push({
         date: day,
         isCurrentMonth: true,
-        dayOfWeek,
-        weton
+        dayOfWeek: fullDate.getDay(),
+        pasaran: pasaranVal,
       });
     }
 
-    // Tanggal bulan depan (untuk lengkapi grid)
+    // Tanggal dari bulan depan
     const totalCells = days.length;
     const remaining = 42 - totalCells;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
-      const { weton } = getWeton(nextDate);
-      const dayOfWeek = nextDate.getDay();
+      const { pasaran: pasaranVal } = getWeton(nextDate);
       days.push({
         date: day,
         isCurrentMonth: false,
-        dayOfWeek,
-        weton
+        dayOfWeek: nextDate.getDay(),
+        pasaran: pasaranVal,
       });
     }
 
@@ -193,7 +192,7 @@ const Kalender = () => {
               {bulanNama.map((bulan, index) => (
                 <div
                   key={bulan}
-                  className={`month-cell ${index === currentDate.getMonth() ? 'selected' : ''}`}
+                  className={`month-cell ${index === currentMonth ? 'selected' : ''}`}
                   onClick={() => selectMonth(index)}
                 >
                   {bulan}
@@ -213,7 +212,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Grid Tanggal + Weton */}
+      {/* Grid Tanggal + Pasaran */}
       <div className="dates-grid">
         {daysInMonth.map((dayObj, index) => (
           <div
@@ -223,8 +222,8 @@ const Kalender = () => {
               ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
             `}
           >
-            <span className="date-num">{dayObj.date}</span>
-            <span className="weton">{dayObj.weton}</span>
+            <span className="date-number">{dayObj.date}</span>
+            <span className="pasaran">{dayObj.pasaran}</span>
           </div>
         ))}
       </div>
