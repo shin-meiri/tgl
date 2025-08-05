@@ -1,4 +1,4 @@
-// Kalender.jsx
+// Kalender.jsx (versi dengan Weton Jawa)
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -11,51 +11,79 @@ const Kalender = () => {
   const [daysInMonth, setDaysInMonth] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Nama hari & pasaran
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const hariPanjang = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const bulanNama = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const bulanPanjang = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
+  // Acuan: 1 Januari 1970 adalah Senin Legi (basis hitung weton)
+  const EPOCH_DATE = new Date('1970-01-01'); // Senin Legi
+  const EPOCH_HARI = 1; // Senin
+  const EPOCH_PASARAN = 0; // Legi
+
+  // Hitung pasaran berdasarkan selisih hari
+  const getPasaran = (date) => {
+    const diffTime = date - EPOCH_DATE;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const pasaranIndex = (EPOCH_PASARAN + diffDays) % 5;
+    return pasaran[pasaranIndex];
+  };
+
   const generateCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
 
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
+    const firstDay = new Date(year, month, 1).getDay();
     const daysCount = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Tanggal dari bulan sebelumnya (hanya untuk mengisi grid)
-    const prevMonth = new Date(year, month, 0).getDate(); // akhir bulan lalu
+    // Tanggal dari bulan sebelumnya
+    const prevMonth = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
+      const prevDate = new Date(year, month - 1, prevMonth - i);
       days.unshift({
         date: prevMonth - i,
         isCurrentMonth: false,
-        dayOfWeek: (6 - i) % 7, // hari sebelum 1
+        dayOfWeek: (6 - i) % 7,
+        pasaran: getPasaran(prevDate),
+        fullWeton: `${hariPanjang[(6 - i) % 7]} ${getPasaran(prevDate)}`
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
-      const dayOfWeek = new Date(year, month, day).getDay();
+      const currentDate = new Date(year, month, day);
+      const dayOfWeek = currentDate.getDay();
+      const pasaranName = getPasaran(currentDate);
+      const weton = `${hariPanjang[dayOfWeek]} ${pasaranName}`;
+
       days.push({
         date: day,
         isCurrentMonth: true,
         dayOfWeek,
+        pasaran: pasaranName,
+        fullWeton: weton
       });
     }
 
-    // Tambahkan tanggal dari bulan depan jika belum penuh 6 baris
+    // Tanggal dari bulan depan
     const totalCells = days.length;
-    const remaining = 42 - totalCells; // 6 baris x 7 = 42
+    const remaining = 42 - totalCells;
     for (let day = 1; day <= remaining; day++) {
-      const dayOfWeek = new Date(year, month + 1, day).getDay();
+      const nextDate = new Date(year, month + 1, day);
+      const dayOfWeek = nextDate.getDay();
       days.push({
         date: day,
         isCurrentMonth: false,
         dayOfWeek,
+        pasaran: getPasaran(nextDate),
+        fullWeton: `${hariPanjang[dayOfWeek]} ${getPasaran(nextDate)}`
       });
     }
 
@@ -185,7 +213,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Grid Tanggal */}
+      {/* Grid Tanggal + Weton */}
       <div className="dates-grid">
         {daysInMonth.map((dayObj, index) => (
           <div
@@ -194,8 +222,10 @@ const Kalender = () => {
               ${!dayObj.isCurrentMonth ? 'outside' : ''}
               ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
             `}
+            title={dayObj.fullWeton} // Tooltip weton lengkap
           >
-            {dayObj.date}
+            <span className="date-number">{dayObj.date}</span>
+            <span className="pasaran">{dayObj.pasaran}</span>
           </div>
         ))}
       </div>
