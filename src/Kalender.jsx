@@ -1,141 +1,104 @@
 // Kalender.jsx
-import React, { useState } from 'react';
-import Flatpickr from 'react-flatpickr';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
 
 const Kalender = () => {
-  const today = new Date();
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [date, setDate] = useState(new Date('2025-08-05')); // Tanggal awal: 5 Agustus 2025
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const calendarRef = useRef(null);
 
-  const handlePrevMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setSelectedDate(newDate);
+  // Format tanggal ke DD/MM/YYYY
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
 
-  const handleNextMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setSelectedDate(newDate);
+  // Ambil data acara berdasarkan tanggal
+  const fetchEvents = async (selectedDate) => {
+    setLoading(true);
+    try {
+      // Contoh API: /api/events?date=2025-08-05
+      const response = await axios.get('/api/events', {
+        params: { date: selectedDate.toISOString().split('T')[0] },
+      });
+      setEvents(response.data || []);
+    } catch (error) {
+      console.error('Gagal memuat acara:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleTodayClick = () => {
-    setSelectedDate(new Date());
+  // Inisialisasi Flatpickr
+  useEffect(() => {
+    const fp = flatpickr(calendarRef.current, {
+      inline: true,
+      dateFormat: 'Y-m-d',
+      defaultDate: date,
+      onChange: (selectedDates) => {
+        setDate(selectedDates[0]);
+      },
+    });
+
+    return () => fp.destroy();
+  }, []);
+
+  // Muat acara saat tanggal berubah
+  useEffect(() => {
+    fetchEvents(date);
+  }, [date]);
+
+  // Fungsi navigasi
+  const goToPrevDay = () => {
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() - 1);
+    setDate(newDate);
   };
 
-  const formatDay = (date) => {
-    const day = date.getDate();
-    const month = date.getMonth();
-    const selectedMonth = selectedDate.getMonth();
-    const selectedYear = selectedDate.getFullYear();
-
-    // Cek apakah tanggal termasuk di bulan saat ini
-    const isCurrentMonth = month === selectedMonth && date.getFullYear() === selectedYear;
-
-    return (
-      <span
-        style={{
-          fontSize: isCurrentMonth ? '14px' : '12px', // ukuran lebih kecil untuk luar bulan
-          opacity: isCurrentMonth ? 1 : 0.6,
-          color: isCurrentMonth ? '#333' : '#999',
-        }}
-      >
-        {day}
-      </span>
-    );
+  const goToNextDay = () => {
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() + 1);
+    setDate(newDate);
   };
 
   return (
     <div className="kalender-container">
-      <h2>Kalender</h2>
-
-      {/* Tombol Navigasi */}
-      <div className="navigation">
-        <button onClick={handlePrevMonth} className="nav-btn">
+      <div className="calendar-header">
+        <button onClick={goToPrevDay} className="nav-btn prev-btn">
           ⬅️
         </button>
-
-        <Flatpickr
-          value={selectedDate}
-          options={{
-            dateFormat: 'd/m/Y',
-            onChange: (selectedDates) => setSelectedDate(new Date(selectedDates[0])),
-            showMonths: 1,
-            disableMobile: true,
-          }}
-          render={({ defaultValue, value, ...props }, ref) => {
-            return (
-              <button {...props} ref={ref} className="today-btn" onClick={handleTodayClick}>
-                {value || defaultValue}
-              </button>
-            );
-          }}
-        />
-
-        <button onClick={handleNextMonth} className="nav-btn">
+        <h2>{formatDate(date)}</h2>
+        <button onClick={goToNextDay} className="nav-btn next-btn">
           ➡️
         </button>
       </div>
 
-      {/* Kalender Grid */}
-      <div className="kalender-grid">
-        {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
-          <div key={hari} className="hari-header">
-            {hari}
-          </div>
-        ))}
+      <div className="calendar-body">
+        <input
+          type="text"
+          ref={calendarRef}
+          style={{ opacity: 0, height: 0, position: 'absolute' }}
+        />
+      </div>
 
-        {(() => {
-          const year = selectedDate.getFullYear();
-          const month = selectedDate.getMonth();
-          const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
-          const totalDays = new Date(year, month + 1, 0).getDate();
-
-          const days = [];
-
-          // Tanggal dari bulan sebelumnya
-          const prevMonthLastDay = new Date(year, month, 0).getDate();
-          for (let i = firstDay - 1; i >= 0; i--) {
-            const date = new Date(year, month - 1, prevMonthLastDay - i);
-            days.push(
-              <div key={`prev-${i}`} className="kalender-date other-month">
-                {formatDay(date)}
-              </div>
-            );
-          }
-
-          // Tanggal bulan ini
-          for (let date = 1; date <= totalDays; date++) {
-            const currentDate = new Date(year, month, date);
-            const isToday =
-              today.getDate() === date &&
-              today.getMonth() === month &&
-              today.getFullYear() === year;
-
-            days.push(
-              <div
-                key={date}
-                className={`kalender-date ${isToday ? 'today' : ''}`}
-              >
-                {formatDay(currentDate)}
-              </div>
-            );
-          }
-
-          // Tanggal dari bulan depan
-          const remaining = 42 - days.length; // 6 baris x 7 kolom
-          for (let i = 1; i <= remaining; i++) {
-            const date = new Date(year, month + 1, i);
-            days.push(
-              <div key={`next-${i}`} className="kalender-date other-month">
-                {formatDay(date)}
-              </div>
-            );
-          }
-
-          return days;
-        })()}
+      <div className="events-section">
+        <h3>Acara pada {formatDate(date)}</h3>
+        {loading ? (
+          <p>Loading...</p>
+        ) : events.length > 0 ? (
+          <ul>
+            {events.map((event, index) => (
+              <li key={index}>{event.title}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>Tidak ada acara.</p>
+        )}
       </div>
     </div>
   );
