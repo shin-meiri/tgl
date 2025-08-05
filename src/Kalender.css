@@ -3,7 +3,7 @@
   max-width: 380px;
   margin: 20px auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   border: 1px solid #ddd;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -16,11 +16,11 @@
   margin-bottom: 20px;
 }
 
-/* Navigasi */
-.navigation {
+/* Tombol Navigasi dan Hari Ini */
+.nav-today {
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   margin-bottom: 15px;
 }
@@ -37,6 +37,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.3s;
 }
 
 .nav-btn:hover {
@@ -44,76 +45,57 @@
 }
 
 .today-btn {
+  padding: 8px 16px;
+  font-size: 16px;
   background: #28a745;
   color: white;
   border: none;
-  padding: 8px 12px;
   border-radius: 8px;
-  font-size: 14px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  min-width: 120px;
 }
 
 .today-btn:hover {
   background: #218838;
 }
 
-/* Header Hari */
-.hari-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 8px;
-}
-
-.hari-cell {
-  text-align: center;
-  font-weight: bold;
-  color: #007bff;
-  font-size: 14px;
-}
-
-/* Grid Kalender */
-.kalender-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 15px;
-}
-
-.kalender-date {
-  padding: 10px 0;
-  text-align: center;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #333;
-}
-
-.kalender-date.current {
-  background-color: #f0f8ff;
-  font-weight: 500;
-}
-
-.kalender-date.other {
-  font-size: 12px; /* Lebih kecil untuk tanggal di luar bulan */
-  color: #aaa;
-}
-
-/* Label bulan */
-.month-label {
-  text-align: center;
-  font-size: 14px;
-  color: #555;
-  margin-top: 10px;
-}
-
-/* Sembunyikan flatpickr default UI kecuali inline */
-.flatpickr-calendar {
-  margin-top: 10px;
-  border-radius: 8px;
+/* Styling untuk Flatpickr */
+.flatpickr-wrapper .flatpickr-calendar {
+  border-radius: 10px !important;
   overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
 }
 
-.flatpickr-day {
-  font-size: 13px !important;
+.flatpickr-wrapper .flatpickr-day {
+  font-size: 14px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px !important;
+}
+
+/* Tanggal dari bulan sebelum/sesudah (out-of-month) */
+.flatpickr-wrapper .flatpickr-day.outMonth {
+  color: #aaa !important;
+  font-size: 12px !important; /* Font lebih kecil */
+  opacity: 0.7;
+}
+
+/* Hari ini */
+.flatpickr-wrapper .flatpickr-day.today:not(.selected) {
+  background-color: #cce5ff !important;
+  color: #004085 !important;
+}
+
+/* Tanggal dipilih */
+.flatpickr-wrapper .flatpickr-day.selected,
+.flatpickr-wrapper .flatpickr-day.startRange,
+.flatpickr-wrapper .flatpickr-day.endRange,
+.flatpickr-wrapper .flatpickr-day.inRange {
+  background-color: #007bff !important;
+  color: white !important;
+  font-weight: 500 !important;
 }
