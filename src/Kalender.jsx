@@ -18,18 +18,22 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (5 hari)
-  const pasaran = ['Pon', 'Wage', 'Kliwon', 'Legi', 'Pahing'];
+  // Pasaran Jawa (berulang tiap 5 hari)
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Titik acuan: 1 Januari 1900 adalah hari Senin dan Legi (pasaran ke-3)
-  // Kita hitung jumlah hari dari acuan ini
-  const baseDate = new Date(1900, 0, 1); // 1 Jan 1900
+  // ⚙️ Fungsi hitung pasaran berdasarkan jumlah hari sejak acuan
+  // Acuan: 1 Januari 1970 = Jumat Legi (hari 5, pasaran 0)
+  const getWeton = (date) => {
+    const timeDiff = date.getTime() - new Date(1970, 0, 1).getTime(); // ms
+    const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // hari
 
-  const getPasaran = (date) => {
-    const diffTime = Math.abs(date - baseDate);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const pasaranIndex = diffDays % 5;
-    return pasaran[pasaranIndex];
+    const hariIndex = date.getDay(); // 0-6 (Minggu-Sabtu)
+    const pasaranIndex = dayDiff % 5; // 0=Legi, 1=Pahing, ...
+
+    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][hariIndex];
+    const pasarannya = pasaran[pasaranIndex];
+
+    return { hari, pasarannya, weton: `${hari} ${pasarannya}` };
   };
 
   const generateCalendarDays = (date) => {
@@ -41,41 +45,44 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan sebelumnya
+    // Tanggal dari bulan lalu
     const prevMonth = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const prevDate = new Date(year, month - 1, prevMonth - i);
+      const { weton } = getWeton(prevDate);
       days.unshift({
         date: prevMonth - i,
         isCurrentMonth: false,
-        dayOfWeek: (6 - i) % 7,
-        pasaran: getPasaran(prevDate),
+        dayOfWeek: prevDate.getDay(),
+        weton,
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
-      const fullDate = new Date(year, month, day);
-      const dayOfWeek = fullDate.getDay();
+      const currentDate = new Date(year, month, day);
+      const { weton, pasarannya } = getWeton(currentDate);
+      const dayOfWeek = currentDate.getDay();
       days.push({
         date: day,
         isCurrentMonth: true,
         dayOfWeek,
-        pasaran: getPasaran(fullDate),
+        weton,
+        pasarannya,
       });
     }
 
-    // Tanggal dari bulan depan
+    // Isi sisa grid dari bulan depan jika perlu
     const totalCells = days.length;
-    const remaining = 42 - totalCells;
+    const remaining = 42 - totalCells; // 6 baris
     for (let day = 1; day <= remaining; day++) {
-      const fullDate = new Date(year, month + 1, day);
-      const dayOfWeek = fullDate.getDay();
+      const nextDate = new Date(year, month + 1, day);
+      const { weton } = getWeton(nextDate);
       days.push({
         date: day,
         isCurrentMonth: false,
-        dayOfWeek,
-        pasaran: getPasaran(fullDate),
+        dayOfWeek: nextDate.getDay(),
+        weton,
       });
     }
 
@@ -215,8 +222,10 @@ const Kalender = () => {
               ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
             `}
           >
-            <span className="date-number">{dayObj.date}</span>
-            <span className="weton">{dayObj.pasaran}</span>
+            <span className="date-num">{dayObj.date}</span>
+            <span className={`weton ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}`}>
+              {dayObj.pasarannya}
+            </span>
           </div>
         ))}
       </div>
