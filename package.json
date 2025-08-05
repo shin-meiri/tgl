@@ -9,11 +9,13 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.11.0",
+    "flatpickr": "^4.6.13",
     "react": "^19.1.0",
+    "react-datepicker": "^7.4.0",
     "react-dom": "^19.1.0",
+    "react-flatpickr": "^4.0.11",
     "react-router-dom": "^7.7.0",
     "react-scripts": "5.0.1",
-    "react-datepicker": "^7.4.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
