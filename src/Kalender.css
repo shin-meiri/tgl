@@ -3,11 +3,10 @@
   max-width: 380px;
   margin: 20px auto;
   padding: 20px;
+  font-family: Arial, sans-serif;
   border: 1px solid #ddd;
   border-radius: 12px;
-  font-family: Arial, sans-serif;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
 }
 
 .kalender-container h2 {
@@ -16,11 +15,12 @@
   margin-bottom: 20px;
 }
 
-/* Navigasi Tanggal */
-.date-nav {
+/* Navigasi */
+.navigation {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 10px;
   margin-bottom: 15px;
 }
 
@@ -33,7 +33,9 @@
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
-  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-btn:hover {
@@ -41,68 +43,76 @@
 }
 
 .current-date {
-  font-size: 18px;
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background-color: #f0f8ff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
   font-weight: bold;
   color: #007bff;
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
   cursor: pointer;
-  text-align: center;
-  min-width: 160px;
   user-select: none;
 }
 
 .current-date:hover {
-  background-color: #f0f8ff;
+  background-color: #e0f7ff;
 }
 
-.today-btn {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
+/* Header Hari */
+.hari-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.hari-cell {
+  text-align: center;
+  font-weight: bold;
+  color: #333;
   font-size: 14px;
+  padding: 8px;
 }
 
-.today-btn:hover {
-  background-color: #218838;
+/* Grid Kalender */
+.kalender-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
 }
 
-/* Styling Flatpickr */
+.kalender-date {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #eee;
+  background-color: #f9f9f9;
+  font-size: 14px;
+  border-radius: 5px;
+  color: #333;
+}
+
+.kalender-date.outside {
+  font-size: 10px; /* Lebih kecil untuk tanggal di luar bulan */
+  color: #aaa;
+  background-color: #f0f0f0;
+}
+
+.kalender-date.today {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+/* Judul bulan */
+.bulan-kalender h3 {
+  text-align: center;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+/* Sembunyikan flatpickr asli */
 .flatpickr-calendar {
   border-radius: 10px !important;
   overflow: hidden;
-  margin-top: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
 }
-
-.flatpickr-day {
-  font-size: 14px !important;
-  width: 36px !important;
-  height: 36px !important;
-  line-height: 36px !important;
-  border-radius: 50% !important;
-}
-
-/* Tanggal dari bulan sebelum/sesudah (out-of-month) */
-.flatpickr-day.prevMonthDay,
-.flatpickr-day.nextMonthDay {
-  color: #aaa !important;
-  font-size: 12px !important;
-}
-
-/* Tanggal hari ini */
-.flatpickr-day.today {
-  background: #007bff !important;
-  color: white !important;
-  opacity: 1 !important;
-}
-
-/* Tanggal terpilih */
-.flatpickr-day.selected {
-  background: #0056b3 !important;
-  color: white !important;
-  }
