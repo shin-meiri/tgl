@@ -16,13 +16,6 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Rentang tahun: ±5 dari tahun sekarang
-  const currentYear = today.getFullYear();
-  const yearOptions = [];
-  for (let year = currentYear - 1900; year <= currentYear + 3000; year++) {
-    yearOptions.push(year);
-  }
-
   const handlePrevMonth = () => {
     const newDate = new Date(selectedDate);
     newDate.setMonth(newDate.getMonth() - 1);
@@ -115,15 +108,12 @@ const Kalender = () => {
                 onChange={handleDateChange}
                 dateFormat="dd/MM/yyyy"
                 showYearDropdown
-                yearDropdownItemNumber={11} // Jumlah item yang ditampilkan
-                scrollableYearDropdown
-                minDate={new Date(currentYear - 5, 0, 1)}
-                maxDate={new Date(currentYear + 5, 11, 31)}
-                yearItemNumber={11}
-                dropdownMode="scroll"
-                // Optional: tambah pilih bulan
                 showMonthDropdown
-                monthDropdownItemNumber={12}
+                scrollableYearDropdown
+                yearDropdownItemNumber={15}
+                dropdownMode="scroll"
+                minDate={new Date(1900, 0, 1)}
+                maxDate={new Date(3000, 11, 31)}
               />
             </div>
           )}
