@@ -1,158 +1,115 @@
-// Kalender.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import flatpickr from 'flatpickr';
+import React, { useState, useRef } from 'react';
+import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import axios from 'axios';
-import './Kalender.css';
 
-const Kalender = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState({});
-  const calendarRef = useRef(null);
+const App = () => {
+  const [date, setDate] = useState(new Date());
+  const flatpickrRef = useRef(null);
 
-  // Nama hari dan bulan dalam bahasa Indonesia
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-
-  // Ambil data event dari API (contoh)
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        // Contoh: API lokal atau eksternal
-        const res = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=5');
-        const mockEvents = {};
-        res.data.forEach((post, index) => {
-          const date = new Date();
-          date.setDate(10 + index); // acak tanggal 10-14
-          const key = date.toISOString().split('T')[0];
-          mockEvents[key] = post.title;
-        });
-        setEvents(mockEvents);
-      } catch (err) {
-        console.error('Gagal ambil data:', err);
-      }
-    };
-    fetchEvents();
-  }, []);
-
-  // Inisialisasi flatpickr (untuk styling atau interaksi jika diperlukan)
-  useEffect(() => {
-    if (calendarRef.current) {
-      flatpickr(calendarRef.current, {
-        inline: true,
-        onChange: (selectedDates) => {
-          setCurrentDate(selectedDates[0] || new Date());
-        },
-        dateFormat: 'Y-m-d',
-        disableMobile: true,
-      });
-    }
-  }, []);
-
-  const goToPreviousMonth = () => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() - 1);
-      return d;
-    });
+  // Format tanggal sebagai MM/DD/YYYY
+  const formatDate = (date: Date) => {
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
   };
 
-  const goToNextMonth = () => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() + 1);
-      return d;
-    });
+  // Handle navigasi bulan
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(date);
+    if (direction === 'prev') {
+      newDate.setMonth(date.getMonth() - 1);
+    } else {
+      newDate.setMonth(date.getMonth() + 1);
+    }
+    setDate(newDate);
+    // Optional: trigger Flatpickr to update view
+    if (flatpickrRef.current) {
+      flatpickrRef.current.flatpickr?.setDate(newDate);
+    }
   };
 
-  const renderCalendar = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const today = new Date();
-    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
-
-    const rows = [];
-    let cells = [];
-
-    // Header hari
-    days.forEach(day => {
-      cells.push(
-        <div key={`header-${day}`} className="calendar-header-day">
-          {day}
-        </div>
-      );
-    });
-    rows.push(<div key="header" className="calendar-row">{cells}</div>);
-
-    // Kosongkan awal bulan
-    for (let i = 0; i < firstDay; i++) {
-      cells.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+  // Contoh fetch data dengan Axios
+  const fetchData = async () => {
+    try {
+      const response = await axios.get('https://jsonplaceholder.typicode.com/todos/1');
+      console.log('Data dari API:', response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
     }
-
-    // Isi tanggal
-    for (let date = 1; date <= daysInMonth; date++) {
-      const fullDate = new Date(year, month, date);
-      const dateStr = fullDate.toISOString().split('T')[0];
-      const isToday = isCurrentMonth && today.getDate() === date;
-
-      cells.push(
-        <div
-          key={date}
-          className={`calendar-day ${isToday ? 'today' : ''} ${events[dateStr] ? 'has-event' : ''}`}
-        >
-          <span className="date-number">{date}</span>
-          {events[dateStr] && <div className="event-dot"></div>}
-        </div>
-      );
-    }
-
-    rows.push(<div key="days" className="calendar-row">{cells}</div>);
-    return rows;
   };
-
-  const displayMonthYear = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
   return (
-    <div className="calendar-container">
-      <div className="calendar-header">
-        <button onClick={goToPreviousMonth} className="nav-btn prev">
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h2>📅 Kalender dengan Navigasi Bulan (Seperti Excel)</h2>
+
+      {/* Tombol Navigasi & Tanggal */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <button
+          onClick={() => navigateMonth('prev')}
+          style={{ fontSize: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+          aria-label="Previous Month"
+        >
           ⬅️
         </button>
-        <h2 className="month-display">{displayMonthYear}</h2>
-        <button onClick={goToNextMonth} className="nav-btn next">
+
+        <span
+          style={{
+            padding: '8px 12px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            fontWeight: 'bold',
+            minWidth: '100px',
+            textAlign: 'center',
+          }}
+        >
+          {formatDate(date)}
+        </span>
+
+        <button
+          onClick={() => navigateMonth('next')}
+          style={{ fontSize: '1.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+          aria-label="Next Month"
+        >
           ➡️
         </button>
       </div>
 
-      <div className="calendar-body">
-        {renderCalendar()}
+      {/* Flatpickr Date Picker */}
+      <div style={{ marginBottom: '20px' }}>
+        <Flatpickr
+          ref={flatpickrRef}
+          value={date}
+          options={{
+            dateFormat: 'm/d/Y',
+            onChange: (selectedDates) => setDate(selectedDates[0]),
+            allowInput: true,
+          }}
+          style={{
+            padding: '8px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+          }}
+        />
       </div>
 
-      {/* Optional: Flatpickr inline (bisa di-hide jika tidak perlu) */}
-      <input
-        ref={calendarRef}
-        type="text"
-        style={{ display: 'none' }}
-        value={currentDate.toISOString().split('T')[0]}
-        readOnly
-      />
-
-      {/* Legend Event */}
-      <div className="legend">
-        <div className="legend-item">
-          <div className="event-dot"></div>
-          <span>Ada Event</span>
-        </div>
-      </div>
+      {/* Tombol Contoh Axios */}
+      <button
+        onClick={fetchData}
+        style={{
+          padding: '10px 15px',
+          backgroundColor: '#007bff',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+        }}
+      >
+        🔁 Fetch Data (Axios)
+      </button>
     </div>
   );
 };
 
-export default Kalender;
+export default App;
