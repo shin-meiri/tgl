@@ -1,53 +1,8 @@
 // Kalender.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
-
-// ✅ Dipindahkan keluar dari komponen agar tidak berubah tiap render
-const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-
-const WETON_NAMA = {
-  'Minggu_Legi': 'Wage',
-  'Senin_Legi': 'Keliwon',
-  'Selasa_Legi': 'Legi',
-  'Rabu_Legi': 'Pahing',
-  'Kamis_Legi': 'Pon',
-  'Jumat_Legi': 'Wage',
-  'Sabtu_Legi': 'Kliwon',
-
-  'Minggu_Pahing': 'Pahing',
-  'Senin_Pahing': 'Pon',
-  'Selasa_Pahing': 'Wage',
-  'Rabu_Pahing': 'Kliwon',
-  'Kamis_Pahing': 'Legi',
-  'Jumat_Pahing': 'Pahing',
-  'Sabtu_Pahing': 'Pon',
-
-  'Minggu_Pon': 'Pon',
-  'Senin_Pon': 'Wage',
-  'Selasa_Pon': 'Kliwon',
-  'Rabu_Pon': 'Legi',
-  'Kamis_Pon': 'Pahing',
-  'Jumat_Pon': 'Pon',
-  'Sabtu_Pon': 'Wage',
-
-  'Minggu_Wage': 'Wage',
-  'Senin_Wage': 'Kliwon',
-  'Selasa_Wage': 'Legi',
-  'Rabu_Wage': 'Pahing',
-  'Kamis_Wage': 'Pon',
-  'Jumat_Wage': 'Wage',
-  'Sabtu_Wage': 'Kliwon',
-
-  'Minggu_Kliwon': 'Kliwon',
-  'Senin_Kliwon': 'Legi',
-  'Selasa_Kliwon': 'Pahing',
-  'Rabu_Kliwon': 'Pon',
-  'Kamis_Kliwon': 'Wage',
-  'Jumat_Kliwon': 'Kliwon',
-  'Sabtu_Kliwon': 'Legi'
-};
 
 const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -63,80 +18,86 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // ✅ getPasaran: tidak bergantung pada state, jadi aman
-  const getPasaran = useCallback((date) => {
-    const epoch = new Date('2024-03-24'); // Legi
-    const diffTime = date.getTime() - epoch.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const index = diffDays % 5;
-    return PASARAN[(index % 5 + 5) % 5];
-  }, []); // ✅ Tidak ada dependency → stabil
+  // Weton Jawa: 5 pasaran
+  const wetonList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // ✅ getWeton: hanya bergantung pada getPasaran + konstanta
-  const getWeton = useCallback((date) => {
-    const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
-    const pasaranName = getPasaran(date);
-    return WETON_NAMA[`${dayName}_${pasaranName}`] || pasaranName;
-  }, [getPasaran]); // ✅ Hanya getPasaran yang bisa berubah (tapi tidak akan)
+  // ⚙️ TITIK ACUAN: Tanggal ini dianggap WETON ke berapa?
+  // Misal: 2 Januari 1996 adalah Legi (index 0)
+  // Bisa diubah sesuai kebutuhan
+  const referenceDate = new Date(1996, 0, 2); // 2 Jan 1996 = Legi
+  const referenceWetonIndex = 0; // 0: Legi, 1: Pahing, dst.
 
-  // ✅ generateCalendarDays: bergantung pada getPasaran & getWeton
-  const generateCalendarDays = useCallback((date) => {
+  // Fungsi hitung weton berdasarkan selisih hari
+  const getWeton = (date) => {
+    const oneDay = 24 * 60 * 60 * 1000; // ms
+    const diffTime = date.getTime() - referenceDate.getTime();
+    const diffDays = Math.floor(diffTime / oneDay);
+    const wetonIndex = (diffDays % 5 + 5) % 5; // pastikan positif
+    return wetonList[(wetonIndex + referenceWetonIndex) % 5];
+  };
+
+  const generateCalendarDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
+
     const firstDay = new Date(year, month, 1).getDay();
     const daysCount = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Bulan sebelumnya
-    const prevLastDay = new Date(year, month, 0).getDate();
+    // Tanggal dari bulan lalu
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      const d = new Date(year, month - 1, prevLastDay - i);
+      const d = new Date(year, month - 1, prevMonthLastDay - i);
       days.push({
-        date: prevLastDay - i,
+        date: prevMonthLastDay - i,
         isCurrentMonth: false,
         dayOfWeek: d.getDay(),
-        pasaran: getPasaran(d),
-        weton: getWeton(d)
+        weton: getWeton(d),
       });
     }
 
-    // Bulan ini
+    // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
       const d = new Date(year, month, day);
       days.push({
         date: day,
         isCurrentMonth: true,
         dayOfWeek: d.getDay(),
-        pasaran: getPasaran(d),
-        weton: getWeton(d)
+        weton: getWeton(d),
       });
     }
 
-    // Bulan depan (isi hingga 42 sel)
-    const total = days.length;
-    const remaining = 42 - total;
+    // Tanggal dari bulan depan (lengkapi grid)
+    const totalCells = days.length;
+    const remaining = 42 - totalCells; // 6 baris
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
       days.push({
         date: day,
         isCurrentMonth: false,
         dayOfWeek: d.getDay(),
-        pasaran: getPasaran(d),
-        weton: getWeton(d)
+        weton: getWeton(d),
       });
     }
 
     setDaysInMonth(days);
-  }, [getPasaran, getWeton]);
+  };
 
-  // Navigasi
   const prevMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
+    setCurrentDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
   };
 
   const nextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+    setCurrentDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
   };
 
   const openMonthPicker = () => {
@@ -145,69 +106,91 @@ const Kalender = () => {
   };
 
   const selectMonth = (monthIndex) => {
-    setCurrentDate(new Date(tempYear || currentDate.getFullYear(), monthIndex));
+    setCurrentDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(monthIndex);
+      d.setFullYear(tempYear || d.getFullYear());
+      return d;
+    });
     setShowMonthPicker(false);
   };
 
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
-      setTempYear(value ? parseInt(value, 10) : '');
+      setTempYear(value === '' ? '' : parseInt(value, 10));
     }
   };
 
   const applyYear = () => {
     if (tempYear) {
-      setCurrentDate(prev => new Date(tempYear, prev.getMonth()));
+      setCurrentDate(prev => {
+        const d = new Date(prev);
+        d.setFullYear(tempYear);
+        return d;
+      });
     }
   };
 
-  // Simulasi API
   useEffect(() => {
     setLoading(true);
-    axios.get('https://jsonplaceholder.typicode.com/posts', { params: { _limit: 1 } })
-      .catch(() => {})
+    axios
+      .get('https://jsonplaceholder.typicode.com/posts?_limit=5')
+      .then(res => console.log('Data loaded:', res.data))
+      .catch(err => console.error('Error:', err))
       .finally(() => setLoading(false));
   }, [currentDate]);
 
-  // Generate kalender
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate, generateCalendarDays]);
+  }, [currentDate]);
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
   return (
     <div className="kalender-container">
-      {/* Header */}
+      {/* Header navigasi */}
       <div className="kalender-header">
-        <button className="nav-btn" onClick={prevMonth} aria-label="Prev">{`⬅️`}</button>
-        <div className="month-display" onClick={openMonthPicker}>
+        <button className="nav-btn" onClick={prevMonth} aria-label="Bulan Sebelumnya">
+          ⬅️
+        </button>
+
+        <div className="month-display" onClick={openMonthPicker} aria-label="Pilih bulan dan tahun">
           {bulanPanjang[currentMonth]} {currentYear}
         </div>
-        <button className="nav-btn" onClick={nextMonth} aria-label="Next">{`➡️`}</button>
+
+        <button className="nav-btn" onClick={nextMonth} aria-label="Bulan Berikutnya">
+          ➡️
+        </button>
       </div>
 
-      {/* Month Picker */}
+      {/* Picker Bulan & Tahun */}
       {showMonthPicker && (
-        <div className="month-picker-overlay">
+        <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="month-picker">
             <div className="year-input">
               <input
                 type="number"
-                value={tempYear || ''}
+                value={tempYear}
                 onChange={handleYearChange}
                 onBlur={applyYear}
-                onKeyPress={e => e.key === 'Enter' && applyYear()}
+                onKeyPress={(e) => e.key === 'Enter' && applyYear()}
+                min="1"
+                max="9999"
                 placeholder="Tahun"
                 className="year-edit"
               />
             </div>
+
             <div className="months-grid">
-              {bulanNama.map((b, i) => (
-                <div key={b} className={`month-cell ${i === currentMonth ? 'selected' : ''}`} onClick={() => selectMonth(i)}>
-                  {b}
+              {bulanNama.map((bulan, index) => (
+                <div
+                  key={bulan}
+                  className={`month-cell ${index === currentMonth ? 'selected' : ''}`}
+                  onClick={() => selectMonth(index)}
+                >
+                  {bulan}
                 </div>
               ))}
             </div>
@@ -215,19 +198,27 @@ const Kalender = () => {
         </div>
       )}
 
-      {/* Hari */}
+      {/* Header Hari */}
       <div className="hari-header">
-        {hariNama.map(h => (
-          <div key={h} className={`hari-label ${h === 'Min' ? 'sunday' : ''}`}>{h}</div>
+        {hariNama.map(hari => (
+          <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
+            {hari}
+          </div>
         ))}
       </div>
 
-      {/* Tanggal + Weton */}
+      {/* Grid Tanggal + Weton */}
       <div className="dates-grid">
-        {daysInMonth.map((d, i) => (
-          <div key={i} className={`date-box ${!d.isCurrentMonth ? 'outside' : ''} ${d.dayOfWeek === 0 ? 'sunday' : ''}`}>
-            <span className="date-number">{d.date}</span>
-            <span className="weton">{d.pasaran}</span>
+        {daysInMonth.map((dayObj, index) => (
+          <div
+            key={index}
+            className={`date-box
+              ${!dayObj.isCurrentMonth ? 'outside' : ''}
+              ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
+            `}
+          >
+            <span className="date-number">{dayObj.date}</span>
+            <span className="weton-text">{dayObj.weton}</span>
           </div>
         ))}
       </div>
