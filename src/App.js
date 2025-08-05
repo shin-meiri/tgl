@@ -7,3 +7,5 @@ function App() {
     </div>
   );
 }
+
+export default App; // ✅ Ini wajib ada!
