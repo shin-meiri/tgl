@@ -6,22 +6,27 @@
   border: 1px solid #ddd;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   background-color: #fff;
 }
 
 .calendar-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   padding: 10px 20px;
-  background-color: #4a90e2;
+  background-color: #4a6fa5;
   color: white;
-  font-weight: bold;
   font-size: 1.2em;
+  font-weight: bold;
 }
 
-.nav-btn {
+.calendar-header .current-date-display {
+  text-align: center;
+  min-width: 100px;
+}
+
+.nav-button {
   background: none;
   border: none;
   font-size: 1.5em;
@@ -30,44 +35,62 @@
   transition: transform 0.2s ease;
 }
 
-.nav-btn:hover {
+.nav-button:hover {
   transform: scale(1.2);
 }
 
-.current-date {
-  text-align: center;
-  flex-grow: 1;
-  margin: 0 10px;
-}
-
-.flatpickr-calendar {
+.calendar-body {
   padding: 15px;
-  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
 }
 
-/* Styling untuk flatpickr agar lebih rapi */
-.flatpickr-calendar .flatpickr-days {
-  width: 100%;
+/* Styling untuk flatpickr */
+.flatpickr-calendar {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-.flatpickr-calendar .dayContainer {
-  justify-content: center;
+.flatpickr-days {
+  font-size: 0.9em;
 }
 
-.flatpickr-calendar .flatpickr-day {
-  width: 36px;
-  height: 36px;
-  margin: 2px;
-  line-height: 36px;
-  border-radius: 8px;
+.flatpickr-day {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  border-radius: 50% !important;
+  margin: 2px !important;
 }
 
-.flatpickr-calendar .flatpickr-day.selected {
-  background-color: #4a90e2 !important;
-  color: white;
+.flatpickr-day.today {
+  background: #4a6fa5 !important;
+  color: white !important;
 }
 
-.flatpickr-calendar .flatpickr-day.today {
-  border: 1px solid #4a90e2;
-  color: #4a90e2;
+.flatpickr-day.selected {
+  background: #0056b3 !important;
+  color: white !important;
 }
+
+.event-list {
+  padding: 15px 20px;
+  background-color: #f1f5f9;
+  border-top: 1px solid #ddd;
+  font-size: 0.9em;
+}
+
+.event-list h4 {
+  margin-top: 0;
+  color: #333;
+}
+
+.event-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.event-list li {
+  padding: 4px 0;
+  color: #555;
+  }
