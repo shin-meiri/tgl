@@ -1,4 +1,4 @@
-// Kalender.jsx
+// Kalender.jsx (versi dengan Weton Jawa)
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -18,22 +18,22 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (berulang tiap 5 hari)
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon']; // urutan pasaran
 
-  // Titik acuan: 22 Juni 1868 M = 1 Suro 1795 Jawa = hari Jumat Legi
-  // Kita pilih acuan: 1 Januari 1836 = 1 Suro 1757 (diasumsikan Legi) → bisa disesuaikan
-  // Tapi kita gunakan metode: hitung selisih hari dari acuan kecil
+  // Acuan: 1 Jan 1900 = Senin Legi
+  const EPOCH_DATE = new Date('1900-01-01'); // Senin, Legi
 
-  // Acuan: 1 Januari 1836 = Legi (indeks 0)
-  const EPOCH_DATE = new Date('1836-01-01'); // Acuan awal
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  // Fungsi hitung weton
+  const getWeton = (date) => {
+    const totalHari = Math.floor((date - EPOCH_DATE) / (1000 * 60 * 60 * 24)); // selisih hari
+    const hariIndex = (totalHari + 1) % 7; // karena 1 Jan 1900 = Senin (index 1), kita tambah 1
+    const pasaranIndex = totalHari % 5;
 
-  const getPasaran = (date) => {
-    const diffTime = date.getTime() - EPOCH_DATE.getTime();
-    const diffDays = Math.floor(diffTime / MS_PER_DAY);
-    const pasaranIndex = diffDays % 5;
-    return pasaran[pasaranIndex];
+    const hariJawa = (hariIndex + 6) % 7; // adjust ke Minggu=0
+    const namaHari = hariNama[hariJawa];
+    const namaPasaran = pasaran[(((pasaranIndex % 5) + 5) % 5)]; // pastikan positif
+
+    return { hari: namaHari, pasaran: namaPasaran };
   };
 
   const generateCalendarDays = (date) => {
@@ -45,26 +45,28 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan sebelumnya
+    // Tanggal dari bulan lalu
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const prevDate = new Date(year, month - 1, prevMonthLastDay - i);
+      const { pasaran: pasaranName } = getWeton(prevDate);
       days.unshift({
         date: prevMonthLastDay - i,
         isCurrentMonth: false,
         dayOfWeek: prevDate.getDay(),
-        pasaran: getPasaran(prevDate),
+        pasaran: pasaranName,
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
-      const currentDateObj = new Date(year, month, day);
+      const fullDate = new Date(year, month, day);
+      const { dayOfWeek, pasaran: pasaranName } = getWeton(fullDate);
       days.push({
         date: day,
         isCurrentMonth: true,
-        dayOfWeek: currentDateObj.getDay(),
-        pasaran: getPasaran(currentDateObj),
+        dayOfWeek: fullDate.getDay(),
+        pasaran: pasaranName,
       });
     }
 
@@ -73,11 +75,12 @@ const Kalender = () => {
     const remaining = 42 - totalCells; // 6 baris
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
+      const { pasaran: pasaranName } = getWeton(nextDate);
       days.push({
         date: day,
         isCurrentMonth: false,
         dayOfWeek: nextDate.getDay(),
-        pasaran: getPasaran(nextDate),
+        pasaran: pasaranName,
       });
     }
 
@@ -218,7 +221,7 @@ const Kalender = () => {
             `}
           >
             <span className="date-number">{dayObj.date}</span>
-            <span className="pasaran">{dayObj.pasaran}</span>
+            <span className="weton">{dayObj.pasaran}</span>
           </div>
         ))}
       </div>
