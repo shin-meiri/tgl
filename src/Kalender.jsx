@@ -1,4 +1,4 @@
-// Kalender.jsx (versi dengan Weton Jawa)
+// Kalender.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -12,28 +12,29 @@ const Kalender = () => {
   const [loading, setLoading] = useState(false);
 
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const bulanNama = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const bulanPanjang = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (berulang tiap 5 hari)
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  // Acuan: 1 Januari 1900 adalah Jumat Legi
+  const EPOCH_DATE = new Date(1900, 0, 1); // 1 Jan 1900
+  const EPOCH_HARI = 5; // Jumat (0=Min, 1=Sen, ..., 5=Jum)
+  const EPOCH_PASARAN = 0; // Legi (index 0)
 
-  // ⚙️ Fungsi hitung pasaran berdasarkan jumlah hari sejak acuan
-  // Acuan: 1 Januari 1970 = Jumat Legi (hari 5, pasaran 0)
+  // Fungsi hitung pasaran Jawa
   const getWeton = (date) => {
-    const timeDiff = date.getTime() - new Date(1970, 0, 1).getTime(); // ms
-    const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // hari
+    const totalHari = Math.floor((date - EPOCH_DATE) / (1000 * 60 * 60 * 24)) + 1; // +1 karena 1 Jan 1900 termasuk
 
-    const hariIndex = date.getDay(); // 0-6 (Minggu-Sabtu)
-    const pasaranIndex = dayDiff % 5; // 0=Legi, 1=Pahing, ...
+    const hariIndex = (EPOCH_HARI + (totalHari - 1)) % 7;
+    const pasaranIndex = (EPOCH_PASARAN + (totalHari - 1)) % 5;
 
-    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][hariIndex];
-    const pasarannya = pasaran[pasaranIndex];
-
-    return { hari, pasarannya, weton: `${hari} ${pasarannya}` };
+    return {
+      hari: hariNama[hariIndex],
+      pasaran: pasaran[pasaranIndex],
+    };
   };
 
   const generateCalendarDays = (date) => {
@@ -49,40 +50,40 @@ const Kalender = () => {
     const prevMonth = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const prevDate = new Date(year, month - 1, prevMonth - i);
-      const { weton } = getWeton(prevDate);
+      const { pasaran: pasar } = getWeton(prevDate);
       days.unshift({
         date: prevMonth - i,
         isCurrentMonth: false,
         dayOfWeek: prevDate.getDay(),
-        weton,
+        pasaran: pasar,
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
       const currentDate = new Date(year, month, day);
-      const { weton, pasarannya } = getWeton(currentDate);
+      const { pasaran: pasar } = getWeton(currentDate);
       const dayOfWeek = currentDate.getDay();
       days.push({
         date: day,
         isCurrentMonth: true,
         dayOfWeek,
-        weton,
-        pasarannya,
+        pasaran: pasar,
       });
     }
 
-    // Isi sisa grid dari bulan depan jika perlu
+    // Tanggal dari bulan depan
     const totalCells = days.length;
-    const remaining = 42 - totalCells; // 6 baris
+    const remaining = 42 - totalCells;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
-      const { weton } = getWeton(nextDate);
+      const { pasaran: pasar } = getWeton(nextDate);
+      const dayOfWeek = nextDate.getDay();
       days.push({
         date: day,
         isCurrentMonth: false,
-        dayOfWeek: nextDate.getDay(),
-        weton,
+        dayOfWeek,
+        pasaran: pasar,
       });
     }
 
@@ -212,7 +213,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Grid Tanggal + Weton */}
+      {/* Grid Tanggal + Pasaran */}
       <div className="dates-grid">
         {daysInMonth.map((dayObj, index) => (
           <div
@@ -222,10 +223,8 @@ const Kalender = () => {
               ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
             `}
           >
-            <span className="date-num">{dayObj.date}</span>
-            <span className={`weton ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}`}>
-              {dayObj.pasarannya}
-            </span>
+            <span className="date-number">{dayObj.date}</span>
+            <span className="pasaran">{dayObj.pasaran}</span>
           </div>
         ))}
       </div>
