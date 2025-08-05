@@ -16,78 +16,71 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  const formattedDate = `${selectedDate.getDate()} ${bulan[selectedDate.getMonth()]} ${selectedDate.getFullYear()}`;
+  // Dapatkan semua tanggal dalam grid bulan (termasuk overflow minggu)
+  const getCalendarDays = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
 
-  // Buka date picker
-  const openDatePicker = () => {
-    if (flatpickrRef.current) {
-      flatpickrRef.current.flatpickr.open();
-    }
-  };
-
-  // Saat tanggal dipilih
-  const handleDateChange = (dateArray) => {
-    setSelectedDate(new Date(dateArray[0]));
-    setShowCalendar(true);
-  };
-
-  // Navigasi ke hari sebelumnya
-  const prevDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() - 1);
-    setSelectedDate(newDate);
-    setShowCalendar(true);
-  };
-
-  // Navigasi ke hari berikutnya
-  const nextDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + 1);
-    setSelectedDate(newDate);
-    setShowCalendar(true);
-  };
-
-  // Dapatkan semua tanggal dalam bulan
-  const getDaysInMonth = () => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const totalDays = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Tambahkan tanggal dari bulan sebelumnya
+    // Tanggal dari bulan sebelumnya (untuk melengkapi minggu pertama)
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ date: prevMonthLastDay - i, isOutside: true });
+      days.push({ date: prevMonthLastDay - i, isCurrentMonth: false });
     }
 
-    // Tambahkan tanggal bulan ini
+    // Tanggal bulan ini
     for (let date = 1; date <= totalDays; date++) {
-      days.push({ date, isOutside: false });
+      days.push({ date, isCurrentMonth: true });
     }
 
-    // Tambahkan tanggal dari bulan depan
-    const remainingCells = 42 - days.length; // 6 baris x 7 kolom
-    for (let date = 1; date <= remainingCells; date++) {
-      days.push({ date, isOutside: true });
+    // Tanggal dari bulan depan (untuk lengkapi minggu terakhir)
+    const remaining = 42 - days.length; // 6 baris x 7 kolom
+    for (let date = 1; date <= remaining; date++) {
+      days.push({ date, isCurrentMonth: false });
     }
 
     return days;
   };
 
-  const daysInMonth = getDaysInMonth();
+  const calendarDays = getCalendarDays(selectedDate);
   const currentMonthName = bulan[selectedDate.getMonth()];
   const currentYear = selectedDate.getFullYear();
 
-  const isToday = (dayObj) => {
-    const today = new Date();
-    return (
-      !dayObj.isOutside &&
-      dayObj.date === today.getDate() &&
-      selectedDate.getMonth() === today.getMonth() &&
-      selectedDate.getFullYear() === today.getFullYear()
-    );
+  const handleTodayClick = () => {
+    setSelectedDate(today);
+    setShowCalendar(false);
+  };
+
+  const handlePrevMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() - 1);
+    setSelectedDate(newDate);
+    setShowCalendar(false);
+  };
+
+  const handleNextMonth = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setSelectedDate(newDate);
+    setShowCalendar(false);
+  };
+
+  const onDateChange = (selectedDates) => {
+    if (selectedDates.length > 0) {
+      setSelectedDate(selectedDates[0]);
+    }
+    setShowCalendar(false);
+  };
+
+  const toggleCalendar = () => {
+    setShowCalendar((prev) => !prev);
+    if (!showCalendar && flatpickrRef.current) {
+      flatpickrRef.current.flatpickr.open();
+    }
   };
 
   return (
@@ -96,55 +89,56 @@ const Kalender = () => {
 
       {/* Tombol Navigasi */}
       <div className="navigation">
-        <button onClick={prevDay} className="nav-btn">
+        <button onClick={handlePrevMonth} className="nav-btn">
           ⬅️
         </button>
 
-        <div className="current-date" onClick={openDatePicker}>
-          {formattedDate}
-        </div>
+        <button onClick={toggleCalendar} className="today-btn">
+          {selectedDate.getDate()}/{selectedDate.getMonth() + 1}/{selectedDate.getFullYear()}
+        </button>
 
-        <button onClick={nextDay} className="nav-btn">
+        <button onClick={handleNextMonth} className="nav-btn">
           ➡️
         </button>
       </div>
 
-      {/* Flatpickr (hidden sampai diklik) */}
-      <Flatpickr
-        ref={flatpickrRef}
-        options={{
-          inline: true,
-          dateFormat: 'Y-m-d',
-          onChange: handleDateChange,
-          defaultDate: selectedDate,
-        }}
-        style={{ display: showCalendar ? 'block' : 'none' }}
-      />
+      {/* Flatpickr untuk pilih tanggal (hanya muncul saat diklik) */}
+      <div style={{ position: 'relative' }}>
+        <Flatpickr
+          ref={flatpickrRef}
+          options={{
+            inline: true,
+            onChange: onDateChange,
+            defaultDate: selectedDate,
+          }}
+          style={{ display: showCalendar ? 'block' : 'none' }}
+        />
+      </div>
 
-      {/* Tampilkan Kalender Bulan */}
-      {showCalendar && (
-        <div className="bulan-kalender">
-          <h3>{currentMonthName} {currentYear}</h3>
-          <div className="hari-header">
-            {hari.map((h) => (
-              <div key={h} className="hari-cell">
-                {h}
-              </div>
-            ))}
+      {/* Header Hari */}
+      <div className="hari-header">
+        {hari.map((nama) => (
+          <div key={nama} className="hari-cell">
+            {nama}
           </div>
+        ))}
+      </div>
 
-          <div className="kalender-grid">
-            {daysInMonth.map((day, index) => (
-              <div
-                key={index}
-                className={`kalender-date ${day.isOutside ? 'outside' : ''} ${isToday(day) ? 'today' : ''}`}
-              >
-                {day.date}
-              </div>
-            ))}
+      {/* Grid Kalender */}
+      <div className="kalender-grid">
+        {calendarDays.map((day, index) => (
+          <div
+            key={index}
+            className={`kalender-date ${day.isCurrentMonth ? 'current' : 'other'}`}
+          >
+            {day.date}
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+
+      <p className="month-label">
+        <strong>{currentMonthName} {currentYear}</strong>
+      </p>
     </div>
   );
 };
