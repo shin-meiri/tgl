@@ -1,60 +1,73 @@
 /* Kalender.css */
 .calendar-container {
-  max-width: 400px;
-  margin: 40px auto;
-  padding: 20px;
+  width: 320px;
+  margin: 20px auto;
   font-family: 'Arial', sans-serif;
   border: 1px solid #ddd;
   border-radius: 10px;
+  overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  background-color: #f9f9f9;
+  background-color: #fff;
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 15px;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background-color: #4a90e2;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2em;
 }
 
 .nav-btn {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 1.5em;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 5px;
-  transition: background-color 0.2s;
+  padding: 0 10px;
+  transition: transform 0.2s ease;
 }
 
 .nav-btn:hover {
-  background-color: #e0e0e0;
+  transform: scale(1.2);
 }
 
-.nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.date-input {
+.current-date {
   text-align: center;
-  font-size: 16px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  width: 150px;
-  outline: none;
+  flex-grow: 1;
+  margin: 0 10px;
 }
 
-.date-input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+.flatpickr-calendar {
+  padding: 15px;
+  border-top: 1px solid #eee;
 }
 
-.current-date-display {
-  text-align: center;
-  font-size: 16px;
-  color: #333;
-  margin-top: 10px;
-  }
+/* Styling untuk flatpickr agar lebih rapi */
+.flatpickr-calendar .flatpickr-days {
+  width: 100%;
+}
+
+.flatpickr-calendar .dayContainer {
+  justify-content: center;
+}
+
+.flatpickr-calendar .flatpickr-day {
+  width: 36px;
+  height: 36px;
+  margin: 2px;
+  line-height: 36px;
+  border-radius: 8px;
+}
+
+.flatpickr-calendar .flatpickr-day.selected {
+  background-color: #4a90e2 !important;
+  color: white;
+}
+
+.flatpickr-calendar .flatpickr-day.today {
+  border: 1px solid #4a90e2;
+  color: #4a90e2;
+}
