@@ -1,4 +1,4 @@
-// Kalender.jsx (versi dengan Weton Jawa)
+// Kalender.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
@@ -18,22 +18,66 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon']; // urutan pasaran
+  // Pasaran Jawa (5 hari)
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  // Weton lengkap (gabungan hari + pasaran)
+  const wetonNama = {
+    'Minggu_Legi': 'Wage',
+    'Senin_Legi': 'Keliwon',
+    'Selasa_Legi': 'Legi',
+    'Rabu_Legi': 'Pahing',
+    'Kamis_Legi': 'Pon',
+    'Jumat_Legi': 'Wage',
+    'Sabtu_Legi': 'Kliwon',
 
-  // Acuan: 1 Jan 1900 = Senin Legi
-  const EPOCH_DATE = new Date('1900-01-01'); // Senin, Legi
+    'Minggu_Pahing': 'Pahing',
+    'Senin_Pahing': 'Pon',
+    'Selasa_Pahing': 'Wage',
+    'Rabu_Pahing': 'Kliwon',
+    'Kamis_Pahing': 'Legi',
+    'Jumat_Pahing': 'Pahing',
+    'Sabtu_Pahing': 'Pon',
 
-  // Fungsi hitung weton
+    'Minggu_Pon': 'Pon',
+    'Senin_Pon': 'Wage',
+    'Selasa_Pon': 'Kliwon',
+    'Rabu_Pon': 'Legi',
+    'Kamis_Pon': 'Pahing',
+    'Jumat_Pon': 'Pon',
+    'Sabtu_Pon': 'Wage',
+
+    'Minggu_Wage': 'Wage',
+    'Senin_Wage': 'Kliwon',
+    'Selasa_Wage': 'Legi',
+    'Rabu_Wage': 'Pahing',
+    'Kamis_Wage': 'Pon',
+    'Jumat_Wage': 'Wage',
+    'Sabtu_Wage': 'Kliwon',
+
+    'Minggu_Kliwon': 'Kliwon',
+    'Senin_Kliwon': 'Legi',
+    'Selasa_Kliwon': 'Pahing',
+    'Rabu_Kliwon': 'Pon',
+    'Kamis_Kliwon': 'Wage',
+    'Jumat_Kliwon': 'Kliwon',
+    'Sabtu_Kliwon': 'Legi'
+  };
+
+  // Fungsi hitung pasaran (Neptu 5)
+  const getPasaran = (date) => {
+    const time = date.getTime();
+    const epoch = new Date('2024-03-24'); // Contoh: 24 Maret 2024 = Legi
+    const diffTime = time - epoch.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const index = diffDays % 5;
+    return pasaran[index >= 0 ? index : index + 5];
+  };
+
+  // Hitung nama weton
   const getWeton = (date) => {
-    const totalHari = Math.floor((date - EPOCH_DATE) / (1000 * 60 * 60 * 24)); // selisih hari
-    const hariIndex = (totalHari + 1) % 7; // karena 1 Jan 1900 = Senin (index 1), kita tambah 1
-    const pasaranIndex = totalHari % 5;
-
-    const hariJawa = (hariIndex + 6) % 7; // adjust ke Minggu=0
-    const namaHari = hariNama[hariJawa];
-    const namaPasaran = pasaran[(((pasaranIndex % 5) + 5) % 5)]; // pastikan positif
-
-    return { hari: namaHari, pasaran: namaPasaran };
+    const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
+    const pasaranName = getPasaran(date);
+    return wetonNama[`${dayName}_${pasaranName}`] || pasaranName;
   };
 
   const generateCalendarDays = (date) => {
@@ -45,42 +89,42 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan lalu
+    // Tanggal dari bulan sebelumnya
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      const prevDate = new Date(year, month - 1, prevMonthLastDay - i);
-      const { pasaran: pasaranName } = getWeton(prevDate);
-      days.unshift({
+      const d = new Date(year, month - 1, prevMonthLastDay - i);
+      days.push({
         date: prevMonthLastDay - i,
         isCurrentMonth: false,
-        dayOfWeek: prevDate.getDay(),
-        pasaran: pasaranName,
+        dayOfWeek: d.getDay(),
+        pasaran: getPasaran(d),
+        weton: getWeton(d)
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysCount; day++) {
-      const fullDate = new Date(year, month, day);
-      const { dayOfWeek, pasaran: pasaranName } = getWeton(fullDate);
+      const d = new Date(year, month, day);
       days.push({
         date: day,
         isCurrentMonth: true,
-        dayOfWeek: fullDate.getDay(),
-        pasaran: pasaranName,
+        dayOfWeek: d.getDay(),
+        pasaran: getPasaran(d),
+        weton: getWeton(d)
       });
     }
 
     // Tanggal dari bulan depan
-    const totalCells = days.length;
-    const remaining = 42 - totalCells; // 6 baris
+    const total = days.length;
+    const remaining = 42 - total; // 6 baris x 7
     for (let day = 1; day <= remaining; day++) {
-      const nextDate = new Date(year, month + 1, day);
-      const { pasaran: pasaranName } = getWeton(nextDate);
+      const d = new Date(year, month + 1, day);
       days.push({
         date: day,
         isCurrentMonth: false,
-        dayOfWeek: nextDate.getDay(),
-        pasaran: pasaranName,
+        dayOfWeek: d.getDay(),
+        pasaran: getPasaran(d),
+        weton: getWeton(d)
       });
     }
 
@@ -112,7 +156,7 @@ const Kalender = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
       d.setMonth(monthIndex);
-      d.setFullYear(tempYear);
+      d.setFullYear(tempYear || d.getFullYear());
       return d;
     });
     setShowMonthPicker(false);
@@ -121,7 +165,7 @@ const Kalender = () => {
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
-      setTempYear(value === '' ? '' : parseInt(value));
+      setTempYear(value ? parseInt(value, 10) : '');
     }
   };
 
@@ -138,9 +182,8 @@ const Kalender = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`https://jsonplaceholder.typicode.com/posts?_limit=5`)
-      .then(res => console.log('Data loaded:', res.data))
-      .catch(err => console.error('Error:', err))
+      .get('https://jsonplaceholder.typicode.com/posts', { params: { _limit: 1 } })
+      .catch(err => console.warn('API gagal:', err))
       .finally(() => setLoading(false));
   }, [currentDate]);
 
@@ -175,7 +218,7 @@ const Kalender = () => {
             <div className="year-input">
               <input
                 type="number"
-                value={tempYear}
+                value={tempYear || ''}
                 onChange={handleYearChange}
                 onBlur={applyYear}
                 onKeyPress={(e) => e.key === 'Enter' && applyYear()}
@@ -187,13 +230,13 @@ const Kalender = () => {
             </div>
 
             <div className="months-grid">
-              {bulanNama.map((bulan, index) => (
+              {bulanNama.map((b, idx) => (
                 <div
-                  key={bulan}
-                  className={`month-cell ${index === currentMonth ? 'selected' : ''}`}
-                  onClick={() => selectMonth(index)}
+                  key={b}
+                  className={`month-cell ${idx === currentMonth ? 'selected' : ''}`}
+                  onClick={() => selectMonth(idx)}
                 >
-                  {bulan}
+                  {b}
                 </div>
               ))}
             </div>
@@ -203,7 +246,7 @@ const Kalender = () => {
 
       {/* Header Hari */}
       <div className="hari-header">
-        {hariNama.map(hari => (
+        {hariNama.map((hari) => (
           <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
             {hari}
           </div>
@@ -212,16 +255,16 @@ const Kalender = () => {
 
       {/* Grid Tanggal + Weton */}
       <div className="dates-grid">
-        {daysInMonth.map((dayObj, index) => (
+        {daysInMonth.map((day, idx) => (
           <div
-            key={index}
+            key={idx}
             className={`date-box
-              ${!dayObj.isCurrentMonth ? 'outside' : ''}
-              ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
+              ${!day.isCurrentMonth ? 'outside' : ''}
+              ${day.dayOfWeek === 0 ? 'sunday' : ''}
             `}
           >
-            <span className="date-number">{dayObj.date}</span>
-            <span className="weton">{dayObj.pasaran}</span>
+            <span className="date-number">{day.date}</span>
+            <span className="weton">{day.pasaran}</span>
           </div>
         ))}
       </div>
