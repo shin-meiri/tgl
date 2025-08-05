@@ -18,10 +18,10 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa
+  // Pasaran Jawa (5 hari)
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Nama weton (bisa disesuaikan)
+  // Nama weton (contoh sederhana, bisa dikembangkan)
   const wetonNama = {
     'Minggu_Legi': 'Wage',
     'Senin_Legi': 'Keliwon',
@@ -64,23 +64,23 @@ const Kalender = () => {
     'Sabtu_Kliwon': 'Legi'
   };
 
-  // Hitung pasaran
+  // Hitung pasaran berdasarkan tanggal
   const getPasaran = (date) => {
     const epoch = new Date('2024-03-24'); // Contoh: 24 Maret 2024 = Legi
     const diffTime = date.getTime() - epoch.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const index = diffDays % 5;
-    return pasaran[index >= 0 ? index : index + 5];
+    return pasaran[(index % 5 + 5) % 5]; // Handle negatif
   };
 
-  // Hitung nama weton
+  // Dapatkan nama weton
   const getWeton = (date) => {
     const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][date.getDay()];
     const pasaranName = getPasaran(date);
     return wetonNama[`${dayName}_${pasaranName}`] || pasaranName;
   };
 
-  // Fungsi generate kalender — dibungkus useCallback
+  // Fungsi generate kalender — dibungkus useCallback agar bisa jadi dependency
   const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -117,7 +117,7 @@ const Kalender = () => {
 
     // Tanggal dari bulan depan
     const total = days.length;
-    const remaining = 42 - total;
+    const remaining = 42 - total; // 6 baris x 7
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
       days.push({
@@ -130,9 +130,9 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [getPasaran, getWeton]); // Dependency: fungsi bantuan
+  }, []);
 
-  // Navigasi bulan
+  // Navigasi
   const prevMonth = () => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -149,13 +149,11 @@ const Kalender = () => {
     });
   };
 
-  // Buka picker bulan
   const openMonthPicker = () => {
     setTempYear(currentDate.getFullYear());
     setShowMonthPicker(true);
   };
 
-  // Pilih bulan
   const selectMonth = (monthIndex) => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -166,7 +164,6 @@ const Kalender = () => {
     setShowMonthPicker(false);
   };
 
-  // Input tahun
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
@@ -184,19 +181,19 @@ const Kalender = () => {
     }
   };
 
-  // Load data dari API
+  // Fetch data dari API
   useEffect(() => {
     setLoading(true);
     axios
       .get('https://jsonplaceholder.typicode.com/posts', { params: { _limit: 1 } })
       .catch(err => console.warn('API gagal:', err))
       .finally(() => setLoading(false));
-  }, [currentDate]); // Hanya saat currentDate berubah
+  }, [currentDate]); // Hanya berjalan saat currentDate berubah
 
   // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate, generateCalendarDays]); // ✅ Fixed: tambahkan generateCalendarDays
+  }, [currentDate, generateCalendarDays]); // ✅ generateCalendarDays sekarang aman karena dibungkus useCallback
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
