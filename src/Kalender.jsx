@@ -1,128 +1,66 @@
 // Kalender.jsx
-import React, { useState } from 'react';
+import React, { useRef } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
 
 const Kalender = () => {
   const today = new Date();
-  const [selectedDate, setSelectedDate] = useState(today);
-
-  const hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  const bulan = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
+  const fpRef = useRef(null); // Untuk mengakses instance flatpickr
 
   const handlePrevMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setSelectedDate(newDate);
+    if (fpRef.current) {
+      fpRef.current.flatpickr.changeMonth(-1);
+    }
   };
 
   const handleNextMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setSelectedDate(newDate);
-  };
-
-  const handleDateChange = (dates) => {
-    if (dates.length > 0) {
-      setSelectedDate(dates[0]);
+    if (fpRef.current) {
+      fpRef.current.flatpickr.changeMonth(1);
     }
   };
 
-  // Format tanggal untuk tampilan (contoh: 5 Agustus 2025)
-  const formatDate = (date) => {
-    return `${date.getDate()} ${bulan[date.getMonth()]} ${date.getFullYear()}`;
+  const openFlatpickr = () => {
+    if (fpRef.current) {
+      fpRef.current.flatpickr.open();
+    }
   };
-
-  const getCalendarDays = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const lastDayPrevMonth = new Date(year, month, 0).getDate();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-
-    // Tanggal akhir bulan lalu
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ date: lastDayPrevMonth - i, isCurrentMonth: false });
-    }
-
-    // Tanggal bulan ini
-    for (let d = 1; d <= totalDays; d++) {
-      days.push({ date: d, isCurrentMonth: true });
-    }
-
-    // Tanggal awal bulan depan
-    const remaining = 42 - days.length;
-    for (let i = 1; i <= remaining; i++) {
-      days.push({ date: i, isCurrentMonth: false });
-    }
-
-    return days;
-  };
-
-  const calendarDays = getCalendarDays(selectedDate);
-  const currentMonthName = bulan[selectedDate.getMonth()];
-  const currentYearDisplay = selectedDate.getFullYear();
 
   return (
     <div className="kalender-container">
-      <h2>Kalender</h2>
+      <h2>Kalender Dropdown</h2>
 
-      {/* Navigasi dan Flatpickr */}
-      <div className="datepicker-dropdown">
+      {/* Tombol Navigasi dan Tanggal */}
+      <div className="nav-container">
         <button onClick={handlePrevMonth} className="nav-btn">
           ⬅️
         </button>
 
-        <div className="datepicker-wrapper">
+        <div className="date-display" onClick={openFlatpickr}>
+          {/* Flatpickr sebagai dropdown tersembunyi */}
           <Flatpickr
-            value={selectedDate}
-            onChange={handleDateChange}
+            ref={fpRef}
             options={{
-              dateFormat: 'd F Y', // Internal format
+              inline: false,
               altInput: true,
-              altFormat: 'j F Y', // Tampilan di input: 5 Agustus 2025
-              allowInput: false,
-              clickOpens: true,
-              animate: true,
-              minDate: '01-01-1900',
-              maxDate: '31-12-3000',
-
-              // 🔥 Aktifkan dropdown bulan & tahun
-              monthSelectorType: 'dropdown',
-              yearSelectorType: 'dropdown',
-              showMonths: 1,
-
-              // Localization (opsional)
-              locale: {
-                firstDayOfWeek: 1, // Senin sebagai hari pertama
-                weekdays: {
-                  shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-                  longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
-                },
-                months: {
-                  shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-                  longhand: bulan,
-                },
+              altFormat: 'd/m/Y',
+              dateFormat: 'Y-m-d',
+              defaultDate: today,
+              onChange: (selectedDates) => {
+                console.log('Tanggal dipilih:', selectedDates[0]);
+                // Tambahkan logika saat tanggal berubah
+              },
+              onOpen: () => {
+                // Fokus ke bulan saat ini saat buka
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                const fp = fpRef.current.flatpickr;
+                if (fp.currentYear !== currentYear || fp.currentMonth !== currentMonth) {
+                  fp.jumpToDate(today);
+                }
               },
             }}
-            // Render custom input agar lebih konsisten
-            render={({ value, ...props }, ref) => {
-              return (
-                <input
-                  ref={ref}
-                  className="date-display-btn"
-                  value={formatDate(selectedDate)}
-                  readOnly
-                  placeholder="Pilih tanggal"
-                />
-              );
-            }}
+            style={{ cursor: 'pointer' }}
           />
         </div>
 
@@ -131,42 +69,9 @@ const Kalender = () => {
         </button>
       </div>
 
-      {/* Header Hari */}
-      <div className="hari-header">
-        {hari.map((nama) => (
-          <div key={nama} className="hari-cell header">
-            {nama}
-          </div>
-        ))}
-      </div>
-
-      {/* Grid Kalender */}
-      <div className="kalender-grid">
-        {calendarDays.map((day, index) => {
-          const isToday =
-            day.isCurrentMonth &&
-            day.date === today.getDate() &&
-            selectedDate.getMonth() === today.getMonth() &&
-            selectedDate.getFullYear() === today.getFullYear();
-
-          const isSelected =
-            day.isCurrentMonth && day.date === selectedDate.getDate();
-
-          return (
-            <div
-              key={index}
-              className={`kalender-date ${
-                day.isCurrentMonth ? 'current' : 'other-month'
-              } ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-            >
-              {day.date}
-            </div>
-          );
-        })}
-      </div>
-
-      <p className="month-info">
-        Bulan: <strong>{currentMonthName} {currentYearDisplay}</strong>
+      {/* Info */}
+      <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+        Klik tanggal di atas untuk membuka kalender.
       </p>
     </div>
   );
