@@ -3,10 +3,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './Kalender.css';
 
-// Titik acuan: 31 Des 1899 → 1 Jan 1900 = Legi
-const EPOCH = new Date(1899, 11, 31);
+// --- KONSTANTA DI LUAR KOMPONEN ---
+const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
+// --- FUNGSI DI LUAR KOMPONEN (stabil, tidak berubah) ---
+const getWeton = (date) => {
+  const diffTime = date - EPOCH;
+  const diffDays = Math.floor(diffTime / MS_PER_DAY);
+  return PASARAN[diffDays % 5];
+};
+
+// --- KOMPONEN UTAMA ---
 const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -19,43 +28,38 @@ const Kalender = () => {
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Hitung weton
-  const getWeton = (date) => {
-    const diffTime = date - EPOCH;
-    const diffDays = Math.floor(diffTime / MS_PER_DAY);
-    return pasaran[diffDays % 5];
-  };
-
-  // Generate kalender — dibungkus useCallback
+  // generateCalendarDays stabil karena getWeton dan PASARAN di luar
   const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const daysInThisMonth = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Bulan lalu
+    // Hari dari bulan lalu
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ date: prevMonthLastDay - i, isCurrentMonth: false, dayOfWeek: (6 - i) % 7, weton: null });
+      const dayOfWeek = (6 - i) % 7;
+      days.push({ date: prevMonthLastDay - i, isCurrentMonth: false, dayOfWeek, weton: null });
     }
 
-    // Bulan ini
+    // Hari bulan ini
     for (let day = 1; day <= daysInThisMonth; day++) {
       const fullDate = new Date(year, month, day);
+      const dayOfWeek = fullDate.getDay();
       days.push({
         date: day,
         isCurrentMonth: true,
-        dayOfWeek: fullDate.getDay(),
+        dayOfWeek,
         weton: getWeton(fullDate),
       });
     }
 
-    // Bulan depan
-    const remaining = 42 - days.length;
+    // Hari dari bulan depan (lengkapi 6 baris)
+    const totalCells = days.length;
+    const remaining = 42 - totalCells;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
       days.push({
@@ -67,7 +71,7 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [getWeton]); // ✅ generateCalendarDays stabil selama getWeton stabil
+  }, []); // ✅ Tidak perlu dependensi karena getWeton & PASARAN di luar komponen!
 
   // Navigasi
   const goToPrevMonth = () => {
@@ -125,16 +129,16 @@ const Kalender = () => {
         const res = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=5');
         console.log('Data:', res.data);
       } catch (err) {
-        console.error('Error:', err.message);
+        console.error('API error:', err.message);
       }
     };
     fetchData();
-  }, [currentDate]); // ✅ hanya berjalan saat currentDate berubah
+  }, [currentDate]);
 
   // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate, generateCalendarDays]); // ✅ generateCalendarDays dimasukkan karena stabil berkat useCallback
+  }, [currentDate, generateCalendarDays]); // ✅ Aman: generateCalendarDays stabil
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -156,7 +160,7 @@ const Kalender = () => {
         </button>
       </div>
 
-      {/* Month Picker */}
+      {/* Month & Year Picker */}
       {showMonthPicker && (
         <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="month-picker">
@@ -200,7 +204,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Grid Tanggal */}
+      {/* Grid Tanggal + Weton */}
       <div className="dates-grid">
         {daysInMonth.map((day, idx) => (
           <div
