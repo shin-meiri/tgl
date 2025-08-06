@@ -18,22 +18,27 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Weton Jawa: 5 pasaran
-  const wetonList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  // Pasaran Jawa (5 harian)
+  const pasaran = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'];
 
-  // ⚙️ TITIK ACUAN: Tanggal ini dianggap WETON ke berapa?
-  // Misal: 2 Januari 1996 adalah Legi (index 0)
-  // Bisa diubah sesuai kebutuhan
-  const referenceDate = new Date(1996, 0, 2); // 2 Jan 1996 = Legi
-  const referenceWetonIndex = 0; // 0: Legi, 1: Pahing, dst.
-
-  // Fungsi hitung weton berdasarkan selisih hari
+  // Fungsi untuk menghitung pasaran berdasarkan tanggal (logika sederhana)
+  // Acuan: 1 Januari 1970 adalah hari Kamis dan pasaran **Legi**
+  // Julian Day untuk 1970-01-01 ≈ 2440588
   const getWeton = (date) => {
-    const oneDay = 24 * 60 * 60 * 1000; // ms
-    const diffTime = date.getTime() - referenceDate.getTime();
-    const diffDays = Math.floor(diffTime / oneDay);
-    const wetonIndex = (diffDays % 5 + 5) % 5; // pastikan positif
-    return wetonList[(wetonIndex + referenceWetonIndex) % 5];
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    // Konversi ke Julian Day (sederhana)
+    const a = Math.floor((14 - month) / 12);
+    const y = year + 4800 - a;
+    const m = month + 12 * a - 3;
+    const jd = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+
+    // Selisih dari acuan 1970-01-01 (Julian Day 2440588, pasaran Legi = index 4)
+    const selisih = jd - 2440588;
+    const pasaranIndex = (4 + selisih) % 5; // Legi = 4, lalu tambah selisih hari
+    return pasaran[pasaranIndex];
   };
 
   const generateCalendarDays = (date) => {
@@ -45,7 +50,7 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan lalu
+    // Tanggal dari bulan sebelumnya
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       const d = new Date(year, month - 1, prevMonthLastDay - i);
@@ -68,9 +73,9 @@ const Kalender = () => {
       });
     }
 
-    // Tanggal dari bulan depan (lengkapi grid)
+    // Tanggal dari bulan depan (untuk lengkapi grid)
     const totalCells = days.length;
-    const remaining = 42 - totalCells; // 6 baris
+    const remaining = 42 - totalCells; // 6 baris x 7
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
       days.push({
@@ -118,7 +123,7 @@ const Kalender = () => {
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
-      setTempYear(value === '' ? '' : parseInt(value, 10));
+      setTempYear(value === '' ? '' : Number(value));
     }
   };
 
@@ -200,7 +205,7 @@ const Kalender = () => {
 
       {/* Header Hari */}
       <div className="hari-header">
-        {hariNama.map(hari => (
+        {hariNama.map((hari) => (
           <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
             {hari}
           </div>
@@ -218,7 +223,7 @@ const Kalender = () => {
             `}
           >
             <span className="date-number">{dayObj.date}</span>
-            <span className="weton-text">{dayObj.weton}</span>
+            <span className="weton">{dayObj.weton}</span>
           </div>
         ))}
       </div>
