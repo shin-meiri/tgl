@@ -1,5 +1,4 @@
-// Kalender.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import 'flatpickr/dist/flatpickr.min.css';
 import './Kalender.css';
@@ -18,30 +17,26 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran Jawa (5 harian)
   const pasaran = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'];
 
-  // Fungsi untuk menghitung pasaran berdasarkan tanggal (logika sederhana)
-  // Acuan: 1 Januari 1970 adalah hari Kamis dan pasaran **Legi**
-  // Julian Day untuk 1970-01-01 ≈ 2440588
-  const getWeton = (date) => {
+  // Gunakan useCallback agar fungsi tidak berubah tiap render
+  const getWeton = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
 
-    // Konversi ke Julian Day (sederhana)
     const a = Math.floor((14 - month) / 12);
     const y = year + 4800 - a;
     const m = month + 12 * a - 3;
     const jd = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
 
-    // Selisih dari acuan 1970-01-01 (Julian Day 2440588, pasaran Legi = index 4)
-    const selisih = jd - 2440588;
-    const pasaranIndex = (4 + selisih) % 5; // Legi = 4, lalu tambah selisih hari
+    const selisih = jd - 2440588; // 1 Jan 1970
+    const pasaranIndex = (4 + selisih) % 5;
     return pasaran[pasaranIndex];
-  };
+  }, []);
 
-  const generateCalendarDays = (date) => {
+  // Fungsi generateCalendarDays di-wrap useCallback
+  const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
 
@@ -73,9 +68,9 @@ const Kalender = () => {
       });
     }
 
-    // Tanggal dari bulan depan (untuk lengkapi grid)
+    // Tanggal dari bulan depan
     const totalCells = days.length;
-    const remaining = 42 - totalCells; // 6 baris x 7
+    const remaining = 42 - totalCells;
     for (let day = 1; day <= remaining; day++) {
       const d = new Date(year, month + 1, day);
       days.push({
@@ -87,56 +82,14 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  };
+  }, [getWeton]); // ✅ Dependensi: getWeton
 
-  const prevMonth = () => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() - 1);
-      return d;
-    });
-  };
+  // ✅ Sekarang aman: generateCalendarDays stabil karena useCallback
+  useEffect(() => {
+    generateCalendarDays(currentDate);
+  }, [currentDate, generateCalendarDays]); // ✅ Tambahkan sebagai dependensi
 
-  const nextMonth = () => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() + 1);
-      return d;
-    });
-  };
-
-  const openMonthPicker = () => {
-    setTempYear(currentDate.getFullYear());
-    setShowMonthPicker(true);
-  };
-
-  const selectMonth = (monthIndex) => {
-    setCurrentDate(prev => {
-      const d = new Date(prev);
-      d.setMonth(monthIndex);
-      d.setFullYear(tempYear || d.getFullYear());
-      return d;
-    });
-    setShowMonthPicker(false);
-  };
-
-  const handleYearChange = (e) => {
-    const value = e.target.value;
-    if (/^\d{0,4}$/.test(value)) {
-      setTempYear(value === '' ? '' : Number(value));
-    }
-  };
-
-  const applyYear = () => {
-    if (tempYear) {
-      setCurrentDate(prev => {
-        const d = new Date(prev);
-        d.setFullYear(tempYear);
-        return d;
-      });
-    }
-  };
-
+  // API call
   useEffect(() => {
     setLoading(true);
     axios
@@ -146,90 +99,15 @@ const Kalender = () => {
       .finally(() => setLoading(false));
   }, [currentDate]);
 
-  useEffect(() => {
-    generateCalendarDays(currentDate);
-  }, [currentDate]);
+  // ... (sisanya tetap sama: navigasi, picker, dll)
+  // (kode UI tidak berubah, jadi tidak ditulis ulang di sini)
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
   return (
-    <div className="kalender-container">
-      {/* Header navigasi */}
-      <div className="kalender-header">
-        <button className="nav-btn" onClick={prevMonth} aria-label="Bulan Sebelumnya">
-          ⬅️
-        </button>
-
-        <div className="month-display" onClick={openMonthPicker} aria-label="Pilih bulan dan tahun">
-          {bulanPanjang[currentMonth]} {currentYear}
-        </div>
-
-        <button className="nav-btn" onClick={nextMonth} aria-label="Bulan Berikutnya">
-          ➡️
-        </button>
-      </div>
-
-      {/* Picker Bulan & Tahun */}
-      {showMonthPicker && (
-        <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
-          <div className="month-picker">
-            <div className="year-input">
-              <input
-                type="number"
-                value={tempYear}
-                onChange={handleYearChange}
-                onBlur={applyYear}
-                onKeyPress={(e) => e.key === 'Enter' && applyYear()}
-                min="1"
-                max="9999"
-                placeholder="Tahun"
-                className="year-edit"
-              />
-            </div>
-
-            <div className="months-grid">
-              {bulanNama.map((bulan, index) => (
-                <div
-                  key={bulan}
-                  className={`month-cell ${index === currentMonth ? 'selected' : ''}`}
-                  onClick={() => selectMonth(index)}
-                >
-                  {bulan}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header Hari */}
-      <div className="hari-header">
-        {hariNama.map((hari) => (
-          <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
-            {hari}
-          </div>
-        ))}
-      </div>
-
-      {/* Grid Tanggal + Weton */}
-      <div className="dates-grid">
-        {daysInMonth.map((dayObj, index) => (
-          <div
-            key={index}
-            className={`date-box
-              ${!dayObj.isCurrentMonth ? 'outside' : ''}
-              ${dayObj.dayOfWeek === 0 ? 'sunday' : ''}
-            `}
-          >
-            <span className="date-number">{dayObj.date}</span>
-            <span className="weton">{dayObj.weton}</span>
-          </div>
-        ))}
-      </div>
-
-      {loading && <div className="loading">Memuat...</div>}
-    </div>
+    // ... (return JSX yang sama seperti sebelumnya)
+    // Pastikan Anda masih menggunakan kode JSX terakhir yang ada weton dan struktur yang benar
   );
 };
 
