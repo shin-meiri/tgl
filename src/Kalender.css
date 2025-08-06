@@ -2,7 +2,7 @@
 .kalender-container {
   width: 320px;
   margin: 20px auto;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   border: 1px solid #ddd;
   border-radius: 12px;
   overflow: hidden;
@@ -47,7 +47,6 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Picker Bulan & Tahun */
 .month-picker-overlay {
   position: absolute;
   top: 50px;
@@ -98,12 +97,10 @@
   background-color: #f8f9fa;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .month-cell:hover {
   background-color: #e9ecef;
-  transform: scale(0.95);
 }
 
 .month-cell.selected {
@@ -111,7 +108,6 @@
   color: white;
 }
 
-/* Header Hari */
 .hari-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -132,7 +128,6 @@
   font-weight: bold;
 }
 
-/* Grid Tanggal */
 .dates-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -142,37 +137,31 @@
 
 .date-box {
   background-color: #fff;
-  height: 40px;
+  height: 50px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
   font-size: 0.9rem;
-  color: #222;
-  transition: background-color 0.2s;
+  gap: 1px;
 }
 
-.date-box:hover {
-  background-color: #f0f0f0;
+.date-number {
   font-weight: 500;
+  line-height: 1.2;
 }
 
-/* Tanggal di luar bulan saat ini */
-.date-box.outside {
-  color: #aaa;
+.weton {
+  font-size: 0.65rem;
+  color: #555;
+  font-style: italic;
+}
+
+.outside {
+  color: #aaa !important;
   background-color: #fafafa !important;
 }
 
-/* Hari Minggu (dalam bulan ini) */
-.date-box.sunday {
+.sunday {
   color: #d32f2f !important;
-  font-weight: 500;
-}
-
-/* Loading */
-.loading {
-  text-align: center;
-  padding: 10px;
-  font-size: 0.9rem;
-  color: #666;
-  background-color: #f8f9fa;
 }
