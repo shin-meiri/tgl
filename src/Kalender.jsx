@@ -1,10 +1,10 @@
 // Kalender.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './Kalender.css';
 
-// Titik acuan: 1 Januari 1900 = Legi (dihitung dari 31 Des 1899)
-const EPOCH = new Date(1899, 11, 31); // 31 Desember 1899
+// Titik acuan: 31 Des 1899 → 1 Jan 1900 = Legi
+const EPOCH = new Date(1899, 11, 31);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const Kalender = () => {
@@ -21,16 +21,15 @@ const Kalender = () => {
   ];
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Hitung weton berdasarkan selisih hari dari EPOCH
+  // Hitung weton
   const getWeton = (date) => {
     const diffTime = date - EPOCH;
     const diffDays = Math.floor(diffTime / MS_PER_DAY);
-    const index = diffDays % 5;
-    return pasaran[index];
+    return pasaran[diffDays % 5];
   };
 
-  // Generate grid kalender
-  const generateCalendarDays = (date) => {
+  // Generate kalender — dibungkus useCallback
+  const generateCalendarDays = useCallback((date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -38,13 +37,13 @@ const Kalender = () => {
 
     const days = [];
 
-    // Hari dari bulan lalu
+    // Bulan lalu
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({ date: prevMonthLastDay - i, isCurrentMonth: false, dayOfWeek: (6 - i) % 7, weton: null });
     }
 
-    // Hari bulan ini
+    // Bulan ini
     for (let day = 1; day <= daysInThisMonth; day++) {
       const fullDate = new Date(year, month, day);
       days.push({
@@ -55,7 +54,7 @@ const Kalender = () => {
       });
     }
 
-    // Hari dari bulan depan (untuk lengkapi 42 cell)
+    // Bulan depan
     const remaining = 42 - days.length;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
@@ -68,11 +67,11 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  };
+  }, [getWeton]); // ✅ generateCalendarDays stabil selama getWeton stabil
 
   // Navigasi
   const goToPrevMonth = () => {
-    setCurrentDate((prev) => {
+    setCurrentDate(prev => {
       const d = new Date(prev);
       d.setMonth(d.getMonth() - 1);
       return d;
@@ -80,22 +79,20 @@ const Kalender = () => {
   };
 
   const goToNextMonth = () => {
-    setCurrentDate((prev) => {
+    setCurrentDate(prev => {
       const d = new Date(prev);
       d.setMonth(d.getMonth() + 1);
       return d;
     });
   };
 
-  // Buka picker bulan
   const openMonthPicker = () => {
     setTempYear(currentDate.getFullYear());
     setShowMonthPicker(true);
   };
 
-  // Pilih bulan dari grid
   const selectMonth = (monthIndex) => {
-    setCurrentDate((prev) => {
+    setCurrentDate(prev => {
       const d = new Date(prev);
       d.setMonth(monthIndex);
       d.setFullYear(tempYear || d.getFullYear());
@@ -104,7 +101,6 @@ const Kalender = () => {
     setShowMonthPicker(false);
   };
 
-  // Edit tahun
   const handleYearChange = (e) => {
     const value = e.target.value;
     if (/^\d{0,4}$/.test(value)) {
@@ -114,7 +110,7 @@ const Kalender = () => {
 
   const applyYear = () => {
     if (tempYear) {
-      setCurrentDate((prev) => {
+      setCurrentDate(prev => {
         const d = new Date(prev);
         d.setFullYear(tempYear);
         return d;
@@ -122,23 +118,23 @@ const Kalender = () => {
     }
   };
 
-  // Simulasi API call
+  // Ambil data dari API
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
         const res = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=5');
         console.log('Data:', res.data);
       } catch (err) {
-        console.error('API error:', err.message);
+        console.error('Error:', err.message);
       }
     };
-    fetchEvents();
-  }, [currentDate]);
+    fetchData();
+  }, [currentDate]); // ✅ hanya berjalan saat currentDate berubah
 
-  // Generate kalender saat tanggal berubah
+  // Generate kalender saat currentDate berubah
   useEffect(() => {
     generateCalendarDays(currentDate);
-  }, [currentDate]);
+  }, [currentDate, generateCalendarDays]); // ✅ generateCalendarDays dimasukkan karena stabil berkat useCallback
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -160,7 +156,7 @@ const Kalender = () => {
         </button>
       </div>
 
-      {/* Month & Year Picker */}
+      {/* Month Picker */}
       {showMonthPicker && (
         <div className="month-picker-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="month-picker">
@@ -195,7 +191,7 @@ const Kalender = () => {
         </div>
       )}
 
-      {/* Hari Header */}
+      {/* Header Hari */}
       <div className="hari-header">
         {hariNama.map((hari) => (
           <div key={hari} className={`hari-label ${hari === 'Min' ? 'sunday' : ''}`}>
@@ -204,7 +200,7 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Grid Tanggal + Weton */}
+      {/* Grid Tanggal */}
       <div className="dates-grid">
         {daysInMonth.map((day, idx) => (
           <div
