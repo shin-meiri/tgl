@@ -2,6 +2,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
+// --- KONSTANTA DI LUAR KOMPONEN ---
+const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+
+// --- FUNGSI DI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
+const getWeton = (date) => {
+  const diffTime = date - EPOCH;
+  const diffDays = Math.floor(diffTime / MS_PER_DAY);
+  return PASARAN[diffDays % 5];
+};
+
+// --- KOMPONEN UTAMA ---
 const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -16,17 +29,8 @@ const Kalender = () => {
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-  const EPOCH = new Date(1899, 11, 31);
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-  // Fungsi getWeton — stabil karena tidak pakai state/props
-  const getWeton = (date) => {
-    const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
-    return pasaran[diff % 5];
-  };
-
-  // Muat CSS dari API
+  // Muat CSS dari MySQL
   useEffect(() => {
     const loadTheme = async () => {
       try {
@@ -49,7 +53,7 @@ const Kalender = () => {
     loadTheme();
   }, []);
 
-  // Muat libur dari API
+  // Muat libur dari MySQL
   useEffect(() => {
     const loadLibur = async () => {
       try {
@@ -66,7 +70,7 @@ const Kalender = () => {
     loadLibur();
   }, []);
 
-  // generateCalendar — dibungkus useCallback
+  // generateCalendar — stabil karena getWeton & PASARAN di luar
   const generateCalendar = useCallback((date) => {
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -99,14 +103,14 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [daftarLibur, getWeton]); // ✅ Semua dependensi terpenuhi
+  }, [daftarLibur]); // ✅ CUKUP daftarLibur, karena getWeton & PASARAN di luar komponen!
 
-  // Generate saat currentDate berubah
+  // Update kalender saat currentDate berubah
   useEffect(() => {
     if (cssLoaded) {
       generateCalendar(currentDate);
     }
-  }, [currentDate, generateCalendar, cssLoaded]); // ✅ generateCalendar dimasukkan
+  }, [currentDate, generateCalendar, cssLoaded]);
 
   // Navigasi
   const goToPrev = () => {
@@ -149,6 +153,7 @@ const Kalender = () => {
     }
   };
 
+  // Cek apakah ini hari ini
   const today = new Date();
   const isToday = (dayObj) =>
     dayObj.cur &&
