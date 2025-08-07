@@ -86,9 +86,9 @@
   margin: 0 auto;
 }
 
-/* Mobile Responsive */
 @media (max-width: 600px) {
   .menubar button {
     padding: 12px 16px;
     font-size: 0.95rem;
   }
+}
