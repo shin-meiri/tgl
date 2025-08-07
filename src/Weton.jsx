@@ -118,7 +118,7 @@ const Weton = () => {
         <p><strong>Hari Ini:</strong> {todayWeton.tanggal}</p>
         <p><strong>Neptu Hari:</strong> {todayWeton.hari} ({todayWeton.neptuHari})</p>
         <p><strong>Weton:</strong> {todayWeton.weton} ({todayWeton.neptuWeton})</p>
-        <p><strong>Arah Ke:</strong> <span className="arah-bold">{todayWeton.arah}</span></p>
+        <p><strong>Dari Arah:</strong> <span className="arah-bold">{todayWeton.arah}</span></p>
         <p><strong>Jumlah Neptu:</strong> {todayWeton.totalNeptu}</p>
 
         {/* Info tambahan untuk transparansi */}
