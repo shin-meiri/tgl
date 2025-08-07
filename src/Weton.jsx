@@ -22,7 +22,7 @@ const ARAH_WETON = {
   Kliwon: 'Pusat'
 };
 
-// --- FUNGSI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
+// --- FUNGSI LUAR KOMPONEN ---
 const getWeton = (date) => {
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
@@ -34,36 +34,57 @@ const getDayName = (date) => {
   return names[date.getDay()];
 };
 
+// Cek apakah sudah lewat jam 18.00
+const isAfterSunset = () => {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  return hours > 18 || (hours === 18 && minutes >= 0);
+};
+
 // --- KOMPONEN UTAMA ---
 const Weton = () => {
   const [todayWeton, setTodayWeton] = useState(null);
   const [cssLoaded, setCssLoaded] = useState(false);
 
-  // Hitung weton hari ini
   useEffect(() => {
-    const today = new Date();
-    const hari = getDayName(today);
-    const weton = getWeton(today);
+    const now = new Date();
+
+    // Tentukan tanggal acuan untuk weton
+    let wetonDate = new Date(now);
+
+    // Jika sudah lewat 18:00, maka weton = besok
+    if (isAfterSunset()) {
+      wetonDate.setDate(now.getDate() + 1);
+    }
+
+    const hari = getDayName(wetonDate);
+    const weton = getWeton(wetonDate);
     const neptuHari = NEPTU_HARI[hari];
     const neptuWeton = NEPTU_PASARAN[weton];
     const arah = ARAH_WETON[weton];
     const totalNeptu = neptuHari + neptuWeton;
 
+    // Format tanggal tampilan (tetap tampilkan "hari ini" untuk UI)
+    const displayDate = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
     setTodayWeton({
-      tanggal: today.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
+      tanggal: displayDate,
       hari,
       weton,
       neptuHari,
       neptuWeton,
       arah,
-      totalNeptu
+      totalNeptu,
+      isAfterSunset: isAfterSunset(),
+      realDate: wetonDate // untuk debugging
     });
-  }, []); // ✅ Tidak perlu dependensi karena semua fungsi di luar
+  }, []);
 
   // Muat CSS dari MySQL
   useEffect(() => {
@@ -85,7 +106,7 @@ const Weton = () => {
       }
     };
     loadCSS();
-  }, []); // ✅ Hanya dijalankan sekali
+  }, []);
 
   if (!cssLoaded || !todayWeton) return <div className="loading">Memuat...</div>;
 
@@ -99,8 +120,18 @@ const Weton = () => {
         <p><strong>Weton:</strong> {todayWeton.weton} ({todayWeton.neptuWeton})</p>
         <p><strong>Arah Ke:</strong> <span className="arah-bold">{todayWeton.arah}</span></p>
         <p><strong>Jumlah Neptu:</strong> {todayWeton.totalNeptu}</p>
+
+        {/* Info tambahan untuk transparansi */}
+        <p className="small-text">
+          <em>
+            {todayWeton.isAfterSunset
+              ? 'Weton sudah berganti (setelah 18:00)'
+              : 'Weton masih hari ini (sebelum 18:00)'}
+          </em>
+        </p>
       </div>
 
+      {/* Diagram Mata Angin */}
       <div className="mata-angin-diagram">
         <div className={`utara ${todayWeton.weton === 'Wage' ? 'active' : ''}`}>
           <span>Utara</span>
