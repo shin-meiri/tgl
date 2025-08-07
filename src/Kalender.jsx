@@ -2,25 +2,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-// --- KONSTANTA DI LUAR KOMPONEN ---
-const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
+// --- Konstanta di luar komponen ---
+const EPOCH = new Date(1899, 11, 31); // 1 Jan 1900 = Legi
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// --- FUNGSI DI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
+// --- Fungsi getWeton (stabil) ---
 const getWeton = (date) => {
   const diffTime = date - EPOCH;
   const diffDays = Math.floor(diffTime / MS_PER_DAY);
   return PASARAN[diffDays % 5];
 };
 
-// --- KOMPONEN UTAMA ---
 const Kalender = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [tempYear, setTempYear] = useState(currentDate.getFullYear());
   const [daysInMonth, setDaysInMonth] = useState([]);
-  const [daftarLibur, setDaftarLibur] = useState({});
+  const [daftarLibur, setDaftarLibur] = useState([]);
   const [cssLoaded, setCssLoaded] = useState(false);
 
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -55,22 +54,25 @@ const Kalender = () => {
 
   // Muat libur dari MySQL
   useEffect(() => {
-    const loadLibur = async () => {
+    const fetchLibur = async () => {
       try {
         const res = await axios.get('/api/libur.php');
-        const liburMap = {};
-        res.data.libur.forEach(l => {
-          liburMap[l.tanggal] = l.nama;
-        });
-        setDaftarLibur(liburMap);
+        setDaftarLibur(res.data.libur || []);
       } catch (err) {
         console.error('Gagal muat libur:', err);
+        setDaftarLibur([]);
       }
     };
-    loadLibur();
+    fetchLibur();
   }, []);
 
-  // generateCalendar — stabil karena getWeton & PASARAN di luar
+  // Buat map libur: '2025-01-01' => {tanggal, nama}
+  const liburMap = {};
+  daftarLibur.forEach(l => {
+    liburMap[l.tanggal] = l.nama;
+  });
+
+  // Generate kalender
   const generateCalendar = useCallback((date) => {
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -87,12 +89,18 @@ const Kalender = () => {
     // Bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
       const full = new Date(y, m, day);
+      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isLibur = !!liburMap[dateStr];
+      const isToday = full.toDateString() === new Date().toDateString();
+
       days.push({
         d: day,
         cur: true,
         dow: full.getDay(),
         weton: getWeton(full),
-        libur: daftarLibur[`${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`]
+        isLibur,
+        isToday,
+        liburNama: liburMap[dateStr]
       });
     }
 
@@ -103,23 +111,15 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [daftarLibur]); // ✅ CUKUP daftarLibur, karena getWeton & PASARAN di luar komponen!
+  }, [getWeton, liburMap]);
 
-  // Update kalender saat currentDate berubah
   useEffect(() => {
-    if (cssLoaded) {
-      generateCalendar(currentDate);
-    }
+    if (cssLoaded) generateCalendar(currentDate);
   }, [currentDate, generateCalendar, cssLoaded]);
 
   // Navigasi
-  const goToPrev = () => {
-    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-  };
-
-  const goToNext = () => {
-    setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-  };
+  const goToPrev = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const goToNext = () => setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
 
   const openPicker = () => {
     setTempYear(currentDate.getFullYear());
@@ -138,28 +138,14 @@ const Kalender = () => {
 
   const handleYear = (e) => {
     const v = e.target.value;
-    if (/^\d{0,4}$/.test(v)) {
-      setTempYear(v === '' ? '' : Number(v));
-    }
+    if (/^\d{0,4}$/.test(v)) setTempYear(v === '' ? '' : Number(v));
   };
 
-  const applyYear = () => {
-    if (tempYear) {
-      setCurrentDate(d => {
-        const c = new Date(d);
-        c.setFullYear(tempYear);
-        return c;
-      });
-    }
-  };
-
-  // Cek apakah ini hari ini
-  const today = new Date();
-  const isToday = (dayObj) =>
-    dayObj.cur &&
-    today.getDate() === dayObj.d &&
-    today.getMonth() === currentDate.getMonth() &&
-    today.getFullYear() === currentDate.getFullYear();
+  const applyYear = () => tempYear && setCurrentDate(d => {
+    const c = new Date(d);
+    c.setFullYear(tempYear);
+    return c;
+  });
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -168,7 +154,7 @@ const Kalender = () => {
 
   return (
     <div className="kalender-container">
-      {/* Header */}
+      {/* Header Kalender */}
       <div className="kalender-header">
         <button type="button" className="nav-btn" onClick={goToPrev}>⬅️</button>
         <div className="month-display" onClick={openPicker}>
@@ -207,12 +193,10 @@ const Kalender = () => {
         </div>
       )}
 
-      {/* Hari Header */}
+      {/* Header Hari */}
       <div className="hari-header">
-        {hariNama.map((h) => (
-          <div key={h} className={`hari-label ${h === 'Min' ? 'sunday' : ''}`}>
-            {h}
-          </div>
+        {hariNama.map(h => (
+          <div key={h} className={`hari-label ${h === 'Min' ? 'sunday' : ''}`}>{h}</div>
         ))}
       </div>
 
@@ -225,18 +209,43 @@ const Kalender = () => {
               'date-box',
               !day.cur && 'outside',
               day.dow === 0 && 'sunday',
-              day.libur && 'libur',
-              isToday(day) && 'today',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            title={day.libur || ''}
+              day.isLibur && 'libur',
+              day.isToday && 'today'
+            ].filter(Boolean).join(' ')}
+            title={day.liburNama || ''}
           >
+            {day.isToday && <span className="dot-today"></span>}
             <span className="date-number">{day.d}</span>
             {day.cur && <span className="weton">{day.weton}</span>}
-            {day.libur && <span className="libur-badge">🎉</span>}
           </div>
         ))}
+      </div>
+
+      {/* Tabel Keterangan Libur */}
+      <div className="keterangan-libur">
+        <h4>📋 Keterangan Libur</h4>
+        {daftarLibur.length === 0 ? (
+          <p>Tidak ada libur</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Deskripsi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {daftarLibur.map((l, idx) => (
+                <tr key={l.tanggal}>
+                  <td>{idx + 1}</td>
+                  <td>{l.tanggal}</td>
+                  <td>{l.nama}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
