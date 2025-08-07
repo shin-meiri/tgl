@@ -2,16 +2,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-// --- Konstanta di luar komponen ---
-const EPOCH = new Date(1899, 11, 31); // 1 Jan 1900 = Legi
+// --- KONSTANTA LUAR KOMPONEN ---
+const EPOCH = new Date(1899, 11, 31);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// --- Fungsi getWeton (stabil) ---
+// --- FUNGSI LUAR KOMPONEN ---
 const getWeton = (date) => {
-  const diffTime = date - EPOCH;
-  const diffDays = Math.floor(diffTime / MS_PER_DAY);
-  return PASARAN[diffDays % 5];
+  const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
+  return PASARAN[diff % 5];
 };
 
 const Kalender = () => {
@@ -66,11 +65,11 @@ const Kalender = () => {
     fetchLibur();
   }, []);
 
-  // Buat map libur: '2025-01-01' => {tanggal, nama}
-  const liburMap = {};
-  daftarLibur.forEach(l => {
-    liburMap[l.tanggal] = l.nama;
-  });
+  // Buat map libur: '2025-01-01' => {nama, tanggal}
+  const liburMap = daftarLibur.reduce((map, libur) => {
+    map[libur.tanggal] = libur;
+    return map;
+  }, {});
 
   // Generate kalender
   const generateCalendar = useCallback((date) => {
@@ -83,35 +82,33 @@ const Kalender = () => {
     // Bulan lalu
     const prevLast = new Date(y, m, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ d: prevLast - i, cur: false, w: null });
+      days.push({ d: prevLast - i, cur: false });
     }
 
     // Bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
       const full = new Date(y, m, day);
-      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const isLibur = !!liburMap[dateStr];
-      const isToday = full.toDateString() === new Date().toDateString();
+      const dateString = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const libur = liburMap[dateString];
 
       days.push({
         d: day,
         cur: true,
         dow: full.getDay(),
         weton: getWeton(full),
-        isLibur,
-        isToday,
-        liburNama: liburMap[dateStr]
+        libur: !!libur,
+        namaLibur: libur ? libur.nama : ''
       });
     }
 
     // Bulan depan
     const remaining = 42 - days.length;
     for (let day = 1; day <= remaining; day++) {
-      days.push({ d: day, cur: false, w: null });
+      days.push({ d: day, cur: false });
     }
 
     setDaysInMonth(days);
-  }, [getWeton, liburMap]);
+  }, [liburMap, getWeton]);
 
   useEffect(() => {
     if (cssLoaded) generateCalendar(currentDate);
@@ -141,11 +138,23 @@ const Kalender = () => {
     if (/^\d{0,4}$/.test(v)) setTempYear(v === '' ? '' : Number(v));
   };
 
-  const applyYear = () => tempYear && setCurrentDate(d => {
-    const c = new Date(d);
-    c.setFullYear(tempYear);
-    return c;
-  });
+  const applyYear = () => {
+    if (tempYear) {
+      setCurrentDate(d => {
+        const c = new Date(d);
+        c.setFullYear(tempYear);
+        return c;
+      });
+    }
+  };
+
+  // Cek hari ini
+  const today = new Date();
+  const isToday = (dayObj) =>
+    dayObj.cur &&
+    today.getDate() === dayObj.d &&
+    today.getMonth() === currentDate.getMonth() &&
+    today.getFullYear() === currentDate.getFullYear();
 
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
@@ -180,11 +189,7 @@ const Kalender = () => {
             </div>
             <div className="months-grid">
               {bulanNama.map((b, i) => (
-                <div
-                  key={b}
-                  className={`month-cell ${i === currentMonth ? 'selected' : ''}`}
-                  onClick={() => selectMonth(i)}
-                >
+                <div key={b} className={`month-cell ${i === currentMonth ? 'selected' : ''}`} onClick={() => selectMonth(i)}>
                   {b}
                 </div>
               ))}
@@ -209,12 +214,11 @@ const Kalender = () => {
               'date-box',
               !day.cur && 'outside',
               day.dow === 0 && 'sunday',
-              day.isLibur && 'libur',
-              day.isToday && 'today'
+              day.libur && 'libur', // Warna merah untuk libur
+              isToday(day) && 'today' // Lingkaran biru untuk hari ini
             ].filter(Boolean).join(' ')}
-            title={day.liburNama || ''}
+            title={day.namaLibur || ''}
           >
-            {day.isToday && <span className="dot-today"></span>}
             <span className="date-number">{day.d}</span>
             {day.cur && <span className="weton">{day.weton}</span>}
           </div>
@@ -222,12 +226,12 @@ const Kalender = () => {
       </div>
 
       {/* Tabel Keterangan Libur */}
-      <div className="keterangan-libur">
-        <h4>📋 Keterangan Libur</h4>
+      <div className="libur-table-container">
+        <h4>📅 Keterangan Hari Libur</h4>
         {daftarLibur.length === 0 ? (
-          <p>Tidak ada libur</p>
+          <p>Tidak ada libur.</p>
         ) : (
-          <table>
+          <table className="libur-table">
             <thead>
               <tr>
                 <th>No</th>
@@ -236,9 +240,9 @@ const Kalender = () => {
               </tr>
             </thead>
             <tbody>
-              {daftarLibur.map((l, idx) => (
+              {daftarLibur.map((l, i) => (
                 <tr key={l.tanggal}>
-                  <td>{idx + 1}</td>
+                  <td>{i + 1}</td>
                   <td>{l.tanggal}</td>
                   <td>{l.nama}</td>
                 </tr>
