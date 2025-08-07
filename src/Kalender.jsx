@@ -7,7 +7,7 @@ const EPOCH = new Date(1899, 11, 31);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// --- FUNGSI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
+// --- FUNGSI LUAR KOMPONEN ---
 const getWeton = (date) => {
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
   return PASARAN[diff % 5];
@@ -18,7 +18,7 @@ const Kalender = () => {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [tempYear, setTempYear] = useState(currentDate.getFullYear());
   const [daysInMonth, setDaysInMonth] = useState([]);
-  const [daftarLibur, setDaftarLibur] = useState([]);
+  const [daftarLibur, setDaftarLibur] = useState([]); // semua libur dari API
   const [cssLoaded, setCssLoaded] = useState(false);
 
   const hariNama = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -37,9 +37,7 @@ const Kalender = () => {
         const style = document.getElementById('dynamic-css') || document.createElement('style');
         style.id = 'dynamic-css';
         style.textContent = css;
-        if (!document.getElementById('dynamic-css')) {
-          document.head.appendChild(style);
-        }
+        if (!style.isConnected) document.head.appendChild(style);
       } catch (err) {
         console.error('Gagal muat tema:', err);
       } finally {
@@ -49,7 +47,7 @@ const Kalender = () => {
     loadTheme();
   }, []);
 
-  // Muat libur dari MySQL
+  // Muat semua libur dari MySQL
   useEffect(() => {
     const fetchLibur = async () => {
       try {
@@ -63,13 +61,19 @@ const Kalender = () => {
     fetchLibur();
   }, []);
 
-  // Buat map libur: '2025-01-01' => libur
-  const liburMap = daftarLibur.reduce((map, libur) => {
+  // Filter libur hanya yang di bulan saat ini
+  const liburDiBulanIni = daftarLibur.filter((libur) => {
+    const [year, month, day] = libur.tanggal.split('-').map(Number);
+    return year === currentDate.getFullYear() && month - 1 === currentDate.getMonth();
+  });
+
+  // Buat map libur untuk cek cepat di grid
+  const liburMap = liburDiBulanIni.reduce((map, libur) => {
     map[libur.tanggal] = libur;
     return map;
   }, {});
 
-  // Generate kalender — getWeton tidak perlu di dep karena di luar komponen
+  // Generate kalender
   const generateCalendar = useCallback((date) => {
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -106,7 +110,7 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [liburMap]); // ✅ Hanya liburMap yang bisa berubah
+  }, [liburMap]);
 
   // Update kalender saat currentDate berubah
   useEffect(() => {
@@ -226,11 +230,11 @@ const Kalender = () => {
         ))}
       </div>
 
-      {/* Tabel Keterangan Libur */}
+      {/* Tabel Keterangan Libur — Hanya Libur di Bulan Ini */}
       <div className="libur-table-container">
-        <h4>📅 Keterangan Hari Libur</h4>
-        {daftarLibur.length === 0 ? (
-          <p>Tidak ada libur.</p>
+        <h4>📅 Libur di {bulanPanjang[currentMonth]} {currentYear}</h4>
+        {liburDiBulanIni.length === 0 ? (
+          <p>Tidak ada libur nasional di bulan ini.</p>
         ) : (
           <table className="libur-table">
             <thead>
@@ -241,13 +245,16 @@ const Kalender = () => {
               </tr>
             </thead>
             <tbody>
-              {daftarLibur.map((l, i) => (
-                <tr key={l.tanggal}>
-                  <td>{i + 1}</td>
-                  <td>{l.tanggal}</td>
-                  <td>{l.nama}</td>
-                </tr>
-              ))}
+              {liburDiBulanIni.map((l, i) => {
+                const tgl = new Date(l.tanggal).getDate(); // Ambil tanggal (1, 2, 3...)
+                return (
+                  <tr key={l.tanggal}>
+                    <td>{i + 1}</td>
+                    <td>{tgl}</td>
+                    <td>{l.nama}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
