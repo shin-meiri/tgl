@@ -7,7 +7,7 @@ const EPOCH = new Date(1899, 11, 31);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// --- FUNGSI LUAR KOMPONEN ---
+// --- FUNGSI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
 const getWeton = (date) => {
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
   return PASARAN[diff % 5];
@@ -34,14 +34,12 @@ const Kalender = () => {
       try {
         const res = await axios.get('/api/theme.php');
         const css = res.data.css;
-
-        let style = document.getElementById('dynamic-css');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = 'dynamic-css';
+        const style = document.getElementById('dynamic-css') || document.createElement('style');
+        style.id = 'dynamic-css';
+        style.textContent = css;
+        if (!document.getElementById('dynamic-css')) {
           document.head.appendChild(style);
         }
-        style.textContent = css;
       } catch (err) {
         console.error('Gagal muat tema:', err);
       } finally {
@@ -65,13 +63,13 @@ const Kalender = () => {
     fetchLibur();
   }, []);
 
-  // Buat map libur: '2025-01-01' => {nama, tanggal}
+  // Buat map libur: '2025-01-01' => libur
   const liburMap = daftarLibur.reduce((map, libur) => {
     map[libur.tanggal] = libur;
     return map;
   }, {});
 
-  // Generate kalender
+  // Generate kalender — getWeton tidak perlu di dep karena di luar komponen
   const generateCalendar = useCallback((date) => {
     const y = date.getFullYear();
     const m = date.getMonth();
@@ -108,10 +106,13 @@ const Kalender = () => {
     }
 
     setDaysInMonth(days);
-  }, [liburMap, getWeton]);
+  }, [liburMap]); // ✅ Hanya liburMap yang bisa berubah
 
+  // Update kalender saat currentDate berubah
   useEffect(() => {
-    if (cssLoaded) generateCalendar(currentDate);
+    if (cssLoaded) {
+      generateCalendar(currentDate);
+    }
   }, [currentDate, generateCalendar, cssLoaded]);
 
   // Navigasi
@@ -214,8 +215,8 @@ const Kalender = () => {
               'date-box',
               !day.cur && 'outside',
               day.dow === 0 && 'sunday',
-              day.libur && 'libur', // Warna merah untuk libur
-              isToday(day) && 'today' // Lingkaran biru untuk hari ini
+              day.libur && 'libur',
+              isToday(day) && 'today'
             ].filter(Boolean).join(' ')}
             title={day.namaLibur || ''}
           >
