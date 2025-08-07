@@ -34,7 +34,7 @@ const Kalender = () => {
   useEffect(() => {
     const loadTheme = async () => {
       try {
-        const res = await axios.get('/api/theme.php');
+        const res = await axios.get('./api/theme.php');
         const css = res.data.css;
 
         let style = document.getElementById('dynamic-css');
@@ -57,7 +57,7 @@ const Kalender = () => {
   useEffect(() => {
     const loadLibur = async () => {
       try {
-        const res = await axios.get('/api/libur.php');
+        const res = await axios.get('./api/libur.php');
         const liburMap = {};
         res.data.libur.forEach(l => {
           liburMap[l.tanggal] = l.nama;
