@@ -1,112 +1,132 @@
-// src/Weton.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css';
+// Weton.jsx
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// --- KONSTANTA LUAR KOMPONEN ---
+const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const NEPTU_HARI = {
+  Min: 5, Sen: 4, Sel: 3, Rab: 7, Kam: 8, Jum: 6, Sab: 9
+};
+
+const NEPTU_PASARAN = {
+  Legi: 5, Pahing: 9, Pon: 7, Wage: 4, Kliwon: 8
+};
+
+const ARAH_WETON = {
+  Legi: 'Timur',
+  Pahing: 'Selatan',
+  Pon: 'Barat',
+  Wage: 'Utara',
+  Kliwon: 'Pusat'
+};
+
+// --- FUNGSI LUAR KOMPONEN (STABIL, TIDAK BERUBAH) ---
+const getWeton = (date) => {
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
+  return pasaran[diff % 5];
+};
+
+const getDayName = (date) => {
+  const names = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  return names[date.getDay()];
+};
+
+// --- KOMPONEN UTAMA ---
 const Weton = () => {
-  const datePickerRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState(() => {
+  const [todayWeton, setTodayWeton] = useState(null);
+  const [cssLoaded, setCssLoaded] = useState(false);
+
+  // Hitung weton hari ini
+  useEffect(() => {
     const today = new Date();
-    return today.toISOString().split('T')[0]; // string: '2025-04-05'
-  });
-  const [wetonData, setWetonData] = useState(null);
-  const [loading, setLoading] = useState(false);
+    const hari = getDayName(today);
+    const weton = getWeton(today);
+    const neptuHari = NEPTU_HARI[hari];
+    const neptuWeton = NEPTU_PASARAN[weton];
+    const arah = ARAH_WETON[weton];
+    const totalNeptu = neptuHari + neptuWeton;
 
-  // Ambil data weton dari backend
-  const fetchWeton = async (dateStr) => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/get-weton.php`, {
-        params: { date: dateStr },
-      });
-      setWetonData(response.data);
-    } catch (error) {
-      setWetonData({ error: 'Data tidak ditemukan atau server bermasalah.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Inisialisasi flatpickr — hanya sekali saat komponen mount
-  useEffect(() => {
-    const fp = flatpickr(datePickerRef.current, {
-      defaultDate: selectedDate,
-      dateFormat: 'Y-m-d',
-      onChange: (selectedDates) => {
-        if (selectedDates.length > 0) {
-          const dateStr = selectedDates[0].toISOString().split('T')[0];
-          setSelectedDate(dateStr); // update sebagai string
-        }
-      },
+    setTodayWeton({
+      tanggal: today.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      hari,
+      weton,
+      neptuHari,
+      neptuWeton,
+      arah,
+      totalNeptu
     });
+  }, []); // ✅ Tidak perlu dependensi karena semua fungsi di luar
 
-    return () => fp.destroy();
-  }, []); // ✅ Tidak perlu dependency — hanya jalan sekali
-
-  // Fetch data saat selectedDate berubah
+  // Muat CSS dari MySQL
   useEffect(() => {
-    fetchWeton(selectedDate);
-  }, [selectedDate]); // ✅ selectedDate adalah string → stabil dan valid
+    const loadCSS = async () => {
+      try {
+        const res = await axios.get('/api/theme.php');
+        const css = res.data.css;
+        let style = document.getElementById('dynamic-css-weton');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'dynamic-css-weton';
+          document.head.appendChild(style);
+        }
+        style.textContent = css;
+      } catch (err) {
+        console.error('Gagal muat CSS:', err);
+      } finally {
+        setCssLoaded(true);
+      }
+    };
+    loadCSS();
+  }, []); // ✅ Hanya dijalankan sekali
+
+  if (!cssLoaded || !todayWeton) return <div className="loading">Memuat...</div>;
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h2>🔮 Cek Weton Jawa</h2>
+    <div className="weton-container">
+      <h3>🧭 Weton & Arah Spiritual</h3>
 
-      <div style={{ marginBottom: '20px' }}>
-        <label htmlFor="datepicker">Pilih Tanggal: </label>
-        <input
-          id="datepicker"
-          ref={datePickerRef}
-          type="text"
-          placeholder="Pilih tanggal"
-          style={{
-            padding: '8px 12px',
-            marginLeft: '10px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-          }}
-        />
+      <div className="weton-info">
+        <p><strong>Hari Ini:</strong> {todayWeton.tanggal}</p>
+        <p><strong>Neptu Hari:</strong> {todayWeton.hari} ({todayWeton.neptuHari})</p>
+        <p><strong>Weton:</strong> {todayWeton.weton} ({todayWeton.neptuWeton})</p>
+        <p><strong>Arah Ke:</strong> <span className="arah-bold">{todayWeton.arah}</span></p>
+        <p><strong>Jumlah Neptu:</strong> {todayWeton.totalNeptu}</p>
       </div>
 
-      {loading && <p style={{ color: '#007BFF' }}>Memuat data...</p>}
-
-      {wetonData && !wetonData.error && (
-        <div
-          style={{
-            padding: '15px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            backgroundColor: '#f8f9fa',
-            marginBottom: '20px',
-          }}
-        >
-          <h3>📅 Hasil Weton</h3>
-          <p><strong>Tanggal:</strong> {wetonData.date_gregorian}</p>
-          <p><strong>Weton:</strong> <strong>{wetonData.day_name} {wetonData.pasaran}</strong></p>
-          <p><strong>Neptu:</strong> {wetonData.neptu}</p>
-          <p><strong>Windu:</strong> {wetonData.windu}</p>
-          <p><strong>Arah Keberuntungan:</strong> {wetonData.arah_mata_angin || 'Tidak tersedia'}</p>
+      <div className="mata-angin-diagram">
+        <div className={`utara ${todayWeton.weton === 'Wage' ? 'active' : ''}`}>
+          <span>Utara</span>
+          <small>Wage</small>
+          {todayWeton.weton === 'Wage' && <span className="active-arrow">↑</span>}
         </div>
-      )}
-
-      {wetonData?.error && (
-        <p style={{ color: 'red', fontWeight: 'bold' }}>{wetonData.error}</p>
-      )}
-
-      {/* Deskripsi Weton */}
-      <div style={{ lineHeight: '1.6', color: '#333' }}>
-        <h3>📖 Apa Itu Weton?</h3>
-        <p>
-          Weton adalah hari kelahiran menurut kalender Jawa, gabungan dari <strong>7 hari</strong> 
-          (Senin-Minggu) dan <strong>5 pasaran</strong> (Legi, Pahing, Pon, Wage, Kliwon). 
-          Setiap kombinasi memiliki <strong>neptu</strong> yang digunakan untuk ramalan jodoh, 
-          hari baik, dan kepribadian.
-        </p>
-        <p>
-          <strong>Windu</strong> adalah siklus 8 tahun dalam kalender Jawa. 
-          Sedangkan <strong>arah mata angin</strong> sering dikaitkan dengan keberuntungan berdasarkan pasaran.
-        </p>
+        <div className={`barat ${todayWeton.weton === 'Pon' ? 'active' : ''}`}>
+          <span>Barat</span>
+          <small>Pon</small>
+          {todayWeton.weton === 'Pon' && <span className="active-arrow">←</span>}
+        </div>
+        <div className={`pusat ${todayWeton.weton === 'Kliwon' ? 'active' : ''}`}>
+          <span>Kliwon</span>
+          <small>Pusat</small>
+          {todayWeton.weton === 'Kliwon' && <span className="active-dot">•</span>}
+        </div>
+        <div className={`timur ${todayWeton.weton === 'Legi' ? 'active' : ''}`}>
+          <span>Timur</span>
+          <small>Legi</small>
+          {todayWeton.weton === 'Legi' && <span className="active-arrow">→</span>}
+        </div>
+        <div className={`selatan ${todayWeton.weton === 'Pahing' ? 'active' : ''}`}>
+          <span>Selatan</span>
+          <small>Pahing</small>
+          {todayWeton.weton === 'Pahing' && <span className="active-arrow">↓</span>}
+        </div>
       </div>
     </div>
   );
