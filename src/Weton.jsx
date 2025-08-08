@@ -1,6 +1,5 @@
 // Weton.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
@@ -18,7 +17,7 @@ const ARAH_WETON = {
   Kliwon: 'Pusat'
 };
 
-// --- Fungsi Luar Komponen ---
+// --- Fungsi Bantuan ---
 const getWeton = (date) => {
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
@@ -33,17 +32,13 @@ const getDayName = (date) => {
 // --- KOMPONEN UTAMA ---
 const Weton = () => {
   const [wetonInfo, setWetonInfo] = useState(null);
-  const [cssLoaded, setCssLoaded] = useState(false);
-  const flatpickrRef = useRef(null); // Untuk container flatpickr
+  const flatpickrRef = useRef(null);
 
-  // Hitung weton dari tanggal
+  // Hitung weton
   const hitungWeton = (date) => {
-    // Cek apakah sudah lewat 18:00 → weton = besok
     const isAfterSunset = date.getHours() >= 18;
     const baseDate = new Date(date);
-    if (isAfterSunset) {
-      baseDate.setDate(baseDate.getDate() + 1);
-    }
+    if (isAfterSunset) baseDate.setDate(baseDate.getDate() + 1);
 
     const hari = getDayName(baseDate);
     const weton = getWeton(baseDate);
@@ -53,31 +48,21 @@ const Weton = () => {
     const totalNeptu = neptuHari + neptuWeton;
 
     const formattedDate = baseDate.toLocaleDateString('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
 
     setWetonInfo({
       tanggal: formattedDate,
-      hari,
-      weton,
-      neptuHari,
-      neptuWeton,
-      arah,
-      totalNeptu,
-      isAfterSunset
+      hari, weton, neptuHari, neptuWeton, arah, totalNeptu, isAfterSunset
     });
   };
 
-  // Inisialisasi flatpickr (inline, seperti Excel)
+  // Inisialisasi flatpickr
   useEffect(() => {
     if (flatpickrRef.current) {
       const fp = flatpickr(flatpickrRef.current, {
-        inline: true,           // Tampilkan langsung, bukan input
-        defaultDate: new Date(), // Default = hari ini
-        dateFormat: 'Y-m-d',
+        inline: true,
+        defaultDate: new Date(),
         locale: {
           firstDayOfWeek: 1,
           weekdays: {
@@ -89,84 +74,126 @@ const Weton = () => {
             longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
           }
         },
-        onChange: (selectedDates) => {
-          if (selectedDates.length > 0) {
-            hitungWeton(selectedDates[0]);
-          }
-        }
+        onChange: (dates) => dates[0] && hitungWeton(dates[0])
       });
 
-      // Hitung weton untuk hari ini saat pertama kali
+      // Hitung langsung
       hitungWeton(new Date());
 
       return () => fp.destroy();
     }
   }, []);
 
-  // Muat CSS dari MySQL
+  // Jangan pakai axios untuk CSS — karena kamu bilang Kalender jalan, Weton harus jalan tanpa ketergantungan
+  // Kita langsung lanjutkan meski CSS dari MySQL tidak dimuat
   useEffect(() => {
-    axios.get('/api/theme.php')
-      .then(res => {
-        const style = document.createElement('style');
-        style.id = 'dynamic-css-weton';
-        style.textContent = res.data.css;
-        if (!document.getElementById('dynamic-css-weton')) {
+    // Coba muat CSS dari MySQL, TAPI jangan tahan render
+    fetch('/api/theme.php')
+      .then(res => res.json())
+      .then(data => {
+        let style = document.getElementById('dynamic-css-weton');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'dynamic-css-weton';
           document.head.appendChild(style);
         }
+        style.textContent = data.css || '';
       })
-      .catch(err => console.error('Gagal muat CSS:', err))
-      .finally(() => setCssLoaded(true));
-  }, []);
+      .catch(err => {
+        console.warn('Gagal muat CSS dari MySQL, lanjutkan tanpa CSS', err);
+      })
+      .finally(() => {
+        // 🔥 INI YANG SANGAT PENTING: JANGAN TUNGGU CSS!
+        // Kalau CSS gagal, tetap tampilkan komponen!
+        if (!wetonInfo) {
+          hitungWeton(new Date()); // Pastikan wetonInfo terisi
+        }
+      });
+  }, [wetonInfo]);
 
-  if (!cssLoaded || !wetonInfo) return <div className="loading">Memuat...</div>;
+  // Jika belum ada data, isi default
+  if (!wetonInfo) {
+    return <div className="loading">Memuat...</div>;
+  }
 
   return (
     <div className="weton-container">
       <h3>🧭 Weton & Arah Spiritual</h3>
 
-      {/* Flatpickr Inline - TAMPIL LANGSUNG SEPERTI EXCEL */}
+      {/* Flatpickr Inline */}
       <div ref={flatpickrRef} className="flatpickr-inline"></div>
 
-      {/* Deskripsi Hasil */}
+      {/* Hasil */}
       <div className="weton-result">
-        <h4>📅 Informasi Weton</h4>
+        <h4>📅 Hasil Weton</h4>
         <p><strong>Tanggal:</strong> {wetonInfo.tanggal}</p>
         <p><strong>Hari:</strong> {wetonInfo.hari} ({wetonInfo.neptuHari})</p>
         <p><strong>Weton:</strong> {wetonInfo.weton} ({wetonInfo.neptuWeton})</p>
-        <p><strong>Arah Ke:</strong> <span className="arah-bold">{wetonInfo.arah}</span></p>
+        <p><strong>Arah Ke:</strong> <span style={{ fontWeight: 'bold', color: '#d32f2f' }}>{wetonInfo.arah}</span></p>
         <p><strong>Neptu Total:</strong> {wetonInfo.totalNeptu}</p>
-        <p className="small-text">
+        <p style={{ fontSize: '0.85rem', color: '#666' }}>
           <em>{wetonInfo.isAfterSunset ? 'Weton sudah berganti (setelah 18:00)' : 'Masih weton hari ini'}</em>
         </p>
       </div>
 
       {/* Diagram Mata Angin */}
-      <div className="mata-angin-diagram">
-        <div className={`utara ${wetonInfo.weton === 'Wage' ? 'active' : ''}`}>
-          <span>Utara</span>
-          <small>Wage</small>
-          {wetonInfo.weton === 'Wage' && <span className="active-arrow">↑</span>}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        gridTemplateRows: '1fr auto 1fr',
+        gap: '8px',
+        maxWidth: '300px',
+        margin: '20px auto',
+        textAlign: 'center'
+      }}>
+        <div style={{
+          backgroundColor: wetonInfo.weton === 'Wage' ? '#e3f2fd' : '#f1f3f5',
+          padding: '10px',
+          borderRadius: '8px',
+          fontWeight: wetonInfo.weton === 'Wage' ? 'bold' : 'normal'
+        }}>
+          Utara<br/><small>Wage</small>
         </div>
-        <div className={`barat ${wetonInfo.weton === 'Pon' ? 'active' : ''}`}>
-          <span>Barat</span>
-          <small>Pon</small>
-          {wetonInfo.weton === 'Pon' && <span className="active-arrow">←</span>}
+        <div></div>
+        <div></div>
+
+        <div style={{
+          backgroundColor: wetonInfo.weton === 'Pon' ? '#e3f2fd' : '#f1f3f5',
+          padding: '10px',
+          borderRadius: '8px',
+          fontWeight: wetonInfo.weton === 'Pon' ? 'bold' : 'normal'
+        }}>
+          Barat<br/><small>Pon</small>
         </div>
-        <div className={`pusat ${wetonInfo.weton === 'Kliwon' ? 'active' : ''}`}>
-          <span>Kliwon</span>
-          <small>Pusat</small>
-          {wetonInfo.weton === 'Kliwon' && <span className="active-dot">•</span>}
+
+        <div style={{
+          backgroundColor: wetonInfo.weton === 'Kliwon' ? '#bbdefb' : '#f3e5f5',
+          padding: '10px',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}>
+          Pusat<br/><small>Kliwon</small>
         </div>
-        <div className={`timur ${wetonInfo.weton === 'Legi' ? 'active' : ''}`}>
-          <span>Timur</span>
-          <small>Legi</small>
-          {wetonInfo.weton === 'Legi' && <span className="active-arrow">→</span>}
+
+        <div style={{
+          backgroundColor: wetonInfo.weton === 'Legi' ? '#e3f2fd' : '#f1f3f5',
+          padding: '10px',
+          borderRadius: '8px',
+          fontWeight: wetonInfo.weton === 'Legi' ? 'bold' : 'normal'
+        }}>
+          Timur<br/><small>Legi</small>
         </div>
-        <div className={`selatan ${wetonInfo.weton === 'Pahing' ? 'active' : ''}`}>
-          <span>Selatan</span>
-          <small>Pahing</small>
-          {wetonInfo.weton === 'Pahing' && <span className="active-arrow">↓</span>}
+
+        <div></div>
+        <div style={{
+          backgroundColor: wetonInfo.weton === 'Pahing' ? '#e3f2fd' : '#f1f3f5',
+          padding: '10px',
+          borderRadius: '8px',
+          fontWeight: wetonInfo.weton === 'Pahing' ? 'bold' : 'normal'
+        }}>
+          Selatan<br/><small>Pahing</small>
         </div>
+        <div></div>
       </div>
     </div>
   );
