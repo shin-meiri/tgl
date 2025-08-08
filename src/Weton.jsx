@@ -4,18 +4,12 @@ import axios from 'axios';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-// --- KONSTANTA LUAR KOMPONEN ---
-const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
+// --- KONSTANTA ---
+const EPOCH = new Date(1899, 11, 31);
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const NEPTU_HARI = {
-  Min: 5, Sen: 4, Sel: 3, Rab: 7, Kam: 8, Jum: 6, Sab: 9
-};
-
-const NEPTU_PASARAN = {
-  Legi: 5, Pahing: 9, Pon: 7, Wage: 4, Kliwon: 8
-};
-
+const NEPTU_HARI = { Min: 5, Sen: 4, Sel: 3, Rab: 7, Kam: 8, Jum: 6, Sab: 9 };
+const NEPTU_PASARAN = { Legi: 5, Pahing: 9, Pon: 7, Wage: 4, Kliwon: 8 };
 const ARAH_WETON = {
   Legi: 'Timur',
   Pahing: 'Selatan',
@@ -24,7 +18,7 @@ const ARAH_WETON = {
   Kliwon: 'Pusat'
 };
 
-// --- FUNGSI LUAR KOMPONEN ---
+// --- FUNGSI BANTUAN (di luar komponen) ---
 const getWeton = (date) => {
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
@@ -36,26 +30,19 @@ const getDayName = (date) => {
   return names[date.getDay()];
 };
 
-const isAfterSunset = () => {
-  const now = new Date();
-  return now.getHours() >= 18;
-};
+const isAfterSunset = () => new Date().getHours() >= 18;
 
 // --- KOMPONEN UTAMA ---
 const Weton = () => {
   const [todayWeton, setTodayWeton] = useState(null);
   const [selectedWeton, setSelectedWeton] = useState(null);
   const [cssLoaded, setCssLoaded] = useState(false);
-  const containerRef = useRef(null); // ✅ Hanya ini yang dipakai
+  const flatpickrContainer = useRef(null); // ✅ Hanya ini, tidak ada yang tidak terpakai
 
   // Hitung weton hari ini
   useEffect(() => {
     const now = new Date();
-    let baseDate = new Date(now);
-
-    if (isAfterSunset()) {
-      baseDate.setDate(now.getDate() + 1);
-    }
+    const baseDate = isAfterSunset() ? new Date(now.setDate(now.getDate() + 1)) : new Date();
 
     const hari = getDayName(baseDate);
     const weton = getWeton(baseDate);
@@ -64,26 +51,15 @@ const Weton = () => {
     const arah = ARAH_WETON[weton];
     const totalNeptu = neptuHari + neptuWeton;
 
-    const displayDate = now.toLocaleDateString('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
     setTodayWeton({
-      tanggal: displayDate,
-      hari,
-      weton,
-      neptuHari,
-      neptuWeton,
-      arah,
-      totalNeptu,
-      isAfterSunset: isAfterSunset()
+      tanggal: baseDate.toLocaleDateString('id-ID', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      }),
+      hari, weton, neptuHari, neptuWeton, arah, totalNeptu, isAfterSunset: isAfterSunset()
     });
   }, []);
 
-  // Fungsi hitung weton dari tanggal yang dipilih
+  // Hitung weton dari pilihan
   const hitungWeton = (date) => {
     const hari = getDayName(date);
     const weton = getWeton(date);
@@ -92,28 +68,18 @@ const Weton = () => {
     const arah = ARAH_WETON[weton];
     const totalNeptu = neptuHari + neptuWeton;
 
-    const formattedDate = date.toLocaleDateString('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
     setSelectedWeton({
-      tanggal: formattedDate,
-      hari,
-      weton,
-      neptuHari,
-      neptuWeton,
-      arah,
-      totalNeptu
+      tanggal: date.toLocaleDateString('id-ID', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      }),
+      hari, weton, neptuHari, neptuWeton, arah, totalNeptu
     });
   };
 
-  // Inisialisasi flatpickr inline
+  // Inisialisasi flatpickr inline (kalender mini)
   useEffect(() => {
-    if (containerRef.current) {
-      const fp = flatpickr(containerRef.current, {
+    if (flatpickrContainer.current) {
+      const fp = flatpickr(flatpickrContainer.current, {
         inline: true,
         defaultDate: new Date(),
         locale: {
@@ -127,37 +93,29 @@ const Weton = () => {
             longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
           }
         },
-        onChange: (selectedDates) => {
-          if (selectedDates.length > 0) {
-            hitungWeton(selectedDates[0]);
-          }
-        }
+        onChange: (dates) => dates[0] && hitungWeton(dates[0])
       });
 
-      // Hitung awal
-      hitungWeton(new Date());
+      hitungWeton(new Date()); // Default: hari ini
 
-      return () => fp.destroy();
+      return () => fp.destroy(); // Cleanup
     }
   }, []);
 
   // Muat CSS dari MySQL
   useEffect(() => {
-    const loadCSS = async () => {
-      try {
-        const res = await axios.get('/api/theme.php');
-        const css = res.data.css;
-        const style = document.getElementById('dynamic-css-weton') || document.createElement('style');
-        style.id = 'dynamic-css-weton';
-        style.textContent = css;
-        if (!style.isConnected) document.head.appendChild(style);
-      } catch (err) {
-        console.error('Gagal muat CSS:', err);
-      } finally {
-        setCssLoaded(true);
-      }
-    };
-    loadCSS();
+    axios.get('/api/theme.php')
+      .then(res => {
+        let style = document.getElementById('dynamic-css-weton');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'dynamic-css-weton';
+          document.head.appendChild(style);
+        }
+        style.textContent = res.data.css;
+      })
+      .catch(err => console.error('Gagal muat CSS:', err))
+      .finally(() => setCssLoaded(true));
   }, []);
 
   if (!cssLoaded || !todayWeton) return <div className="loading">Memuat...</div>;
@@ -179,10 +137,10 @@ const Weton = () => {
         </p>
       </div>
 
-      {/* Kalender Mini Flatpickr (Inline) */}
+      {/* Kalender Mini Flatpickr */}
       <div className="flatpickr-inline-container">
-        <h4>🗓️ Pilih Tanggal untuk Cek Weton</h4>
-        <div ref={containerRef}></div>
+        <h4>🗓️ Pilih Tanggal</h4>
+        <div ref={flatpickrContainer}></div>
       </div>
 
       {/* Hasil Pilihan */}
