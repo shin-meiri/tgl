@@ -1,8 +1,8 @@
 // Weton.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Tema resmi
+import 'flatpickr/dist/flatpickr.min.css';
 
 // --- KONSTANTA LUAR KOMPONEN ---
 const EPOCH = new Date(1899, 11, 31);
@@ -38,8 +38,7 @@ const getDayName = (date) => {
 
 const isAfterSunset = () => {
   const now = new Date();
-  const hours = now.getHours();
-  return hours >= 18;
+  return now.getHours() >= 18;
 };
 
 // --- KOMPONEN UTAMA ---
@@ -49,7 +48,7 @@ const Weton = () => {
   const [cssLoaded, setCssLoaded] = useState(false);
   const datePickerRef = useRef(null);
 
-  // Hitung weton hari ini (dengan aturan 18:00)
+  // Hitung weton hari ini
   useEffect(() => {
     const now = new Date();
     let baseDate = new Date(now);
@@ -84,37 +83,8 @@ const Weton = () => {
     });
   }, []);
 
-  // Inisialisasi flatpickr
-  useEffect(() => {
-    if (datePickerRef.current) {
-      flatpickr(datePickerRef.current, {
-        dateFormat: 'd F Y',
-        locale: {
-          firstDayOfWeek: 1,
-          weekdays: {
-            shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-            longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-          },
-          months: {
-            shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-            longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-          }
-        },
-        onChange: (selectedDates) => {
-          if (selectedDates.length > 0) {
-            hitungWetonCustom(selectedDates[0]);
-          }
-        }
-      });
-    }
-
-    return () => {
-      // Cleanup jika perlu
-    };
-  }, []);
-
-  // Fungsi hitung weton custom
-  const hitungWetonCustom = useCallback((date) => {
+  // Fungsi hitung weton custom (untuk dipakai di inline)
+  const hitungWetonCustom = (date) => {
     const hari = getDayName(date);
     const weton = getWeton(date);
     const neptuHari = NEPTU_HARI[hari];
@@ -138,7 +108,33 @@ const Weton = () => {
       arah,
       totalNeptu
     });
-  }, []);
+  };
+
+  // Inisialisasi flatpickr — tanpa dependensi pada hitungWetonCustom
+  useEffect(() => {
+    if (datePickerRef.current) {
+      flatpickr(datePickerRef.current, {
+        dateFormat: 'd F Y',
+        locale: {
+          firstDayOfWeek: 1,
+          weekdays: {
+            shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+            longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+          },
+          months: {
+            shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+            longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+          }
+        },
+        onChange: (selectedDates) => {
+          if (selectedDates.length > 0) {
+            // ✅ Gunakan langsung, tanpa ketergantungan pada fungsi di dep
+            hitungWetonCustom(selectedDates[0]);
+          }
+        }
+      });
+    }
+  }, []); // ✅ Tidak perlu dependensi — hanya dijalankan sekali
 
   // Muat CSS dari MySQL
   useEffect(() => {
@@ -178,7 +174,7 @@ const Weton = () => {
         </p>
       </div>
 
-      {/* Input Cek Weton Tanggal Lain */}
+      {/* Input Cek Weton */}
       <div className="custom-input">
         <h4>🔍 Cek Weton Tanggal Lain</h4>
         <input
