@@ -4,7 +4,7 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 // --- Konstanta Weton ---
-const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
+const EPOCH = new Date(1899, 11, 31); // 1 Jan 1900 = Legi
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const NEPTU_HARI = { Min: 5, Sen: 4, Sel: 3, Rab: 7, Kam: 8, Jum: 6, Sab: 9 };
@@ -34,8 +34,8 @@ const Weton = () => {
   const [wetonInfo, setWetonInfo] = useState(null);
   const flatpickrRef = useRef(null);
 
-  // Hitung weton
   const hitungWeton = (date) => {
+    // Pergantian weton jam 18:00
     const isAfterSunset = date.getHours() >= 18;
     const baseDate = new Date(date);
     if (isAfterSunset) baseDate.setDate(baseDate.getDate() + 1);
@@ -48,16 +48,24 @@ const Weton = () => {
     const totalNeptu = neptuHari + neptuWeton;
 
     const formattedDate = baseDate.toLocaleDateString('id-ID', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
     });
 
     setWetonInfo({
       tanggal: formattedDate,
-      hari, weton, neptuHari, neptuWeton, arah, totalNeptu, isAfterSunset
+      hari,
+      weton,
+      neptuHari,
+      neptuWeton,
+      arah,
+      totalNeptu,
+      isAfterSunset
     });
   };
 
-  // Inisialisasi flatpickr
   useEffect(() => {
     if (flatpickrRef.current) {
       const fp = flatpickr(flatpickrRef.current, {
@@ -74,64 +82,39 @@ const Weton = () => {
             longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
           }
         },
-        onChange: (dates) => dates[0] && hitungWeton(dates[0])
+        onChange: (dates) => {
+          if (dates.length > 0) hitungWeton(dates[0]);
+        }
       });
 
-      // Hitung langsung
+      // Hitung weton hari ini
       hitungWeton(new Date());
 
       return () => fp.destroy();
     }
   }, []);
 
-  // Jangan pakai axios untuk CSS — karena kamu bilang Kalender jalan, Weton harus jalan tanpa ketergantungan
-  // Kita langsung lanjutkan meski CSS dari MySQL tidak dimuat
-  useEffect(() => {
-    // Coba muat CSS dari MySQL, TAPI jangan tahan render
-    fetch('/api/theme.php')
-      .then(res => res.json())
-      .then(data => {
-        let style = document.getElementById('dynamic-css-weton');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = 'dynamic-css-weton';
-          document.head.appendChild(style);
-        }
-        style.textContent = data.css || '';
-      })
-      .catch(err => {
-        console.warn('Gagal muat CSS dari MySQL, lanjutkan tanpa CSS', err);
-      })
-      .finally(() => {
-        // 🔥 INI YANG SANGAT PENTING: JANGAN TUNGGU CSS!
-        // Kalau CSS gagal, tetap tampilkan komponen!
-        if (!wetonInfo) {
-          hitungWeton(new Date()); // Pastikan wetonInfo terisi
-        }
-      });
-  }, [wetonInfo]);
-
-  // Jika belum ada data, isi default
+  // Jika belum ada data, jangan stuck
   if (!wetonInfo) {
-    return <div className="loading">Memuat...</div>;
+    return <div style={{ padding: '20px', textAlign: 'center' }}>Memuat kalender...</div>;
   }
 
   return (
-    <div className="weton-container">
+    <div style={{ fontFamily: 'Segoe UI, sans-serif', padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h3>🧭 Weton & Arah Spiritual</h3>
 
-      {/* Flatpickr Inline */}
-      <div ref={flatpickrRef} className="flatpickr-inline"></div>
+      {/* Flatpickr Inline - TAMPIL LANGSUNG */}
+      <div ref={flatpickrRef} style={{ marginBottom: '20px' }}></div>
 
-      {/* Hasil */}
-      <div className="weton-result">
-        <h4>📅 Hasil Weton</h4>
+      {/* Informasi Weton */}
+      <div className="weton-result" style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px', fontSize: '0.95rem' }}>
+        <h4>📅 Informasi Weton</h4>
         <p><strong>Tanggal:</strong> {wetonInfo.tanggal}</p>
         <p><strong>Hari:</strong> {wetonInfo.hari} ({wetonInfo.neptuHari})</p>
         <p><strong>Weton:</strong> {wetonInfo.weton} ({wetonInfo.neptuWeton})</p>
         <p><strong>Arah Ke:</strong> <span style={{ fontWeight: 'bold', color: '#d32f2f' }}>{wetonInfo.arah}</span></p>
         <p><strong>Neptu Total:</strong> {wetonInfo.totalNeptu}</p>
-        <p style={{ fontSize: '0.85rem', color: '#666' }}>
+        <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '8px' }}>
           <em>{wetonInfo.isAfterSunset ? 'Weton sudah berganti (setelah 18:00)' : 'Masih weton hari ini'}</em>
         </p>
       </div>
@@ -143,8 +126,9 @@ const Weton = () => {
         gridTemplateRows: '1fr auto 1fr',
         gap: '8px',
         maxWidth: '300px',
-        margin: '20px auto',
-        textAlign: 'center'
+        margin: '25px auto',
+        textAlign: 'center',
+        fontSize: '0.9rem'
       }}>
         <div style={{
           backgroundColor: wetonInfo.weton === 'Wage' ? '#e3f2fd' : '#f1f3f5',
@@ -153,7 +137,9 @@ const Weton = () => {
           fontWeight: wetonInfo.weton === 'Wage' ? 'bold' : 'normal'
         }}>
           Utara<br/><small>Wage</small>
+          {wetonInfo.weton === 'Wage' && <span style={{ display: 'block', marginTop: '4px', fontSize: '1.2rem' }}>↑</span>}
         </div>
+
         <div></div>
         <div></div>
 
@@ -164,15 +150,17 @@ const Weton = () => {
           fontWeight: wetonInfo.weton === 'Pon' ? 'bold' : 'normal'
         }}>
           Barat<br/><small>Pon</small>
+          {wetonInfo.weton === 'Pon' && <span style={{ display: 'block', marginTop: '4px', fontSize: '1.2rem' }}>←</span>}
         </div>
 
         <div style={{
-          backgroundColor: wetonInfo.weton === 'Kliwon' ? '#bbdefb' : '#f3e5f5',
+          backgroundColor: wetonInfo.weton === 'Kliwon' ? '#f3e5f5' : '#f9f9f9',
           padding: '10px',
           borderRadius: '8px',
           fontWeight: 'bold'
         }}>
           Pusat<br/><small>Kliwon</small>
+          {wetonInfo.weton === 'Kliwon' && <span style={{ display: 'block', fontSize: '1.4rem', color: '#9c27b0' }}>•</span>}
         </div>
 
         <div style={{
@@ -182,9 +170,11 @@ const Weton = () => {
           fontWeight: wetonInfo.weton === 'Legi' ? 'bold' : 'normal'
         }}>
           Timur<br/><small>Legi</small>
+          {wetonInfo.weton === 'Legi' && <span style={{ display: 'block', marginTop: '4px', fontSize: '1.2rem' }}>→</span>}
         </div>
 
         <div></div>
+
         <div style={{
           backgroundColor: wetonInfo.weton === 'Pahing' ? '#e3f2fd' : '#f1f3f5',
           padding: '10px',
@@ -192,7 +182,9 @@ const Weton = () => {
           fontWeight: wetonInfo.weton === 'Pahing' ? 'bold' : 'normal'
         }}>
           Selatan<br/><small>Pahing</small>
+          {wetonInfo.weton === 'Pahing' && <span style={{ display: 'block', marginTop: '4px', fontSize: '1.2rem' }}>↓</span>}
         </div>
+
         <div></div>
       </div>
     </div>
