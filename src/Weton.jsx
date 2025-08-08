@@ -44,9 +44,10 @@ const isAfterSunset = () => {
 // --- KOMPONEN UTAMA ---
 const Weton = () => {
   const [todayWeton, setTodayWeton] = useState(null);
-  const [customWeton, setCustomWeton] = useState(null);
+  const [selectedWeton, setSelectedWeton] = useState(null);
   const [cssLoaded, setCssLoaded] = useState(false);
-  const datePickerRef = useRef(null);
+  const flatpickrRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Hitung weton hari ini
   useEffect(() => {
@@ -83,8 +84,8 @@ const Weton = () => {
     });
   }, []);
 
-  // Fungsi hitung weton custom (untuk dipakai di inline)
-  const hitungWetonCustom = (date) => {
+  // Fungsi hitung weton dari tanggal yang dipilih
+  const hitungWeton = (date) => {
     const hari = getDayName(date);
     const weton = getWeton(date);
     const neptuHari = NEPTU_HARI[hari];
@@ -99,7 +100,7 @@ const Weton = () => {
       year: 'numeric'
     });
 
-    setCustomWeton({
+    setSelectedWeton({
       tanggal: formattedDate,
       hari,
       weton,
@@ -110,11 +111,13 @@ const Weton = () => {
     });
   };
 
-  // Inisialisasi flatpickr — tanpa dependensi pada hitungWetonCustom
+  // Inisialisasi flatpickr sebagai inline (kalender mini)
   useEffect(() => {
-    if (datePickerRef.current) {
-      flatpickr(datePickerRef.current, {
+    if (containerRef.current) {
+      const fp = flatpickr(containerRef.current, {
+        inline: true,
         dateFormat: 'd F Y',
+        defaultDate: new Date(),
         locale: {
           firstDayOfWeek: 1,
           weekdays: {
@@ -128,13 +131,17 @@ const Weton = () => {
         },
         onChange: (selectedDates) => {
           if (selectedDates.length > 0) {
-            // ✅ Gunakan langsung, tanpa ketergantungan pada fungsi di dep
-            hitungWetonCustom(selectedDates[0]);
+            hitungWeton(selectedDates[0]);
           }
         }
       });
+
+      // Inisialisasi dengan hari ini
+      hitungWeton(new Date());
+
+      return () => fp.destroy();
     }
-  }, []); // ✅ Tidak perlu dependensi — hanya dijalankan sekali
+  }, []);
 
   // Muat CSS dari MySQL
   useEffect(() => {
@@ -174,54 +181,49 @@ const Weton = () => {
         </p>
       </div>
 
-      {/* Input Cek Weton */}
-      <div className="custom-input">
-        <h4>🔍 Cek Weton Tanggal Lain</h4>
-        <input
-          ref={datePickerRef}
-          type="text"
-          placeholder="Pilih tanggal"
-          className="flatpickr-input"
-        />
+      {/* Kalender Mini Flatpickr (Inline) */}
+      <div className="flatpickr-inline-container">
+        <h4>🗓️ Pilih Tanggal untuk Cek Weton</h4>
+        <div ref={containerRef}></div>
       </div>
 
-      {/* Hasil Custom */}
-      {customWeton && (
+      {/* Hasil Pilihan */}
+      {selectedWeton && (
         <div className="weton-info custom-result">
-          <h4>🎯 Hasil untuk {customWeton.tanggal}</h4>
-          <p><strong>Hari:</strong> {customWeton.hari} ({customWeton.neptuHari})</p>
-          <p><strong>Weton:</strong> {customWeton.weton} ({customWeton.neptuWeton})</p>
-          <p><strong>Arah Ke:</strong> <span className="arah-bold">{customWeton.arah}</span></p>
-          <p><strong>Neptu Total:</strong> {customWeton.totalNeptu}</p>
+          <h4>🎯 Hasil untuk {selectedWeton.tanggal}</h4>
+          <p><strong>Hari:</strong> {selectedWeton.hari} ({selectedWeton.neptuHari})</p>
+          <p><strong>Weton:</strong> {selectedWeton.weton} ({selectedWeton.neptuWeton})</p>
+          <p><strong>Arah Ke:</strong> <span className="arah-bold">{selectedWeton.arah}</span></p>
+          <p><strong>Neptu Total:</strong> {selectedWeton.totalNeptu}</p>
         </div>
       )}
 
       {/* Diagram Mata Angin */}
       <div className="mata-angin-diagram">
-        <div className={`utara ${customWeton?.weton === 'Wage' || todayWeton.weton === 'Wage' ? 'active' : ''}`}>
+        <div className={`utara ${selectedWeton?.weton === 'Wage' || todayWeton.weton === 'Wage' ? 'active' : ''}`}>
           <span>Utara</span>
           <small>Wage</small>
-          {(customWeton?.weton === 'Wage' || todayWeton.weton === 'Wage') && <span className="active-arrow">↑</span>}
+          {(selectedWeton?.weton === 'Wage' || todayWeton.weton === 'Wage') && <span className="active-arrow">↑</span>}
         </div>
-        <div className={`barat ${customWeton?.weton === 'Pon' || todayWeton.weton === 'Pon' ? 'active' : ''}`}>
+        <div className={`barat ${selectedWeton?.weton === 'Pon' || todayWeton.weton === 'Pon' ? 'active' : ''}`}>
           <span>Barat</span>
           <small>Pon</small>
-          {(customWeton?.weton === 'Pon' || todayWeton.weton === 'Pon') && <span className="active-arrow">←</span>}
+          {(selectedWeton?.weton === 'Pon' || todayWeton.weton === 'Pon') && <span className="active-arrow">←</span>}
         </div>
-        <div className={`pusat ${customWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon' ? 'active' : ''}`}>
+        <div className={`pusat ${selectedWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon' ? 'active' : ''}`}>
           <span>Kliwon</span>
           <small>Pusat</small>
-          {(customWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon') && <span className="active-dot">•</span>}
+          {(selectedWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon') && <span className="active-dot">•</span>}
         </div>
-        <div className={`timur ${customWeton?.weton === 'Legi' || todayWeton.weton === 'Legi' ? 'active' : ''}`}>
+        <div className={`timur ${selectedWeton?.weton === 'Legi' || todayWeton.weton === 'Legi' ? 'active' : ''}`}>
           <span>Timur</span>
           <small>Legi</small>
-          {(customWeton?.weton === 'Legi' || todayWeton.weton === 'Legi') && <span className="active-arrow">→</span>}
+          {(selectedWeton?.weton === 'Legi' || todayWeton.weton === 'Legi') && <span className="active-arrow">→</span>}
         </div>
-        <div className={`selatan ${customWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing' ? 'active' : ''}`}>
+        <div className={`selatan ${selectedWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing' ? 'active' : ''}`}>
           <span>Selatan</span>
           <small>Pahing</small>
-          {(customWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing') && <span className="active-arrow">↓</span>}
+          {(selectedWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing') && <span className="active-arrow">↓</span>}
         </div>
       </div>
     </div>
