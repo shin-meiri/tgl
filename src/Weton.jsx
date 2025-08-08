@@ -5,7 +5,7 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 // --- KONSTANTA LUAR KOMPONEN ---
-const EPOCH = new Date(1899, 11, 31);
+const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const NEPTU_HARI = {
@@ -46,8 +46,7 @@ const Weton = () => {
   const [todayWeton, setTodayWeton] = useState(null);
   const [selectedWeton, setSelectedWeton] = useState(null);
   const [cssLoaded, setCssLoaded] = useState(false);
-  const flatpickrRef = useRef(null);
-  const containerRef = useRef(null);
+  const containerRef = useRef(null); // ✅ Hanya ini yang dipakai
 
   // Hitung weton hari ini
   useEffect(() => {
@@ -111,12 +110,11 @@ const Weton = () => {
     });
   };
 
-  // Inisialisasi flatpickr sebagai inline (kalender mini)
+  // Inisialisasi flatpickr inline
   useEffect(() => {
     if (containerRef.current) {
       const fp = flatpickr(containerRef.current, {
         inline: true,
-        dateFormat: 'd F Y',
         defaultDate: new Date(),
         locale: {
           firstDayOfWeek: 1,
@@ -136,7 +134,7 @@ const Weton = () => {
         }
       });
 
-      // Inisialisasi dengan hari ini
+      // Hitung awal
       hitungWeton(new Date());
 
       return () => fp.destroy();
