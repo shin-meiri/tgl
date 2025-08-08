@@ -4,8 +4,8 @@ import axios from 'axios';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-// --- KONSTANTA ---
-const EPOCH = new Date(1899, 11, 31);
+// --- Konstanta Weton ---
+const EPOCH = new Date(1899, 11, 31); // 31 Des 1899 → 1 Jan 1900 = Legi
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const NEPTU_HARI = { Min: 5, Sen: 4, Sel: 3, Rab: 7, Kam: 8, Jum: 6, Sab: 9 };
@@ -18,7 +18,7 @@ const ARAH_WETON = {
   Kliwon: 'Pusat'
 };
 
-// --- FUNGSI BANTUAN (di luar komponen) ---
+// --- Fungsi Luar Komponen ---
 const getWeton = (date) => {
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const diff = Math.floor((date - EPOCH) / MS_PER_DAY);
@@ -30,19 +30,20 @@ const getDayName = (date) => {
   return names[date.getDay()];
 };
 
-const isAfterSunset = () => new Date().getHours() >= 18;
-
 // --- KOMPONEN UTAMA ---
 const Weton = () => {
-  const [todayWeton, setTodayWeton] = useState(null);
-  const [selectedWeton, setSelectedWeton] = useState(null);
+  const [wetonInfo, setWetonInfo] = useState(null);
   const [cssLoaded, setCssLoaded] = useState(false);
-  const flatpickrContainer = useRef(null); // ✅ Hanya ini, tidak ada yang tidak terpakai
+  const flatpickrRef = useRef(null); // Untuk container flatpickr
 
-  // Hitung weton hari ini
-  useEffect(() => {
-    const now = new Date();
-    const baseDate = isAfterSunset() ? new Date(now.setDate(now.getDate() + 1)) : new Date();
+  // Hitung weton dari tanggal
+  const hitungWeton = (date) => {
+    // Cek apakah sudah lewat 18:00 → weton = besok
+    const isAfterSunset = date.getHours() >= 18;
+    const baseDate = new Date(date);
+    if (isAfterSunset) {
+      baseDate.setDate(baseDate.getDate() + 1);
+    }
 
     const hari = getDayName(baseDate);
     const weton = getWeton(baseDate);
@@ -51,37 +52,32 @@ const Weton = () => {
     const arah = ARAH_WETON[weton];
     const totalNeptu = neptuHari + neptuWeton;
 
-    setTodayWeton({
-      tanggal: baseDate.toLocaleDateString('id-ID', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      }),
-      hari, weton, neptuHari, neptuWeton, arah, totalNeptu, isAfterSunset: isAfterSunset()
+    const formattedDate = baseDate.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
     });
-  }, []);
 
-  // Hitung weton dari pilihan
-  const hitungWeton = (date) => {
-    const hari = getDayName(date);
-    const weton = getWeton(date);
-    const neptuHari = NEPTU_HARI[hari];
-    const neptuWeton = NEPTU_PASARAN[weton];
-    const arah = ARAH_WETON[weton];
-    const totalNeptu = neptuHari + neptuWeton;
-
-    setSelectedWeton({
-      tanggal: date.toLocaleDateString('id-ID', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      }),
-      hari, weton, neptuHari, neptuWeton, arah, totalNeptu
+    setWetonInfo({
+      tanggal: formattedDate,
+      hari,
+      weton,
+      neptuHari,
+      neptuWeton,
+      arah,
+      totalNeptu,
+      isAfterSunset
     });
   };
 
-  // Inisialisasi flatpickr inline (kalender mini)
+  // Inisialisasi flatpickr (inline, seperti Excel)
   useEffect(() => {
-    if (flatpickrContainer.current) {
-      const fp = flatpickr(flatpickrContainer.current, {
-        inline: true,
-        defaultDate: new Date(),
+    if (flatpickrRef.current) {
+      const fp = flatpickr(flatpickrRef.current, {
+        inline: true,           // Tampilkan langsung, bukan input
+        defaultDate: new Date(), // Default = hari ini
+        dateFormat: 'Y-m-d',
         locale: {
           firstDayOfWeek: 1,
           weekdays: {
@@ -93,12 +89,17 @@ const Weton = () => {
             longhand: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
           }
         },
-        onChange: (dates) => dates[0] && hitungWeton(dates[0])
+        onChange: (selectedDates) => {
+          if (selectedDates.length > 0) {
+            hitungWeton(selectedDates[0]);
+          }
+        }
       });
 
-      hitungWeton(new Date()); // Default: hari ini
+      // Hitung weton untuk hari ini saat pertama kali
+      hitungWeton(new Date());
 
-      return () => fp.destroy(); // Cleanup
+      return () => fp.destroy();
     }
   }, []);
 
@@ -106,80 +107,65 @@ const Weton = () => {
   useEffect(() => {
     axios.get('/api/theme.php')
       .then(res => {
-        let style = document.getElementById('dynamic-css-weton');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = 'dynamic-css-weton';
+        const style = document.createElement('style');
+        style.id = 'dynamic-css-weton';
+        style.textContent = res.data.css;
+        if (!document.getElementById('dynamic-css-weton')) {
           document.head.appendChild(style);
         }
-        style.textContent = res.data.css;
       })
       .catch(err => console.error('Gagal muat CSS:', err))
       .finally(() => setCssLoaded(true));
   }, []);
 
-  if (!cssLoaded || !todayWeton) return <div className="loading">Memuat...</div>;
+  if (!cssLoaded || !wetonInfo) return <div className="loading">Memuat...</div>;
 
   return (
     <div className="weton-container">
       <h3>🧭 Weton & Arah Spiritual</h3>
 
-      {/* Weton Hari Ini */}
-      <div className="weton-info">
-        <h4>📅 Weton Hari Ini</h4>
-        <p><strong>Tanggal:</strong> {todayWeton.tanggal}</p>
-        <p><strong>Hari:</strong> {todayWeton.hari} ({todayWeton.neptuHari})</p>
-        <p><strong>Weton:</strong> {todayWeton.weton} ({todayWeton.neptuWeton})</p>
-        <p><strong>Arah Ke:</strong> <span className="arah-bold">{todayWeton.arah}</span></p>
-        <p><strong>Neptu Total:</strong> {todayWeton.totalNeptu}</p>
+      {/* Flatpickr Inline - TAMPIL LANGSUNG SEPERTI EXCEL */}
+      <div ref={flatpickrRef} className="flatpickr-inline"></div>
+
+      {/* Deskripsi Hasil */}
+      <div className="weton-result">
+        <h4>📅 Informasi Weton</h4>
+        <p><strong>Tanggal:</strong> {wetonInfo.tanggal}</p>
+        <p><strong>Hari:</strong> {wetonInfo.hari} ({wetonInfo.neptuHari})</p>
+        <p><strong>Weton:</strong> {wetonInfo.weton} ({wetonInfo.neptuWeton})</p>
+        <p><strong>Arah Ke:</strong> <span className="arah-bold">{wetonInfo.arah}</span></p>
+        <p><strong>Neptu Total:</strong> {wetonInfo.totalNeptu}</p>
         <p className="small-text">
-          <em>{todayWeton.isAfterSunset ? 'Weton sudah berganti (setelah 18:00)' : 'Masih weton hari ini'}</em>
+          <em>{wetonInfo.isAfterSunset ? 'Weton sudah berganti (setelah 18:00)' : 'Masih weton hari ini'}</em>
         </p>
       </div>
 
-      {/* Kalender Mini Flatpickr */}
-      <div className="flatpickr-inline-container">
-        <h4>🗓️ Pilih Tanggal</h4>
-        <div ref={flatpickrContainer}></div>
-      </div>
-
-      {/* Hasil Pilihan */}
-      {selectedWeton && (
-        <div className="weton-info custom-result">
-          <h4>🎯 Hasil untuk {selectedWeton.tanggal}</h4>
-          <p><strong>Hari:</strong> {selectedWeton.hari} ({selectedWeton.neptuHari})</p>
-          <p><strong>Weton:</strong> {selectedWeton.weton} ({selectedWeton.neptuWeton})</p>
-          <p><strong>Arah Ke:</strong> <span className="arah-bold">{selectedWeton.arah}</span></p>
-          <p><strong>Neptu Total:</strong> {selectedWeton.totalNeptu}</p>
-        </div>
-      )}
-
       {/* Diagram Mata Angin */}
       <div className="mata-angin-diagram">
-        <div className={`utara ${selectedWeton?.weton === 'Wage' || todayWeton.weton === 'Wage' ? 'active' : ''}`}>
+        <div className={`utara ${wetonInfo.weton === 'Wage' ? 'active' : ''}`}>
           <span>Utara</span>
           <small>Wage</small>
-          {(selectedWeton?.weton === 'Wage' || todayWeton.weton === 'Wage') && <span className="active-arrow">↑</span>}
+          {wetonInfo.weton === 'Wage' && <span className="active-arrow">↑</span>}
         </div>
-        <div className={`barat ${selectedWeton?.weton === 'Pon' || todayWeton.weton === 'Pon' ? 'active' : ''}`}>
+        <div className={`barat ${wetonInfo.weton === 'Pon' ? 'active' : ''}`}>
           <span>Barat</span>
           <small>Pon</small>
-          {(selectedWeton?.weton === 'Pon' || todayWeton.weton === 'Pon') && <span className="active-arrow">←</span>}
+          {wetonInfo.weton === 'Pon' && <span className="active-arrow">←</span>}
         </div>
-        <div className={`pusat ${selectedWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon' ? 'active' : ''}`}>
+        <div className={`pusat ${wetonInfo.weton === 'Kliwon' ? 'active' : ''}`}>
           <span>Kliwon</span>
           <small>Pusat</small>
-          {(selectedWeton?.weton === 'Kliwon' || todayWeton.weton === 'Kliwon') && <span className="active-dot">•</span>}
+          {wetonInfo.weton === 'Kliwon' && <span className="active-dot">•</span>}
         </div>
-        <div className={`timur ${selectedWeton?.weton === 'Legi' || todayWeton.weton === 'Legi' ? 'active' : ''}`}>
+        <div className={`timur ${wetonInfo.weton === 'Legi' ? 'active' : ''}`}>
           <span>Timur</span>
           <small>Legi</small>
-          {(selectedWeton?.weton === 'Legi' || todayWeton.weton === 'Legi') && <span className="active-arrow">→</span>}
+          {wetonInfo.weton === 'Legi' && <span className="active-arrow">→</span>}
         </div>
-        <div className={`selatan ${selectedWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing' ? 'active' : ''}`}>
+        <div className={`selatan ${wetonInfo.weton === 'Pahing' ? 'active' : ''}`}>
           <span>Selatan</span>
           <small>Pahing</small>
-          {(selectedWeton?.weton === 'Pahing' || todayWeton.weton === 'Pahing') && <span className="active-arrow">↓</span>}
+          {wetonInfo.weton === 'Pahing' && <span className="active-arrow">↓</span>}
         </div>
       </div>
     </div>
