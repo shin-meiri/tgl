@@ -1,14 +1,14 @@
 // src/App.jsx
 import React, { useEffect } from 'react';
-import Header from './components/Header';
-import Kalender from './components/Kalender';
+import Header from './Header';
+import Kalender from './Kalender';
 
 const App = () => {
   // Load CSS dari theme.php (dari database)
   useEffect(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'theme.php'; // Ganti dengan domain kamu
+    link.href = './theme.php'; // Ganti dengan domain kamu
     link.id = 'dynamic-theme';
     document.head.appendChild(link);
 
