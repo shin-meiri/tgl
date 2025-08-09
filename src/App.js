@@ -8,7 +8,7 @@ const App = () => {
   useEffect(() => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = './api/theme.php'; // Ganti dengan domain kamu
+    link.href = 'https://bos.ct.ws/api/theme.php'; // Ganti dengan domain kamu
     link.id = 'dynamic-theme';
     document.head.appendChild(link);
 
