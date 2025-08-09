@@ -1,34 +1,28 @@
-// App.js
-import React, { useState } from 'react';
-import Kalender from './Kalender';
-import Weton from './Weton';
-import './App.css';
+// src/App.jsx
+import React, { useEffect } from 'react';
+import Header from './components/Header';
+import Kalender from './components/Kalender';
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('kalender');
+  // Load CSS dari theme.php (dari database)
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'theme.php'; // Ganti dengan domain kamu
+    link.id = 'dynamic-theme';
+    document.head.appendChild(link);
+
+    return () => {
+      const existing = document.getElementById('dynamic-theme');
+      if (existing) document.head.removeChild(existing);
+    };
+  }, []);
 
   return (
     <div className="app">
-      {/* Menubar Navigasi */}
-      <nav className="menubar">
-        <button
-          className={activeTab === 'kalender' ? 'active' : ''}
-          onClick={() => setActiveTab('kalender')}
-        >
-          📅 Kalender
-        </button>
-        <button
-          className={activeTab === 'weton' ? 'active' : ''}
-          onClick={() => setActiveTab('weton')}
-        >
-          🧭 Weton
-        </button>
-      </nav>
-
-      {/* Konten Utama */}
-      <main className="main-content">
-        {activeTab === 'kalender' && <Kalender />}
-        {activeTab === 'weton' && <Weton />}
+      <Header />
+      <main className="p-6">
+        <Kalender />
       </main>
     </div>
   );
