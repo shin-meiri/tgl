@@ -10,25 +10,18 @@ const Kalender = () => {
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
-  const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']; // Agar muat di HP
+  const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-  // Ambil libur dari API
   useEffect(() => {
-    fetch('https://namasite.infinityfreeapp.com/libur.php') // Ganti domain
-      .then(r => r.json())
-      .then(data => {
+    fetch('https://namasite.infinityfreeapp.com/libur.php')
+      .then((r) => r.json())
+      .then((data) => {
         if (data.success) setHolidays(data.data);
       })
-      .catch(err => console.error('Gagal ambil libur:', err));
+      .catch((err) => console.error('Gagal ambil libur:', err));
   }, []);
 
-  // Cek apakah tanggal adalah libur
-  const isHoliday = (date) => {
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    return holidays.find(h => h.date === dateString);
-  };
-
-  // Generate hari
+  // ✅ Perbaikan: Gunakan holidays di dalam useMemo
   const days = useMemo(() => {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -36,22 +29,33 @@ const Kalender = () => {
 
     const result = [];
 
+    // Helper: cek apakah tanggal adalah libur
+    const isHoliday = (date) => {
+      const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      return holidays.some((h) => h.date === dateString);
+    };
+
+    // Bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
-      result.push({ date: prevMonthDays - i, isCurrent: false, fullDate: new Date(currentYear, currentMonth - 1, prevMonthDays - i) });
+      const d = new Date(currentYear, currentMonth - 1, prevMonthDays - i);
+      result.push({ date: prevMonthDays - i, isCurrent: false, fullDate: d, holiday: isHoliday(d) });
     }
 
+    // Bulan ini
     for (let i = 1; i <= daysInMonth; i++) {
-      const fullDate = new Date(currentYear, currentMonth, i);
-      result.push({ date: i, isCurrent: true, fullDate });
+      const d = new Date(currentYear, currentMonth, i);
+      result.push({ date: i, isCurrent: true, fullDate: d, holiday: isHoliday(d) });
     }
 
+    // Bulan depan
     const totalCells = Math.ceil(result.length / 7) * 7;
     for (let i = result.length; i < totalCells; i++) {
-      result.push({ date: i - result.length + 1, isCurrent: false, fullDate: new Date(currentYear, currentMonth + 1, i - result.length + 1) });
+      const d = new Date(currentYear, currentMonth + 1, i - result.length + 1);
+      result.push({ date: i - result.length + 1, isCurrent: false, fullDate: d, holiday: isHoliday(d) });
     }
 
     return result;
-  }, [currentMonth, currentYear, holidays]);
+  }, [currentMonth, currentYear, holidays]); // ✅ Sekarang valid: holidays digunakan
 
   const handleChange = (dateArray) => {
     setSelectedDate(dateArray[0]);
@@ -59,7 +63,6 @@ const Kalender = () => {
 
   return (
     <div className="calendar-container">
-      {/* Navigasi */}
       <Flatpickr
         value={selectedDate}
         onChange={handleChange}
@@ -71,7 +74,7 @@ const Kalender = () => {
           yearSelectorType: 'dropdown',
           locale: {
             firstDayOfWeek: 1,
-            weekdays: { shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] },
+            weekdays: { shorthand: weekDays },
             months: {
               longhand: [
                 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -85,12 +88,11 @@ const Kalender = () => {
         placeholder="Pilih bulan..."
       />
 
-      {/* Kalender Responsif */}
       <div className="calendar-wrapper">
         <table>
           <thead>
             <tr>
-              {weekDays.map(day => (
+              {weekDays.map((day) => (
                 <th key={day} className="day-header">{day}</th>
               ))}
             </tr>
@@ -101,23 +103,20 @@ const Kalender = () => {
               const weekDays = days.slice(start, start + 7);
               return (
                 <tr key={week}>
-                  {weekDays.map((day, idx) => {
-                    const holiday = isHoliday(day.fullDate);
-                    return (
-                      <td
-                        key={idx}
-                        className={`
-                          ${day.isCurrent ? 'current-month' : 'other-month'}
-                          ${holiday ? 'holiday' : ''}
-                        `}
-                      >
-                        <div className="date-cell">
-                          {day.date}
-                          {holiday && <div className="holiday-dot"></div>}
-                        </div>
-                      </td>
-                    );
-                  })}
+                  {weekDays.map((day, idx) => (
+                    <td
+                      key={idx}
+                      className={`
+                        ${day.isCurrent ? 'current-month' : 'other-month'}
+                        ${day.holiday ? 'holiday' : ''}
+                      `.trim()}
+                    >
+                      <div className="date-cell">
+                        {day.date}
+                        {day.holiday && <div className="holiday-dot"></div>}
+                      </div>
+                    </td>
+                  ))}
                 </tr>
               );
             })}
@@ -125,7 +124,6 @@ const Kalender = () => {
         </table>
       </div>
 
-      {/* Keterangan Libur */}
       <div className="holiday-legend">
         <div className="legend-item">
           <span className="legend-dot holiday"></span>
