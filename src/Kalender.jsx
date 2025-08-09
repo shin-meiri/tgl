@@ -1,37 +1,32 @@
 // src/components/Kalender.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [holidays, setHolidays] = useState({}); // { '2025-08-17': 'Hari Kemerdekaan' }
+  const [holidays, setHolidays] = useState([]);
 
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
-  const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']; // Singkat agar muat di HP
+  const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']; // Agar muat di HP
 
   // Ambil libur dari API
-  React.useEffect(() => {
-    const fetchHolidays = async () => {
-      try {
-        const res = await fetch(`https://namasite.infinityfreeapp.com/libur.php?year=${currentYear}&month=${currentMonth + 1}`);
-        const data = await res.json();
-        if (data.success) {
-          const holidayMap = {};
-          data.data.forEach(h => {
-            holidayMap[h.tanggal] = h.nama;
-          });
-          setHolidays(holidayMap);
-        }
-      } catch (err) {
-        console.error('Gagal ambil libur:', err);
-      }
-    };
+  useEffect(() => {
+    fetch('https://namasite.infinityfreeapp.com/libur.php') // Ganti domain
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) setHolidays(data.data);
+      })
+      .catch(err => console.error('Gagal ambil libur:', err));
+  }, []);
 
-    fetchHolidays();
-  }, [currentYear, currentMonth]);
+  // Cek apakah tanggal adalah libur
+  const isHoliday = (date) => {
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return holidays.find(h => h.date === dateString);
+  };
 
   // Generate hari
   const days = useMemo(() => {
@@ -42,21 +37,17 @@ const Kalender = () => {
     const result = [];
 
     for (let i = firstDay - 1; i >= 0; i--) {
-      result.push({ date: prevMonthDays - i, isCurrent: false });
+      result.push({ date: prevMonthDays - i, isCurrent: false, fullDate: new Date(currentYear, currentMonth - 1, prevMonthDays - i) });
     }
 
     for (let i = 1; i <= daysInMonth; i++) {
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-      result.push({
-        date: i,
-        isCurrent: true,
-        isHoliday: !!holidays[dateStr]
-      });
+      const fullDate = new Date(currentYear, currentMonth, i);
+      result.push({ date: i, isCurrent: true, fullDate });
     }
 
     const totalCells = Math.ceil(result.length / 7) * 7;
     for (let i = result.length; i < totalCells; i++) {
-      result.push({ date: i - result.length + 1, isCurrent: false });
+      result.push({ date: i - result.length + 1, isCurrent: false, fullDate: new Date(currentYear, currentMonth + 1, i - result.length + 1) });
     }
 
     return result;
@@ -80,23 +71,27 @@ const Kalender = () => {
           yearSelectorType: 'dropdown',
           locale: {
             firstDayOfWeek: 1,
-            weekdays: { shorthand: ['Min','Sen','Sel','Rab','Kam','Jum','Sab'] },
+            weekdays: { shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] },
             months: {
-              longhand: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-            }
+              longhand: [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+              ],
+            },
           },
-          inline: false
+          allowInput: false,
         }}
         className="flatpickr-input"
+        placeholder="Pilih bulan..."
       />
 
-      {/* Tabel Responsif — Scroll Horizontal di HP */}
+      {/* Kalender Responsif */}
       <div className="calendar-wrapper">
         <table>
           <thead>
             <tr>
               {weekDays.map(day => (
-                <th key={day}>{day}</th>
+                <th key={day} className="day-header">{day}</th>
               ))}
             </tr>
           </thead>
@@ -107,22 +102,18 @@ const Kalender = () => {
               return (
                 <tr key={week}>
                   {weekDays.map((day, idx) => {
-                    const dateStr = day.isCurrent
-                      ? `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day.date).padStart(2, '0')}`
-                      : '';
-
+                    const holiday = isHoliday(day.fullDate);
                     return (
                       <td
                         key={idx}
-                        className={[
-                          day.isCurrent ? 'current-month' : 'other-month',
-                          day.isHoliday ? 'holiday' : ''
-                        ].filter(Boolean).join(' ')}
-                        title={day.isHoliday ? holidays[dateStr] : ''}
+                        className={`
+                          ${day.isCurrent ? 'current-month' : 'other-month'}
+                          ${holiday ? 'holiday' : ''}
+                        `}
                       >
                         <div className="date-cell">
                           {day.date}
-                          {day.isHoliday && <div className="dot"></div>}
+                          {holiday && <div className="holiday-dot"></div>}
                         </div>
                       </td>
                     );
@@ -132,6 +123,14 @@ const Kalender = () => {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Keterangan Libur */}
+      <div className="holiday-legend">
+        <div className="legend-item">
+          <span className="legend-dot holiday"></span>
+          <span>Hari Libur Nasional</span>
+        </div>
       </div>
     </div>
   );
