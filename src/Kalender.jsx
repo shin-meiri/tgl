@@ -5,125 +5,135 @@ import 'flatpickr/dist/flatpickr.min.css';
 import 'flatpickr/dist/themes/material_blue.css';
 
 const KalenderNavigasi = () => {
+  // Default: bulan ini
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Ambil bulan & tahun dari selectedDate
-  const selectedMonth = selectedDate.getMonth(); // 0-11
-  const selectedYear = selectedDate.getFullYear();
+  // Nama hari (Indonesia)
+  const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-  // Hari dalam seminggu (Indonesia)
-  const daysShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  const daysLong = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const monthsLong = [
+  // Nama bulan (Indonesia)
+  const bulanNama = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Dapatkan semua tanggal dalam bulan yang dipilih
-  const getDaysInMonth = (year, month) => {
-    const date = new Date(year, month, 1);
-    const days = [];
+  // Ambil bulan dan tahun dari selectedDate
+  const currentMonth = selectedDate.getMonth();
+  const currentYear = selectedDate.getFullYear();
 
-    // Tanggal dari akhir bulan lalu (jika bulan dimulai bukan dari Minggu)
-    const firstDay = date.getDay(); // 0 (Minggu) - 6 (Sabtu)
-    const prevMonth = new Date(year, month, 0).getDate();
-    for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({ date: prevMonth - i, isCurrentMonth: false });
+  // Dapatkan tanggal pertama dan terakhir bulan
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0 (Minggu) - 6 (Sabtu)
+  const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Siapkan grid kalender
+  const calendar = [];
+  let date = 1;
+
+  // Baris 1: dari minggu pertama
+  for (let i = 0; i < 6; i++) {
+    const week = [];
+
+    for (let j = 0; j < 7; j++) {
+      if (i === 0 && j < firstDay) {
+        // Tanggal dari bulan sebelumnya
+        const prevMonthLast = new Date(currentYear, currentMonth, 0).getDate();
+        week.push({ day: prevMonthLast - firstDay + j + 1, type: 'prev' });
+      } else if (date > lastDate) {
+        // Tanggal dari bulan berikutnya
+        week.push({ day: date - lastDate, type: 'next' });
+        date++;
+      } else {
+        week.push({ day: date, type: 'current' });
+        date++;
+      }
     }
 
-    // Tanggal bulan ini
-    while (date.getMonth() === month) {
-      days.push({ date: date.getDate(), isCurrentMonth: true });
-      date.setDate(date.getDate() + 1);
-    }
+    calendar.push(week);
 
-    // Tanggal awal bulan depan (untuk melengkapi grid 6x7)
-    const remaining = 42 - days.length; // 6 baris × 7 kolom
-    for (let i = 1; i <= remaining; i++) {
-      days.push({ date: i, isCurrentMonth: false });
-    }
+    // Hentikan jika sudah lewati semua tanggal
+    if (date > lastDate && i >= 1) break;
+  }
 
-    return days;
-  };
-
-  const days = getDaysInMonth(selectedYear, selectedMonth);
-
-  // Handle perubahan tanggal dari Flatpickr
-  const handleDateChange = (dates) => {
-    if (dates.length > 0) {
-      setSelectedDate(dates[0]);
-    }
+  // Handler saat user ganti bulan via Flatpickr
+  const handleMonthChange = (selectedDates) => {
+    setSelectedDate(new Date(selectedDates[0]));
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-      {/* Flatpickr sebagai Navigasi */}
-      <div className="p-4 bg-blue-600 text-white">
+    <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
+      {/* Navigasi Flatpickr */}
+      <div className="mb-6">
+        <label className="block text-gray-700 font-semibold mb-2 text-center">
+          Pilih Bulan
+        </label>
         <Flatpickr
           value={selectedDate}
-          onChange={handleDateChange}
+          onChange={handleMonthChange}
           options={{
-            dateFormat: 'Y-m-d',
-            altInput: true,
-            altFormat: 'd F Y',
+            dateFormat: 'Y-m',
+            view: 'month',
+            plugins: [],
+            allowInput: true,
             clickOpens: true,
-            allowInput: false,
             monthSelectorType: 'dropdown',
             yearSelectorType: 'dropdown',
             showMonths: 1,
             locale: {
-              firstDayOfWeek: 1,
-              weekdays: { shorthand: daysShort, longhand: daysLong },
-              months: { longhand: monthsLong },
-            },
-            onChange: (selectedDates) => {
-              if (selectedDates.length > 0) {
-                setSelectedDate(selectedDates[0]);
-              }
-            },
+              months: { longhand: bulanNama },
+              weekdays: { shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] }
+            }
           }}
-          className="w-full p-2 text-center text-lg rounded cursor-pointer bg-white text-gray-800"
-          placeholder="Pilih tanggal..."
+          className="w-full p-3 text-center text-lg border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Pilih bulan..."
         />
       </div>
 
-      {/* Kalender Grid Manual */}
-      <div className="p-4">
-        <h3 className="text-center text-lg font-bold mb-3 text-gray-800">
-          {monthsLong[selectedMonth]} {selectedYear}
-        </h3>
+      {/* Info Bulan & Tahun */}
+      <h3 className="text-xl font-bold text-center text-gray-800 mb-4">
+        {bulanNama[currentMonth]} {currentYear}
+      </h3>
 
+      {/* Kalender Grid */}
+      <div className="border border-gray-300 rounded-lg overflow-hidden">
         {/* Header Hari */}
-        <div className="grid grid-cols-7 gap-1 mb-1 text-xs font-semibold text-center text-blue-700">
-          {daysShort.map((day) => (
-            <div key={day} className="p-2 bg-blue-50 rounded">
-              {day}
+        <div className="grid grid-cols-7 bg-gray-100">
+          {hariNama.map((hari) => (
+            <div key={hari} className="p-2 text-center font-semibold text-gray-700 border-b">
+              {hari}
             </div>
           ))}
         </div>
 
-        {/* Grid Tanggal */}
-        <div className="grid grid-cols-7 gap-1 text-center">
-          {days.map((day, idx) => (
-            <div
-              key={idx}
-              className={`
-                p-2 border rounded text-sm transition
-                ${day.isCurrentMonth
-                  ? 'text-gray-800 hover:bg-blue-100'
-                  : 'text-gray-400'
-                }
-                ${new Date(selectedYear, selectedMonth, day.date).toDateString() === new Date().toDateString()
-                  ? 'bg-green-100 border-green-300 font-bold'
-                  : 'border-transparent'
-                }
-              `}
-            >
-              {day.date}
+        {/* Isi Tanggal */}
+        <div>
+          {calendar.map((week, i) => (
+            <div key={i} className="grid grid-cols-7">
+              {week.map((cell, j) => (
+                <div
+                  key={j}
+                  className={`p-2 text-center border-b border-gray-200 text-sm ${
+                    cell.type === 'current'
+                      ? 'text-gray-900 font-medium'
+                      : 'text-gray-400 text-xs italic'
+                  } ${
+                    cell.type === 'current' && cell.day === new Date().getDate() &&
+                    currentMonth === new Date().getMonth() &&
+                    currentYear === new Date().getFullYear()
+                      ? 'bg-blue-100 font-bold text-blue-800 rounded-sm'
+                      : ''
+                  }`}
+                >
+                  {cell.day}
+                </div>
+              ))}
             </div>
           ))}
         </div>
       </div>
+
+      <p className="text-center mt-4 text-xs text-gray-500">
+        Kalender menunjukkan {bulanNama[currentMonth]} {currentYear}
+      </p>
     </div>
   );
 };
