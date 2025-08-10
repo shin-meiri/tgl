@@ -2,151 +2,152 @@
 import React, { useState, useMemo } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import 'flatpickr/dist/themes/material_blue.css';
+
+// Fungsi: Hitung Pasaran & Weton
+const hitungWeton = (date) => {
+  const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  const neptuHari = { 'Minggu': 5, 'Senin': 4, 'Selasa': 3, 'Rabu': 7, 'Kamis': 8, 'Jumat': 6, 'Sabtu': 9 };
+  const neptuPasaran = { 'Legi': 5, 'Pahing': 9, 'Pon': 7, 'Wage': 4, 'Kliwon': 8 };
+
+  const dayIndex = date.getDay();
+  const hari = hariList[dayIndex];
+
+  // Hitung pasaran: 1 Jan 1900 = Jumat Pahing (acuan kalender Jawa)
+  const selisihHari = Math.floor((date - new Date(1900, 0, 1)) / (1000 * 60 * 60 * 24));
+  const pasaranIndex = selisihHari % 5;
+  const pasaran = pasaranList[pasaranIndex];
+
+  const totalNeptu = neptuHari[hari] + neptuPasaran[pasaran];
+
+  return {
+    hari,
+    pasaran,
+    weton: `${hari} ${pasaran}`,
+    neptu: totalNeptu,
+  };
+};
 
 const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Ambil bulan & tahun dari selectedDate
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
-  // Generate kalender bulanan
   const calendarDays = useMemo(() => {
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0=Min, 6=Sab
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
 
     const days = [];
 
-    // Hari dari bulan sebelumnya
+    // Bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
-      days.push({
-        date: prevMonthDays - i,
-        isCurrentMonth: false,
-        fullDate: new Date(currentYear, currentMonth - 1, prevMonthDays - i),
-      });
+      const d = new Date(currentYear, currentMonth - 1, prevMonthDays - i);
+      const w = hitungWeton(d);
+      days.push({ date: prevMonthDays - i, isCurrent: false, weton: w });
     }
 
-    // Hari bulan ini
+    // Bulan ini
     for (let i = 1; i <= daysInMonth; i++) {
-      days.push({
-        date: i,
-        isCurrentMonth: true,
-        fullDate: new Date(currentYear, currentMonth, i),
-      });
+      const d = new Date(currentYear, currentMonth, i);
+      const w = hitungWeton(d);
+      days.push({ date: i, isCurrent: true, fullDate: d, weton: w });
     }
 
-    // Total cells = multiple of 7
+    // Isi ke depan
     const totalCells = Math.ceil(days.length / 7) * 7;
-
-    // Hari dari bulan depan
     for (let i = days.length; i < totalCells; i++) {
-      days.push({
-        date: i - days.length + 1,
-        isCurrentMonth: false,
-        fullDate: new Date(currentYear, currentMonth + 1, i - days.length + 1),
-      });
+      const nextDay = i - days.length + 1;
+      const d = new Date(currentYear, currentMonth + 1, nextDay);
+      const w = hitungWeton(d);
+      days.push({ date: nextDay, isCurrent: false, weton: w });
     }
 
     return days;
   }, [currentMonth, currentYear]);
 
-  // Ubah tanggal saat Flatpickr berubah
-  const handleDateChange = (selectedDates) => {
-    setSelectedDate(selectedDates[0]);
+  const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+  const handleDateChange = (dates) => {
+    setSelectedDate(dates[0]);
   };
 
-  // Header hari
-  const weekDays = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
-      {/* Judul */}
-      <h3 className="text-xl font-bold text-center text-gray-800 mb-4">Pilih Bulan</h3>
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-xl">
+      <h3 className="text-2xl font-bold text-center text-gray-800 mb-6 bg-header text-white py-3 rounded-lg">
+        Kalender Jawa
+      </h3>
 
-      {/* Flatpickr sebagai Navigasi */}
-      <div className="mb-6">
+      {/* Navigasi Flatpickr */}
+      <div className="mb-6 text-center">
         <Flatpickr
           value={selectedDate}
           onChange={handleDateChange}
           options={{
             dateFormat: 'Y-m-d',
-            altInput: true,
-            altFormat: 'F Y', // Hanya Bulan dan Tahun
-            allowInput: false,
+            altFormat: 'F Y',
             clickOpens: true,
-            showMonths: 1,
-            mode: 'single',
-            enableTime: false,
-            time_24hr: true,
-            static: false,
+            allowInput: false,
             monthSelectorType: 'dropdown',
             yearSelectorType: 'dropdown',
             locale: {
-              firstDayOfWeek: 1,
+              months: {
+                longhand: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'],
+                shorthand: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ago','Sep','Okt','Nov','Des']
+              },
               weekdays: {
                 shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-                longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
-              },
-              months: {
-                shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-                longhand: [
-                  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-                ],
-              },
+                longhand: ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
+              }
             },
-            // Sembunyikan inline calendar karena kita buat manual
-            inline: false,
+            inline: false
           }}
-          className="w-full p-3 text-center text-lg border-2 border-blue-300 rounded-lg bg-blue-50 text-blue-800 font-medium cursor-pointer"
-          placeholder="Pilih bulan..."
+          className="p-3 border-2 border-blue-400 rounded-lg text-lg font-medium bg-blue-50 text-blue-800 w-64"
         />
       </div>
 
-      {/* Tabel Kalender Manual */}
-      <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-        <table className="w-full table-fixed text-sm">
-          <thead>
-            <tr className="bg-gray-200 text-gray-700 uppercase text-xs">
-              {weekDays.map((day) => (
-                <th key={day} className="py-2 px-1 text-center font-semibold border-r last:border-r-0 border-gray-300">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map((_, weekIndex) => {
-              const start = weekIndex * 7;
-              const week = calendarDays.slice(start, start + 7);
-              return (
-                <tr key={weekIndex} className="border-t border-gray-300">
-                  {week.map((day, idx) => (
-                    <td
-                      key={idx}
-                      className={`
-                        py-3 px-1 text-center text-sm
-                        ${day.isCurrentMonth ? 'text-gray-900 font-medium' : 'text-gray-400 italic'}
-                        ${!day.isCurrentMonth ? 'bg-gray-100' : 'hover:bg-blue-100'}
-                        border-r last:border-r-0 border-gray-300
-                        transition
-                      `}
-                    >
-                      {day.date}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Tabel Kalender Jawa */}
+      <table className="w-full table-fixed border-collapse calendar-table">
+        <thead>
+          <tr className="bg-gray-800 text-white uppercase text-sm">
+            {weekDays.map(day => (
+              <th key={day} className="py-3 border border-gray-400">{day}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: Math.ceil(calendarDays.length / 7) }).map((_, week) => {
+            const start = week * 7;
+            const weekDays = calendarDays.slice(start, start + 7);
+            return (
+              <tr key={week}>
+                {weekDays.map((day, idx) => (
+                  <td
+                    key={idx}
+                    className={`
+                      border border-gray-300 h-20 align-top p-1 text-xs
+                      ${day.isCurrent ? 'bg-white' : 'bg-gray-100 text-gray-400 italic'}
+                      hover:bg-yellow-50 transition
+                    `}
+                  >
+                    <div className="font-bold text-gray-800">{day.date}</div>
+                    <div className="weton-cell text-blue-700 font-medium">
+                      {day.weton.hari.slice(0,3)}
+                    </div>
+                    <div className="weton-cell text-green-700 text-xs">
+                      {day.weton.pasaran}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
-      {/* Info Bulan & Tahun */}
       <p className="text-center mt-4 text-sm text-gray-500">
-        Menampilkan: <strong>{new Date(currentYear, currentMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong>
+        Menampilkan: <strong>{selectedDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong>
       </p>
     </div>
   );
