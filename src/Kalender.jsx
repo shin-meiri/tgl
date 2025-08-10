@@ -49,7 +49,7 @@ const Kalender = () => {
       const tglObj = new Date(tahun, bulan, tanggal);
       const hari = namaHari[tglObj.getDay()];
       const pasar = hitungPasaran(tglObj);
-      const neptuTotal = neptuHari[hari] + neptuPasaran[passar];
+      const neptuTotal = neptuHari[hari] + neptuPasaran[pasar];
 
       const hariKalender = {
         tanggal,
