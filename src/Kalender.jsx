@@ -3,12 +3,12 @@ import React, { useState, useMemo } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-// === Fungsi Hitung Weton (untuk hari & pasaran) ===
+// === Fungsi Hitung Hari & Pasaran ===
 const hitungWeton = (date) => {
   const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  const dayIndex = date.getDay();
+  const dayIndex = date.getDay(); // 0 = Minggu
   const hari = hariList[dayIndex];
 
   // Acuan: 1 Jan 1900 = Selasa Pahing
@@ -16,22 +16,23 @@ const hitungWeton = (date) => {
   const pasaranIndex = selisihHari % 5;
   const pasaran = pasaranList[pasaranIndex];
 
-  const namaWeton = `${hari} ${pasaran}`;
+  const namaWeton = `${hari} ${pasaran}`; // ← Harus persis seperti di DB: "Senin Kliwon"
+
   return { hari, pasaran, namaWeton };
 };
 
 // === Komponen Utama ===
 const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [detailWeton, setDetailWeton] = useState(null); // ← Detail akan muncul di sini
+  const [detailWeton, setDetailWeton] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
-  // === Generate Kalender Bulanan ===
+  // === Generate Kalender (Fix: Bulan Depan) ===
   const calendarDays = useMemo(() => {
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // 0=Min
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
 
@@ -39,29 +40,35 @@ const Kalender = () => {
 
     // 1. Bulan lalu
     for (let i = firstDay - 1; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - 1, prevMonthDays - i);
-      const { pasaran, namaWeton } = hitungWeton(d);
-      days.push({ date: prevMonthDays - i, isCurrent: false, dateObj: d, namaWeton, pasaran });
+      const prevDate = prevMonthDays - i;
+      const d = new Date(currentYear, currentMonth - 1, prevDate);
+      const { namaWeton } = hitungWeton(d);
+      days.push({ date: prevDate, isCurrent: false, dateObj: d, namaWeton });
     }
 
     // 2. Bulan ini
     for (let i = 1; i <= daysInMonth; i++) {
       const d = new Date(currentYear, currentMonth, i);
-      const { pasaran, namaWeton } = hitungWeton(d);
-      days.push({ date: i, isCurrent: true, dateObj: d, namaWeton, pasaran });
+      const { namaWeton } = hitungWeton(d);
+      days.push({ date: i, isCurrent: true, dateObj: d, namaWeton });
     }
 
-    // 3. Bulan depan
+    // 3. Bulan depan (PERBAIKAN: jangan semua 1!)
     const totalCells = Math.ceil(days.length / 7) * 7;
     const nextMonth = new Date(currentYear, currentMonth + 1, 1);
     const nextMonthYear = nextMonth.getFullYear();
     const nextMonthIndex = nextMonth.getMonth();
 
     for (let i = days.length; i < totalCells; i++) {
-      const dateNum = i - days.length + 1;
+      const dateNum = i - days.length + 1; // ← 1, 2, 3, dst
       const d = new Date(nextMonthYear, nextMonthIndex, dateNum);
-      const { pasaran, namaWeton } = hitungWeton(d);
-      days.push({ date: dateNum, isCurrent: false, dateObj: d, namaWeton, pasaran });
+      const { namaWeton } = hitungWeton(d);
+      days.push({
+        date: dateNum,
+        isCurrent: false,
+        dateObj: d,
+        namaWeton,
+      });
     }
 
     return days;
@@ -71,28 +78,38 @@ const Kalender = () => {
 
   const handleDateChange = (dates) => {
     setSelectedDate(dates[0]);
-    setDetailWeton(null); // Reset saat ganti bulan
+    setDetailWeton(null);
   };
 
   // === Ambil Detail Weton dari API ===
-  const handleDateClick = async (tanggal, namaWeton) => {
+  const handleDateClick = async (dateObj, namaWeton) => {
     setLoading(true);
+    setDetailWeton(null);
+
+    console.log('Mencari weton:', namaWeton); // 🔍 Debug
+
     try {
       const response = await fetch(`https://namasite.infinityfreeapp.com/api/weton.php?weton=${encodeURIComponent(namaWeton)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('Respons API:', data); // 🔍 Debug
 
       if (data.success && data.data) {
         setDetailWeton({
           ...data.data,
-          tanggalLahir: tanggal.toISOString().split('T')[0],
-          hari_pasaran: namaWeton
+          tanggalLahir: dateObj.toISOString().split('T')[0],
         });
       } else {
         setDetailWeton({
-          error: `Data weton "${namaWeton}" tidak ditemukan di database.`
+          error: `Weton "${namaWeton}" tidak ditemukan di database. Pastikan nama sesuai (contoh: "Senin Kliwon").`
         });
       }
     } catch (err) {
+      console.error('Error fetch:', err);
       setDetailWeton({
         error: 'Gagal terhubung ke server. Cek koneksi atau coba lagi.'
       });
@@ -103,7 +120,6 @@ const Kalender = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg">
-      {/* Judul */}
       <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">Kalender Jawa</h3>
 
       {/* Navigasi */}
@@ -160,7 +176,7 @@ const Kalender = () => {
                     onClick={() => handleDateClick(day.dateObj, day.namaWeton)}
                   >
                     <div className="font-bold text-gray-800 text-sm">{day.date}</div>
-                    <div className="text-xs text-green-700 font-medium mt-1">{day.pasaran}</div>
+                    <div className="text-xs text-green-700 font-medium mt-1">{day.namaWeton.split(' ')[1]}</div>
                   </td>
                 ))}
               </tr>
@@ -169,12 +185,11 @@ const Kalender = () => {
         </tbody>
       </table>
 
-      {/* Info Bulan */}
       <p className="text-center mt-4 text-sm text-gray-500">
         Menampilkan: <strong>{selectedDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</strong>
       </p>
 
-      {/* === Detail Weton (muncul setelah klik) === */}
+      {/* === Detail Weton === */}
       {loading && (
         <div className="mt-8 p-6 bg-yellow-50 border border-yellow-300 rounded-lg text-center">
           <p className="text-yellow-800">Memuat data weton...</p>
@@ -184,7 +199,7 @@ const Kalender = () => {
       {detailWeton && !loading && (
         <div className="mt-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 border border-gray-200 rounded-xl shadow-inner">
           <h4 className="text-xl font-bold text-gray-800 mb-4">
-            Detail Weton: <span className="text-blue-700">{detailWeton.hari_pasaran}</span>
+            Detail Weton: <span className="text-blue-700">{detailWeton.nama_weton}</span>
           </h4>
 
           {detailWeton.error ? (
@@ -192,11 +207,11 @@ const Kalender = () => {
           ) : (
             <div className="space-y-3 text-gray-700">
               <p><strong>Tanggal Lahir:</strong> {detailWeton.tanggalLahir}</p>
-              <p><strong>Watak Umum:</strong> {detailWeton.watak_umum || 'Tidak tersedia'}</p>
-              <p><strong>Rezeki:</strong> {detailWeton.rezeki || 'Tidak tersedia'}</p>
-              <p><strong>Jodoh Baik:</strong> {detailWeton.jodoh_baik || 'Tidak tersedia'}</p>
-              <p><strong>Jodoh Buruk:</strong> {detailWeton.jodoh_buruk || 'Tidak tersedia'}</p>
-              <p><strong>Umur (Neptu):</strong> {detailWeton.umur ? `${detailWeton.umur} tahun (menurut primbon)` : 'Tidak tersedia'}</p>
+              <p><strong>Watak Umum:</strong> {detailWeton.watak_umum || '–'}</p>
+              <p><strong>Rezeki:</strong> {detailWeton.rezeki || '–'}</p>
+              <p><strong>Jodoh Baik:</strong> {detailWeton.jodoh_baik || '–'}</p>
+              <p><strong>Jodoh Buruk:</strong> {detailWeton.jodoh_buruk || '–'}</p>
+              <p><strong>Umur (Neptu):</strong> {detailWeton.umur ? `${detailWeton.umur} tahun` : '–'}</p>
             </div>
           )}
         </div>
