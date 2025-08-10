@@ -3,21 +3,14 @@ import React, { useState, useEffect } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'flatpickr/dist/themes/material_blue.css';
-import axios from 'axios';
 
 const Kalender = () => {
-  // State: tanggal terpilih (default hari ini)
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [kalenderBulanan, setKalenderBulanan] = useState([]);
 
-  // Nama hari (Saptawara)
   const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-
-  // Pasaran (Pancawara) - 5 harian
   const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const neptuPasaran = { Legi: 5, Pahing: 9, Pon: 7, Wage: 4, Kliwon: 8 };
-
-  // Neptu hari
   const neptuHari = {
     Minggu: 5,
     Senin: 4,
@@ -28,36 +21,35 @@ const Kalender = () => {
     Sabtu: 9,
   };
 
-  // Fungsi: Hitung pasaran berdasarkan tanggal (algoritma sederhana)
+  // ✅ Pindahkan ke luar useEffect agar bisa dimasukkan ke dependency
   const hitungPasaran = (date) => {
-    const epoch = new Date('1970-01-01'); // Acuan: 1 Jan 1970 = Legi
-    const diff = (date - epoch) / (1000 * 60 * 60 * 24); // hari sejak acuan
+    const epoch = new Date('1970-01-01');
+    const diff = (date - epoch) / (1000 * 60 * 60 * 24);
     const index = Math.floor(diff) % 5;
     return pasaran[index < 0 ? index + 5 : index];
   };
 
-  // Fungsi: Buat kalender bulanan
-  const buatKalenderBulanan = (date) => {
+  // ✅ Fungsi dibuat stabil agar bisa dimasukkan ke dependency
+  const buatKalenderBulanan = React.useCallback((date) => {
     const tahun = date.getFullYear();
     const bulan = date.getMonth();
     const pertama = new Date(tahun, bulan, 1);
     const terakhir = new Date(tahun, bulan + 1, 0);
     const totalHari = terakhir.getDate();
-    const hariPertama = pertama.getDay(); // 0 = Minggu
+    const hariPertama = pertama.getDay();
 
     const mingguan = [];
     let minggu = Array(7).fill(null);
 
-    // Isi dari hari pertama
     for (let i = 0; i < hariPertama; i++) {
-      minggu[i] = null; // Kosong di awal
+      minggu[i] = null;
     }
 
     for (let tanggal = 1; tanggal <= totalHari; tanggal++) {
       const tglObj = new Date(tahun, bulan, tanggal);
       const hari = namaHari[tglObj.getDay()];
       const pasar = hitungPasaran(tglObj);
-      const neptuTotal = neptuHari[hari] + neptuPasaran[pasar];
+      const neptuTotal = neptuHari[hari] + neptuPasaran[passar];
 
       const hariKalender = {
         tanggal,
@@ -69,34 +61,30 @@ const Kalender = () => {
 
       minggu[tglObj.getDay()] = hariKalender;
 
-      // Akhir minggu atau akhir bulan
       if (tglObj.getDay() === 6 || tanggal === totalHari) {
         mingguan.push([...minggu]);
         minggu = Array(7).fill(null);
       }
     }
 
-    // Tambahkan sisa hari kosong di akhir jika perlu
     if (minggu.some(Boolean)) {
       mingguan.push(minggu);
     }
 
     setKalenderBulanan(mingguan);
-  };
+  }, [namaHari, pasaran, neptuHari, neptuPasaran, hitungPasaran]); // ✅ Tambahkan dependency
 
-  // Efek: Buat kalender saat tanggal berubah
+  // ✅ Gunakan useCallback agar referensi tetap sama
   useEffect(() => {
     buatKalenderBulanan(selectedDate);
-  }, [selectedDate]);
+  }, [selectedDate, buatKalenderBulanan]); // ✅ Tambahkan buatKalenderBulanan sebagai dependency
 
-  // Handle perubahan tanggal dari Flatpickr
   const handleChange = (dates) => {
     if (dates.length > 0) {
       setSelectedDate(dates[0]);
     }
   };
 
-  // Format bulan-tahun untuk ditampilkan
   const formatBulanTahun = (date) => {
     return new Intl.DateTimeFormat('id-ID', {
       month: 'long',
@@ -104,9 +92,11 @@ const Kalender = () => {
     }).format(date);
   };
 
+  // ❌ Komentari atau hapus axios jika belum dipakai
+  // import axios from 'axios'; → JANGAN DI-IMPORT DI ATAS JIKA BELUM DIGUNAKAN
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
-      {/* Navigasi Flatpickr */}
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Kalender Jawa</h2>
         <Flatpickr
@@ -130,32 +120,12 @@ const Kalender = () => {
               },
               months: {
                 shorthand: [
-                  'Jan',
-                  'Feb',
-                  'Mar',
-                  'Apr',
-                  'Mei',
-                  'Jun',
-                  'Jul',
-                  'Agu',
-                  'Sep',
-                  'Okt',
-                  'Nov',
-                  'Des',
+                  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
                 ],
                 longhand: [
-                  'Januari',
-                  'Februari',
-                  'Maret',
-                  'April',
-                  'Mei',
-                  'Juni',
-                  'Juli',
-                  'Agustus',
-                  'September',
-                  'Oktober',
-                  'November',
-                  'Desember',
+                  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
                 ],
               },
             },
@@ -165,14 +135,12 @@ const Kalender = () => {
         />
       </div>
 
-      {/* Judul Bulan */}
       <div className="text-center mb-4">
         <h3 className="text-xl font-semibold text-gray-700">
           {formatBulanTahun(selectedDate)}
         </h3>
       </div>
 
-      {/* Tabel Kalender */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border border-gray-300 text-sm">
           <thead>
@@ -211,7 +179,6 @@ const Kalender = () => {
         </table>
       </div>
 
-      {/* Info Kecil */}
       <div className="mt-6 text-center text-xs text-gray-500">
         Kalender menampilkan tanggal internasional, pasaran, dan neptu harian.
       </div>
