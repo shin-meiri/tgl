@@ -4,35 +4,28 @@ import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import 'flatpickr/dist/themes/material_blue.css';
 
-// Mapping hari ke neptu (untuk debug/weton)
-const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-const pasaranNames = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-
-// Fungsi: hitung pasaran dari tanggal
-const getPasaran = (date) => {
-  const startDate = new Date('2023-01-01'); // Tanggal acuan: Minggu Legi
-  const diffTime = date - startDate;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const pasaranIndex = (diffDays % 5 + 5) % 5; // Modulo aman untuk negatif
-  return pasaranNames[pasaranIndex];
-};
-
-// Fungsi: dapatkan nama hari
-const getDayName = (date) => {
-  return dayNames[date.getDay()];
-};
-
-// Fungsi: dapatkan nama weton (hari + pasaran)
-const getWeton = (date) => {
-  const day = getDayName(date);
-  const pasaran = getPasaran(date);
-  return `${day} ${pasaran}`;
-};
-
 const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Memo: generate hari-hari dalam bulan (tanpa recompute berlebihan)
+  // Nama pasaran (Pancawara)
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+
+  // Nama bulan Indonesia
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+
+  // Fungsi: dapatkan pasaran dari tanggal
+  const getPasaran = (date) => {
+    const start = new Date(2023, 0, 1); // Acuan: 1 Jan 2023 = Minggu Legi
+    const diffTime = date - start;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const index = diffDays % 5;
+    return pasaran[index < 0 ? index + 5 : index];
+  };
+
+  // Memo: generate hari-hari dalam bulan yang dipilih
   const calendarDays = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
@@ -49,59 +42,52 @@ const Kalender = () => {
 
     for (let i = firstDay - 1; i >= 0; i--) {
       const date = new Date(prevYear, prevMonth, daysInPrevMonth - i);
-      days.push({
-        date,
-        isCurrentMonth: false,
-        weton: getWeton(date),
-      });
+      days.push({ date, isCurrentMonth: false });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      days.push({
-        date,
-        isCurrentMonth: true,
-        weton: getWeton(date),
-      });
+      days.push({ date, isCurrentMonth: true });
     }
 
     // Tanggal dari bulan depan
     const totalDays = days.length;
-    const remaining = 42 - totalDays;
+    const remaining = 42 - totalDays; // 6 baris x 7 kolom
 
     for (let day = 1; day <= remaining; day++) {
       const date = new Date(year, month + 1, day);
-      days.push({
-        date,
-        isCurrentMonth: false,
-        weton: getWeton(date),
-      });
+      days.push({ date, isCurrentMonth: false });
     }
 
     return days;
-  }, [selectedDate]); // Hanya recompute saat selectedDate berubah
+  }, [selectedDate]); // ✅ Hanya rekomputasi saat selectedDate berubah
 
   // Handle perubahan dari Flatpickr
   const handleDateChange = (dates) => {
     if (dates.length > 0) {
-      setSelectedDate(dates[0]);
+      setSelectedDate(dates[0]); // ✅ Pastikan hanya Date object
     }
   };
 
-  // Nama bulan Indonesia
-  const monthNames = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
+  // Memo: hitung weton untuk setiap hari
+  const daysWithWeton = useMemo(() => {
+    return calendarDays.map((day) => ({
+      ...day,
+      pasaran: getPasaran(day.date),
+    }));
+  }, [calendarDays]); // ✅ Tergantung pada calendarDays
+
+  // Ambil bulan & tahun untuk tampilan
   const displayMonth = monthNames[selectedDate.getMonth()];
   const displayYear = selectedDate.getFullYear();
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
-      {/* Navigasi Flatpickr */}
+      {/* Navigasi dengan Flatpickr */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800">Kalender Weton</h2>
+
         <div className="w-full sm:w-64">
           <Flatpickr
             value={selectedDate}
@@ -109,11 +95,10 @@ const Kalender = () => {
             options={{
               dateFormat: 'Y-m-d',
               altFormat: 'F Y',
-              clickOpens: true,
               allowInput: false,
-              showMonths: 1,
+              clickOpens: true,
               mode: 'single',
-              enableTime: false,
+              showMonths: 1,
               monthSelectorType: 'dropdown',
               yearSelectorType: 'dropdown',
               defaultDate: selectedDate,
@@ -121,12 +106,9 @@ const Kalender = () => {
                 firstDayOfWeek: 1,
                 weekdays: {
                   shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-                  longhand: dayNames,
+                  longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
                 },
-                months: {
-                  longhand: monthNames,
-                  shorthand: monthNames.map(m => m.slice(0, 3)),
-                },
+                months: { longhand: monthNames },
               },
             }}
             className="w-full p-3 text-center border-2 border-blue-300 rounded-lg bg-blue-50 cursor-pointer font-medium"
@@ -142,14 +124,14 @@ const Kalender = () => {
         </h3>
       </div>
 
-      {/* Tabel Kalender */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300 text-center">
+      {/* Kalender Tabel (tanpa nama hari) */}
+      <div className="overflow-x-auto border border-gray-300 rounded-lg shadow">
+        <table className="w-full border-collapse">
           <tbody>
             {Array.from({ length: 6 }, (_, weekIndex) => {
               const start = weekIndex * 7;
               const end = start + 7;
-              const week = calendarDays.slice(start, end);
+              const week = daysWithWeton.slice(start, end);
 
               return (
                 <tr key={weekIndex}>
@@ -159,28 +141,31 @@ const Kalender = () => {
                       day?.date &&
                       new Date().toDateString() === day.date.toDateString();
                     const isCurrentMonth = day?.isCurrentMonth;
-                    const wetonLabel = day?.weton?.split(' ')[1]; // Ambil pasaran: "Kliwon"
 
                     return (
                       <td
                         key={idx}
-                        className={`border border-gray-300 p-2 h-20 relative transition-colors
-                          ${!isCurrentMonth ? 'text-gray-400 bg-gray-50' : 'hover:bg-blue-25'}
+                        className={`border border-gray-300 p-3 h-16 relative transition-colors
+                          ${!isCurrentMonth ? 'text-gray-400 bg-gray-50' : 'hover:bg-blue-50'}
+                          ${isToday ? 'bg-yellow-200' : ''}
                         `}
                       >
-                        <div className="flex flex-col h-full justify-center items-center">
+                        <div className="flex flex-col items-center justify-center h-full">
                           <span
-                            className={`block w-8 h-8 rounded-full flex items-center justify-center text-sm
-                              ${isToday ? 'bg-yellow-400 text-black font-bold' : ''}
+                            className={`block w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium
+                              ${isToday ? 'bg-yellow-400 text-black' : ''}
                             `}
                           >
                             {dateNum}
                           </span>
-                          {wetonLabel && (
-                            <small className="text-xs mt-1 font-medium text-gray-600">
-                              {wetonLabel}
-                            </small>
-                          )}
+                          {/* Weton di bawah tanggal */}
+                          <small
+                            className={`block mt-1 text-xs font-normal
+                              ${isCurrentMonth ? 'text-gray-600' : 'text-gray-400'}
+                            `}
+                          >
+                            {day.pasaran}
+                          </small>
                         </div>
                       </td>
                     );
@@ -193,7 +178,7 @@ const Kalender = () => {
       </div>
 
       <div className="mt-4 text-sm text-gray-500 text-center">
-        Navigasi bulan dengan dropdown di atas.
+        Gunakan dropdown untuk navigasi. Weton ditampilkan di bawah setiap tanggal.
       </div>
     </div>
   );
