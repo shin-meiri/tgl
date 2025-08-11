@@ -13,20 +13,19 @@ const Kalender = () => {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
   ];
 
-  // Pasaran berulang tiap 5 hari: Legi, Pahing, Pon, Wage, Kliwon
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  // Pasaran
+  const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-  // Fungsi: dapatkan pasaran dari tanggal
-  const getPasaran = (date) => {
-    const startDate = new Date('2023-01-01'); // Acuan: 1 Jan 2023 = Minggu Legi
-    const diffTime = date - startDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const index = diffDays % 5;
-    return pasaran[index >= 0 ? index : index + 5];
-  };
-
-  // Generate kalender dengan memoization (untuk hindari render berlebihan)
   const calendarDays = useMemo(() => {
+    // 🔽 Pindahkan getPasaran ke dalam useMemo
+    const getPasaran = (date) => {
+      const startDate = new Date('2023-01-01'); // Acuan: 1 Jan 2023 = Minggu Legi
+      const diffTime = date - startDate;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const index = diffDays % 5;
+      return pasaranList[index >= 0 ? index : index + 5];
+    };
+
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
 
@@ -35,7 +34,7 @@ const Kalender = () => {
 
     const days = [];
 
-    // Tanggal dari bulan sebelumnya
+    // Bulan sebelumnya
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear = month === 0 ? year - 1 : year;
     const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
@@ -49,7 +48,7 @@ const Kalender = () => {
       });
     }
 
-    // Tanggal bulan ini
+    // Bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       days.push({
@@ -59,10 +58,9 @@ const Kalender = () => {
       });
     }
 
-    // Tanggal dari bulan depan
+    // Bulan depan
     const totalDays = days.length;
-    const remaining = 42 - totalDays; // 6 baris
-
+    const remaining = 42 - totalDays;
     for (let day = 1; day <= remaining; day++) {
       const date = new Date(year, month + 1, day);
       days.push({
@@ -73,11 +71,11 @@ const Kalender = () => {
     }
 
     return days;
-  }, [selectedDate]); // ✅ Hanya re-run saat selectedDate berubah
+  }, [selectedDate]); // ✅ Hanya selectedDate sebagai dependency → aman!
 
   const handleDateChange = (dates) => {
     if (dates.length > 0) {
-      setSelectedDate(dates[0]); // eslint-disable-line react-hooks/exhaustive-deps
+      setSelectedDate(dates[0]);
     }
   };
 
@@ -87,7 +85,6 @@ const Kalender = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
-      {/* Navigasi Flatpickr */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800 text-center sm:text-left">
           Kalender Weton
@@ -122,14 +119,12 @@ const Kalender = () => {
         </div>
       </div>
 
-      {/* Info Bulan */}
       <div className="text-center mb-4">
         <h3 className="text-xl font-semibold text-gray-700">
           {displayMonthName} {currentYear}
         </h3>
       </div>
 
-      {/* Tabel Kalender */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse border border-gray-300 text-center">
           <thead>
@@ -153,7 +148,9 @@ const Kalender = () => {
               return (
                 <tr key={weekIndex}>
                   {week.map((day, idx) => {
-                    if (!day) return <td key={idx} className="border border-gray-300 p-3"></td>;
+                    if (!day) {
+                      return <td key={idx} className="border border-gray-300 p-3"></td>;
+                    }
 
                     const dateNum = day.date.getDate();
                     const isToday =
