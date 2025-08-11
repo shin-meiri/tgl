@@ -8,32 +8,33 @@ const Kalender = ({ onDateClick }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState([]);
 
-  const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
   ];
 
-  // Hitung pasaran: 1 Jan 1970 = Selasa Wage → index 3
-  const getWetonPasaran = (date) => {
-    const epochMs = new Date('1970-01-01T00:00:00').getTime();
-    const dateMs = date.getTime();
-    const diffDays = Math.floor((dateMs - epochMs) / (1000 * 60 * 60 * 24));
-    return pasaranList[diffDays % 5];
-  };
-
-  // Generate ulang kalender saat selectedDate berubah
+  // Pindahkan fungsi ke dalam useEffect agar tidak jadi dependency
   useEffect(() => {
+    const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+
+    // Fungsi di dalam useEffect → tidak jadi dependency
+    const getWetonPasaran = (date) => {
+      const epochMs = new Date('1970-01-01T00:00:00').getTime();
+      const dateMs = date.getTime();
+      const diffDays = Math.floor((dateMs - epochMs) / (1000 * 60 * 60 * 24));
+      return pasaranList[diffDays % 5];
+    };
+
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
 
-    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
+    const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Tanggal dari bulan lalu
+    // Bulan lalu
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear = month === 0 ? year - 1 : year;
     const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
@@ -46,7 +47,7 @@ const Kalender = ({ onDateClick }) => {
       });
     }
 
-    // Tanggal bulan ini
+    // Bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
       const currentDate = new Date(year, month, day);
       days.push({
@@ -56,9 +57,9 @@ const Kalender = ({ onDateClick }) => {
       });
     }
 
-    // Tanggal bulan depan
+    // Bulan depan
     const totalDays = days.length;
-    const remaining = 42 - totalDays; // 6 baris
+    const remaining = 42 - totalDays;
     for (let day = 1; day <= remaining; day++) {
       const nextDate = new Date(year, month + 1, day);
       days.push({
@@ -69,7 +70,7 @@ const Kalender = ({ onDateClick }) => {
     }
 
     setCalendarDays(days);
-  }, [selectedDate]); // Hanya bergantung pada selectedDate
+  }, [selectedDate]); // ✅ Sekarang aman, getWetonPasaran tidak di luar scope
 
   const handleChangeDate = (dates) => {
     if (Array.isArray(dates) && dates.length > 0) {
@@ -78,7 +79,7 @@ const Kalender = ({ onDateClick }) => {
   };
 
   const handleClickDay = (day) => {
-    if (onDateClick && day.isCurrentMonth) {
+    if (day.isCurrentMonth && onDateClick) {
       const isoDate = day.date.toISOString().split('T')[0];
       onDateClick(isoDate, day.date, day.pasaran);
     }
@@ -145,8 +146,7 @@ const Kalender = ({ onDateClick }) => {
                     return <td key={dayIndex} className="border border-gray-300 p-3"></td>;
                   }
 
-                  const isToday =
-                    new Date().toDateString() === day.date.toDateString();
+                  const isToday = new Date().toDateString() === day.date.toDateString();
                   const isCurrent = day.isCurrentMonth;
                   const dateNum = day.date.getDate();
 
