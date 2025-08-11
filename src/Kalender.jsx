@@ -8,76 +8,79 @@ const Kalender = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState([]);
 
-  // Nama hari untuk header (tidak ditampilkan di dalam kotak)
+  // Daftar pasaran (Pancawara)
+  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-
-  // Nama bulan Indonesia
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Pasaran (5 hari siklus)
-  const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-
-  // Fungsi: cari pasaran berdasarkan jumlah hari sejak acuan (misal: 1 Jan 2000 = Legi)
-  const getPasaran = (date) => {
-    const epoch = new Date('2000-01-01'); // Acuan: 1 Jan 2000 = Legi (index 0)
-    const diffTime = date.getTime() - epoch.getTime();
+  // Fungsi: dapatkan pasaran dari tanggal (algoritma kalender Jawa sederhana)
+  const getWetonPasaran = (date) => {
+    // Epoch: 1 Januari 1970 adalah Selasa Wage
+    const epoch = new Date('1970-01-01'); // Selasa Wage
+    const diffTime = date - epoch;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const index = diffDays % 5;
-    return pasaran[index < 0 ? index + 5 : index];
+    const pasaranIndex = diffDays % 5;
+    return pasaran[pasaranIndex];
   };
 
-  // Generate kalender setiap kali selectedDate berubah
-  useEffect(() => {
+  // Fungsi: generate kalender
+  const generateCalendarDays = () => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
 
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Minggu
+    const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const days = [];
 
-    // Tanggal dari bulan lalu
+    // Tanggal dari bulan sebelumnya
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear = month === 0 ? year - 1 : year;
     const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
 
     for (let i = firstDay - 1; i >= 0; i--) {
-      const date = new Date(prevYear, prevMonth, daysInPrevMonth - i);
+      const prevDate = new Date(prevYear, prevMonth, daysInPrevMonth - i);
       days.push({
-        date,
+        date: prevDate,
         isCurrentMonth: false,
-        pasaran: getPasaran(date),
+        pasaran: getWetonPasaran(prevDate),
       });
     }
 
     // Tanggal bulan ini
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
+      const currentDate = new Date(year, month, day);
       days.push({
-        date,
+        date: currentDate,
         isCurrentMonth: true,
-        pasaran: getPasaran(date),
+        pasaran: getWetonPasaran(currentDate),
       });
     }
 
-    // Tanggal dari bulan depan (sampai 42 total)
-    const totalSoFar = days.length;
-    const remaining = 42 - totalSoFar;
+    // Tanggal dari bulan depan
+    const totalDays = days.length;
+    const remaining = 42 - totalDays; // 6 baris
 
     for (let day = 1; day <= remaining; day++) {
-      const date = new Date(year, month + 1, day);
+      const nextDate = new Date(year, month + 1, day);
       days.push({
-        date,
+        date: nextDate,
         isCurrentMonth: false,
-        pasaran: getPasaran(date),
+        pasaran: getWetonPasaran(nextDate),
       });
     }
 
     setCalendarDays(days);
-  }, [selectedDate]); // Cukup dependency: selectedDate
+  };
+
+  // Gunakan useEffect tanpa useMemo — langsung generate
+  useEffect(() => {
+    generateCalendarDays();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]); // Hanya berjalan saat selectedDate berubah
 
   const handleDateChange = (dates) => {
     if (dates.length > 0) {
@@ -85,18 +88,14 @@ const Kalender = () => {
     }
   };
 
-  const currentMonth = selectedDate.getMonth();
+  const currentMonthName = monthNames[selectedDate.getMonth()];
   const currentYear = selectedDate.getFullYear();
-  const displayMonthName = monthNames[currentMonth];
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
-      {/* Navigasi dengan Flatpickr */}
+      {/* Navigasi Flatpickr */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-800 text-center sm:text-left">
-          Kalender Weton Jawa
-        </h2>
-
+        <h2 className="text-2xl font-bold text-gray-800">Kalender Weton</h2>
         <div className="w-full sm:w-64">
           <Flatpickr
             value={selectedDate}
@@ -107,7 +106,6 @@ const Kalender = () => {
               allowInput: false,
               clickOpens: true,
               mode: 'single',
-              showMonths: 1,
               monthSelectorType: 'dropdown',
               yearSelectorType: 'dropdown',
               defaultDate: selectedDate,
@@ -117,13 +115,10 @@ const Kalender = () => {
                   shorthand: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
                   longhand: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
                 },
-                months: {
-                  shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-                  longhand: monthNames,
-                },
+                months: { longhand: monthNames },
               },
             }}
-            className="w-full p-3 text-center border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer bg-blue-50 font-medium"
+            className="w-full p-3 text-center border-2 border-blue-300 rounded-lg bg-blue-50 cursor-pointer"
             placeholder="Pilih bulan/tahun"
           />
         </div>
@@ -132,7 +127,7 @@ const Kalender = () => {
       {/* Info Bulan */}
       <div className="text-center mb-4">
         <h3 className="text-xl font-semibold text-gray-700">
-          {displayMonthName} {currentYear}
+          {currentMonthName} {currentYear}
         </h3>
       </div>
 
@@ -169,28 +164,27 @@ const Kalender = () => {
                     return (
                       <td
                         key={idx}
-                        className={`border border-gray-300 p-1 h-16 relative transition-colors
+                        className={`border border-gray-300 p-2 h-16 relative transition-colors
                           ${!isCurrentMonth ? 'text-gray-400 bg-gray-50' : 'hover:bg-blue-50'}
+                          ${isToday ? 'bg-yellow-200' : ''}
                         `}
                       >
-                        <div className="flex flex-col h-full justify-center">
+                        <div className="flex flex-col items-center justify-center h-full">
                           <span
-                            className={`block w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm font-medium
+                            className={`block w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
                               ${isToday ? 'bg-yellow-400 text-black' : 'text-gray-700'}
                             `}
                           >
                             {dateNum}
                           </span>
-                          {/* Tampilkan hanya pasaran (Legi, Pahing, dll) */}
-                          <span
-                            className={`block text-xs mt-1 px-1 py-0.5 rounded-sm
-                              ${isCurrentMonth 
-                                ? 'bg-green-100 text-green-800 font-semibold' 
-                                : 'bg-gray-200 text-gray-500'}
+                          {/* Tampilkan hanya pasaran di bawah tanggal */}
+                          <small
+                            className={`block mt-1 text-xs font-semibold
+                              ${isCurrentMonth ? 'text-purple-600' : 'text-gray-400'}
                             `}
                           >
                             {day?.pasaran || ''}
-                          </span>
+                          </small>
                         </div>
                       </td>
                     );
@@ -203,7 +197,7 @@ const Kalender = () => {
       </div>
 
       <div className="mt-4 text-sm text-gray-500 text-center">
-        Gunakan dropdown untuk ganti bulan. Weton pasaran dihitung otomatis.
+        Weton pasaran dihitung dari siklus 5 hari: Legi, Pahing, Pon, Wage, Kliwon.
       </div>
     </div>
   );
