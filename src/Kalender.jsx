@@ -1,112 +1,96 @@
-import React, { useState } from 'react';
-import Flatpickr from 'react-flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // tetap butuh CSS dasar Flatpickr
+import React, { useEffect, useRef } from 'react';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css'; // Tetap butuh CSS dasar flatpickr
 
-const ExcelDatePicker = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+const Kalender = () => {
+  const inputRef = useRef(null);
+  const flatpickrInstance = useRef(null);
 
-  // Helper: Dapatkan array tanggal untuk grid kalender (6 baris x 7 kolom)
-  const getCalendarDays = (date) => {
-    const today = new Date(date);
-    const year = today.getFullYear();
-    const month = today.getMonth();
+  useEffect(() => {
+    // Konfigurasi flatpickr
+    flatpickrInstance.current = flatpickr(inputRef.current, {
+      dateFormat: "Y-m-d",
+      defaultDate: "today",
+      inline: true, // Tampilkan langsung di bawah input, bukan popup
+      onChange: (selectedDates, dateStr) => {
+        console.log("Tanggal dipilih:", dateStr);
+      },
+      onReady: (selectedDates, dateStr, instance) => {
+        // Customisasi tampilan setelah flatpickr siap
+        customizeCalendar(instance);
+      },
+    });
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    
-    // Hitung hari pertama Minggu sebelum tanggal 1
-    startDate.setDate(firstDay.getDate() - firstDay.getDay()); // Minggu pertama
+    return () => {
+      if (flatpickrInstance.current) {
+        flatpickrInstance.current.destroy();
+      }
+    };
+  }, []);
 
-    const days = [];
-    let current = new Date(startDate);
+  const customizeCalendar = (fp) => {
+    const calendarContainer = fp.calendarContainer;
 
-    // 6 baris (42 hari) cukup untuk semua bulan
-    for (let i = 0; i < 42; i++) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
+    // Tambahkan header nama hari manual (opsional, karena fp sudah punya)
+    // Tapi kita pastikan urutannya: Minggu - Sabtu
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const weekdaysElement = calendarContainer.querySelector(".flatpickr-weekdays .flatpickr-weekday");
+    if (weekdaysElement && !weekdaysElement.customized) {
+      const weekdaysContainer = calendarContainer.querySelector(".flatpickr-weekdays .weekdays");
+      weekdaysContainer.innerHTML = "";
+
+      dayNames.forEach(day => {
+        const span = document.createElement("span");
+        span.className = "flatpickr-weekday";
+        span.innerHTML = day.slice(0, 3); // "Min", "Sen", dst.
+        weekdaysContainer.appendChild(span);
+      });
+      weekdaysElement.customized = true;
     }
-
-    return days;
   };
 
-  const days = getCalendarDays(selectedDate);
+  // Inline styles minimal
+  const containerStyle = {
+    fontFamily: "Arial, sans-serif",
+    display: "inline-block",
+    padding: "10px",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    backgroundColor: "#f9f9f9",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+  };
 
-  const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const headerStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px",
+  };
+
+  const inputStyle = {
+    padding: "8px 12px",
+    fontSize: "14px",
+    border: "1px solid #aaa",
+    borderRadius: "4px",
+    width: "200px",
+    cursor: "pointer",
+  };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '16px' }}>
-      {/* Dropdown Flatpickr */}
-      <div style={{ marginBottom: '12px' }}>
-        <Flatpickr
-          value={selectedDate}
-          onChange={(dateArr) => setSelectedDate(dateArr[0])}
-          options={{
-            dateFormat: 'Y-m-d',
-            defaultDate: 'today',
-          }}
-          style={{
-            padding: '8px',
-            fontSize: '16px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-          }}
-        />
+    <div style={containerStyle}>
+      <div style={headerStyle}>
+        <label htmlFor="kalender-input">Pilih Tanggal:</label>
       </div>
-
-      {/* Nama Hari */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          textAlign: 'center',
-          fontWeight: 'bold',
-          backgroundColor: '#f0f0f0',
-          padding: '8px 0',
-          marginBottom: '4px',
-        }}
-      >
-        {dayNames.map((day) => (
-          <div key={day}>{day}</div>
-        ))}
-      </div>
-
-      {/* Kalender Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          textAlign: 'center',
-          gap: '2px',
-        }}
-      >
-        {days.map((day, index) => {
-          const isCurrentMonth = day.getMonth() === selectedDate.getMonth();
-          const isToday =
-            day.toDateString() === new Date().toDateString();
-
-          return (
-            <div
-              key={index}
-              style={{
-                padding: '8px 0',
-                backgroundColor: isToday
-                  ? '#ffe0b2'
-                  : isCurrentMonth
-                  ? '#fff'
-                  : '#f5f5f5',
-                color: isCurrentMonth ? '#000' : '#aaa',
-                border: isToday ? '1px solid #ff8a65' : 'none',
-                borderRadius: isToday ? '4px' : '0',
-              }}
-            >
-              {day.getDate()}
-            </div>
-          );
-        })}
-      </div>
+      <input
+        id="kalender-input"
+        ref={inputRef}
+        type="text"
+        placeholder="Klik untuk buka kalender"
+        style={inputStyle}
+        readOnly
+      />
     </div>
   );
 };
 
-export default ExcelDatePicker;
+export default Kalender;
