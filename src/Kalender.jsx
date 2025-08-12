@@ -1,114 +1,145 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Flatpickr from 'react-flatpickr';
+import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
+const daysInWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const monthsInYear = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+// Fungsi: Tambahkan offset +622 tahun dan -3 hari
+const applyOffset = (date) => {
+  const offsetDate = new Date(date);
+  offsetDate.setFullYear(offsetDate.getFullYear() + 622);
+  offsetDate.setDate(offsetDate.getDate() - 3);
+  return offsetDate;
+};
+
+// Fungsi: Kembalikan ke tanggal asli dari offset
+const removeOffset = (offsetDate) => {
+  const original = new Date(offsetDate);
+  original.setDate(original.getDate() + 3);
+  original.setFullYear(original.getFullYear() - 622);
+  return original;
+};
+
 const CalendarNavigator = () => {
-  const today = new Date();
-  const [month, setMonth] = useState(today.getMonth()); // 0-11
-  const [year, setYear] = useState(today.getFullYear());
-  const [currentDate, setCurrentDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [bulan, setBulan] = useState(new Date().getMonth());
+  const [tahun, setTahun] = useState(new Date().getFullYear());
 
-  const flatpickrRef = useRef(null);
+  const calendarRef = useRef(null);
+  const flatpickrInstance = useRef(null);
 
-  // Daftar nama bulan dan hari
-  const monthNames = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-
-  const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-
-  // Daftar tahun (opsional: range 10 tahun ke depan & belakang)
-  const years = Array.from({ length: 21 }, (_, i) => today.getFullYear() - 10 + i);
-
-  // Update kalender saat bulan/tahun berubah
+  // Inisialisasi Flatpickr inline
   useEffect(() => {
-    if (flatpickrRef.current) {
-      const fp = flatpickrRef.current.flatpickr;
-      fp.setDate(new Date(year, month, 1), false); // false = jangan trigger event
-      fp.redraw(); // refresh tampilan
-      fp.jumpToDate(new Date(year, month, 1)); // lompat ke bulan/tahun
-    }
-  }, [month, year]);
+    const fp = flatpickr(calendarRef.current, {
+      inline: true,
+      defaultDate: applyOffset(selectedDate),
+      onChange: (selectedDates) => {
+        const corrected = removeOffset(selectedDates[0]);
+        setSelectedDate(corrected);
+        setBulan(corrected.getMonth());
+        setTahun(corrected.getFullYear());
+      },
+      // Hapus navigasi prev/next
+      showMonths: 1,
+      prevArrow: '',
+      nextArrow: '',
+      onMonthChange: (selectedDates, dateStr, instance) => {
+        // Simpan bulan & tahun ke state
+        const corrected = removeOffset(instance.currentMonthDate);
+        setBulan(corrected.getMonth());
+        setTahun(corrected.getFullYear());
+      },
+      onYearChange: (selectedDates, dateStr, instance) => {
+        const corrected = removeOffset(instance.currentYear);
+        setTahun(corrected.getFullYear());
+      }
+    });
 
-  // Handle perubahan tanggal dari flatpickr (klik tanggal)
-  const handleDateChange = (selectedDates) => {
-    if (selectedDates.length > 0) {
-      setCurrentDate(new Date(selectedDates[0]));
+    flatpickrInstance.current = fp;
+
+    return () => fp.destroy();
+  }, []);
+
+  // Update kalender saat dropdown berubah
+  useEffect(() => {
+    const tempDate = new Date(tahun, bulan, 1);
+    const offsetDate = applyOffset(tempDate);
+    if (flatpickrInstance.current) {
+      flatpickrInstance.current.jumpToDate(offsetDate);
     }
-  };
+    // Set tanggal pertama bulan sebagai selected
+    setSelectedDate(new Date(tahun, bulan, 1));
+  }, [bulan, tahun]);
+
+  // Handle dropdown change
+  const handleBulanChange = (e) => setBulan(Number(e.target.value));
+  const handleTahunChange = (e) => setTahun(Number(e.target.value));
+
+  // Tanggal offset untuk ditampilkan
+  const displayDate = applyOffset(selectedDate);
+  const displayBulan = monthsInYear[displayDate.getMonth()];
+  const displayTahun = displayDate.getFullYear();
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      {/* Judul */}
-      <h3>Navigasi Kalender</h3>
+      {/* Dropdown Navigasi */}
+      <div style={{ marginBottom: '1rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <label>
+          <strong>Tanggal:</strong>
+          <input
+            type="date"
+            value={selectedDate.toISOString().split('T')[0]}
+            onChange={(e) => setSelectedDate(new Date(e.target.value))}
+            style={{ marginLeft: '5px', padding: '5px' }}
+          />
+        </label>
 
-      {/* Dropdown Bulan & Tahun */}
-      <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <label>Bulan: </label>
-        <select
-          value={month}
-          onChange={(e) => setMonth(parseInt(e.target.value))}
-          style={{ padding: '5px' }}
-        >
-          {monthNames.map((name, idx) => (
-            <option key={idx} value={idx}>
-              {name}
-            </option>
-          ))}
-        </select>
+        <label>
+          <strong>Bulan:</strong>
+          <select value={bulan} onChange={handleBulanChange} style={{ marginLeft: '5px' }}>
+            {monthsInYear.map((m, idx) => (
+              <option key={idx} value={idx}>{m}</option>
+            ))}
+          </select>
+        </label>
 
-        <label>Tahun: </label>
-        <select
-          value={year}
-          onChange={(e) => setYear(parseInt(e.target.value))}
-          style={{ padding: '5px' }}
-        >
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
+        <label>
+          <strong>Tahun:</strong>
+          <input
+            type="number"
+            value={tahun}
+            onChange={(e) => setTahun(Number(e.target.value))}
+            style={{ width: '80px', marginLeft: '5px' }}
+          />
+        </label>
       </div>
 
-      {/* Label Hari dalam Seminggu */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          textAlign: 'center',
-          fontWeight: 'bold',
-          backgroundColor: '#f0f0f0',
-          padding: '8px 0',
-          marginBottom: '5px',
-        }}
-      >
-        {dayNames.map((day) => (
+      {/* Hari dalam Minggu */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        backgroundColor: '#f0f0f0',
+        padding: '10px 0',
+        marginBottom: '10px'
+      }}>
+        {daysInWeek.map((day) => (
           <div key={day}>{day}</div>
         ))}
       </div>
 
-      {/* Kalender Inline dengan Flatpickr */}
-      <Flatpickr
-        ref={flatpickrRef}
-        options={{
-          inline: true,
-          monthSelectorType: 'static',
-          showMonths: 1,
-          defaultDate: currentDate,
-          onChange: handleDateChange,
-          onReady: (selectedDates, dateStr, instance) => {
-            // Pastikan tampilan sesuai dropdown saat pertama kali
-            instance.jumpToDate(new Date(year, month, 1));
-          },
-        }}
-        style={{
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          overflow: 'hidden',
-        }}
-      />
+      {/* Kalender Inline (Flatpickr) */}
+      <div ref={calendarRef} style={{ maxWidth: '300px', margin: '0 auto' }} />
+
+      <p style={{ marginTop: '1rem', fontSize: '14px', color: 'gray' }}>
+        <strong>Tanggal ditampilkan:</strong> {displayDate.getDate()} {displayBulan} {displayTahun}{' '}
+        <em>(+622 tahun, -3 hari dari aslinya)</em>
+      </p>
     </div>
   );
 };
