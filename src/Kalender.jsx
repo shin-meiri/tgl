@@ -1,91 +1,79 @@
 import React, { useEffect, useRef } from 'react';
 import flatpickr from 'flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Tetap butuh CSS dasar flatpickr
+import 'flatpickr/dist/flatpickr.min.css'; // Wajib untuk tampilan dasar
 
 const Kalender = () => {
   const inputRef = useRef(null);
-  const flatpickrInstance = useRef(null);
+  const fpInstance = useRef(null);
 
   useEffect(() => {
-    // Konfigurasi flatpickr
-    flatpickrInstance.current = flatpickr(inputRef.current, {
+    // Inisialisasi flatpickr
+    fpInstance.current = flatpickr(inputRef.current, {
       dateFormat: "Y-m-d",
       defaultDate: "today",
-      inline: true, // Tampilkan langsung di bawah input, bukan popup
+      showMonths: 1, // Hanya 1 bulan
+      animate: false, // Matikan animasi agar lebih ringan
+      clickOpens: true, // Klik input buka kalender
+      allowInput: false, // Harus pilih dari kalender
+
+      // Custom setelah kalender muncul
+      onOpen: () => {
+        const calendar = fpInstance.current;
+        const daysContainer = calendar.days;
+        const weekdayElements = daysContainer.parentNode?.querySelectorAll(
+          ".flatpickr-weekday"
+        );
+
+        // Ganti nama hari ke Bahasa Indonesia: Min - Sab
+        const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+        if (weekdayElements.length === 7) {
+          weekdayElements.forEach((el, i) => {
+            el.textContent = dayNames[i];
+          });
+        }
+      },
+
+      // Saat tanggal dipilih
       onChange: (selectedDates, dateStr) => {
         console.log("Tanggal dipilih:", dateStr);
-      },
-      onReady: (selectedDates, dateStr, instance) => {
-        // Customisasi tampilan setelah flatpickr siap
-        customizeCalendar(instance);
+        // Bisa kirim ke state, props.onSelect, dll
       },
     });
 
     return () => {
-      if (flatpickrInstance.current) {
-        flatpickrInstance.current.destroy();
+      if (fpInstance.current) {
+        fpInstance.current.destroy();
       }
     };
   }, []);
 
-  const customizeCalendar = (fp) => {
-    const calendarContainer = fp.calendarContainer;
-
-    // Tambahkan header nama hari manual (opsional, karena fp sudah punya)
-    // Tapi kita pastikan urutannya: Minggu - Sabtu
-    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const weekdaysElement = calendarContainer.querySelector(".flatpickr-weekdays .flatpickr-weekday");
-    if (weekdaysElement && !weekdaysElement.customized) {
-      const weekdaysContainer = calendarContainer.querySelector(".flatpickr-weekdays .weekdays");
-      weekdaysContainer.innerHTML = "";
-
-      dayNames.forEach(day => {
-        const span = document.createElement("span");
-        span.className = "flatpickr-weekday";
-        span.innerHTML = day.slice(0, 3); // "Min", "Sen", dst.
-        weekdaysContainer.appendChild(span);
-      });
-      weekdaysElement.customized = true;
-    }
-  };
-
-  // Inline styles minimal
-  const containerStyle = {
-    fontFamily: "Arial, sans-serif",
-    display: "inline-block",
-    padding: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    backgroundColor: "#f9f9f9",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-  };
-
-  const headerStyle = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "8px",
-  };
-
+  // Inline style minimal (mirip Excel: bersih, font kecil, kotak rapi)
   const inputStyle = {
     padding: "8px 12px",
     fontSize: "14px",
     border: "1px solid #aaa",
     borderRadius: "4px",
     width: "200px",
-    cursor: "pointer",
+    fontFamily: "Consolas, Monaco, monospace", // Mirip Excel
+    backgroundColor: "#fff",
+    boxShadow: "1px 1px 3px rgba(0,0,0,0.2)",
+    display: "flex",
+    alignItems: "center",
+    boxSizing: "border-box",
+  };
+
+  const containerStyle = {
+    display: "inline-block",
+    margin: "10px",
   };
 
   return (
     <div style={containerStyle}>
-      <div style={headerStyle}>
-        <label htmlFor="kalender-input">Pilih Tanggal:</label>
-      </div>
+      {/* Input dengan ikon kalender */}
       <input
-        id="kalender-input"
         ref={inputRef}
         type="text"
-        placeholder="Klik untuk buka kalender"
+        placeholder="Pilih tanggal..."
         style={inputStyle}
         readOnly
       />
