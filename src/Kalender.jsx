@@ -1,112 +1,114 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import Flatpickr from 'react-flatpickr';
-import 'flatpickr/dist/flatpickr.min.css';
+import 'flatpickr/dist/flatpickr.min.css'; // Tetap butuh dasar
 
 const Kalender = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Bisa di-set ke 622
-  const inlineCalendarRef = useRef(null);
-  const fpInstance = useRef(null);
+  // State: tanggal yang dipilih
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Update inline calendar saat tanggal berubah
-  useEffect(() => {
-    if (inlineCalendarRef.current && !fpInstance.current) {
-      fpInstance.current = flatpickr(inlineCalendarRef.current, {
-        inline: true,
-        defaultDate: selectedDate,
-        onChange: (dates) => {
-          setSelectedDate(dates[0]);
-        },
-        // Locale Indonesia (opsional)
-        // locale: require("flatpickr/dist/l10n/id.js").Indonesian,
-      });
-    } else if (fpInstance.current) {
-      fpInstance.current.setDate(selectedDate);
-    }
-
-    return () => {
-      if (fpInstance.current) {
-        fpInstance.current.destroy();
-        fpInstance.current = null;
-      }
-    };
-  }, [selectedDate]);
-
-  const handleDateChange = (dates) => {
-    if (dates.length > 0) {
-      setSelectedDate(dates[0]);
-    }
+  // Format tanggal untuk tampilan
+  const formatDate = (date) => {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   return (
     <div
       style={{
-        display: 'inline-block',
         fontFamily: 'Arial, sans-serif',
-        padding: '12px',
-        border: '1px solid #ddd',
+        padding: '16px',
+        maxWidth: '320px',
+        margin: '0 auto',
+        border: '1px solid #e0e0e0',
         borderRadius: '8px',
         backgroundColor: '#fff',
-        maxWidth: '320px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
       }}
     >
-      {/* === DATEPICKER (Dropdown) === */}
+      {/* === DATEPICKER (Dropdown seperti Excel) === */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          marginBottom: '12px',
           border: '1px solid #aaa',
-          borderRadius: '6px',
-          overflow: 'hidden',
+          borderRadius: '4px',
+          padding: '8px 10px',
+          fontSize: '14px',
+          cursor: 'pointer',
+          backgroundColor: '#fff',
+          marginBottom: '16px',
         }}
       >
-        <span
-          style={{
-            padding: '8px',
-            fontSize: '16px',
-            backgroundColor: '#f0f0f0',
-            borderRight: '1px solid #ccc',
-          }}
-        >
-          🗓️
-        </span>
+        <span style={{ marginRight: '8px', fontSize: '16px' }}>🗓️</span>
         <Flatpickr
           options={{
             dateFormat: 'Y-m-d',
             defaultDate: selectedDate,
-            onChange: handleDateChange,
+            clickOpens: true,
+            allowInput: false,
+            onChange: (selectedDates) => {
+              setSelectedDate(selectedDates[0]);
+            },
           }}
           render={({ value, ...props }, ref) => (
             <input
               ref={ref}
+              type="text"
+              readOnly
+              placeholder="Pilih tanggal"
+              value={value || formatDate(selectedDate)}
               style={{
-                flex: 1,
-                padding: '8px 12px',
                 border: 'none',
                 outline: 'none',
-                fontSize: '14px',
+                background: 'transparent',
+                flexGrow: 1,
                 cursor: 'pointer',
               }}
-              value={value}
-              placeholder="Pilih tanggal"
-              readOnly
               {...props}
             />
           )}
         />
       </div>
 
-      {/* === KALENDER STATIS (Inline Flatpickr) === */}
+      {/* === KALENDER INLINE (Menampilkan 1 bulan sesuai pilihan) === */}
       <div
         style={{
-          marginTop: '8px',
+          marginTop: '10px',
+          padding: '12px',
           border: '1px solid #eee',
           borderRadius: '6px',
-          overflow: 'hidden',
+          backgroundColor: '#f9f9f9',
         }}
       >
-        <div ref={inlineCalendarRef} />
+        <Flatpickr
+          options={{
+            dateFormat: 'Y-m-d',
+            defaultDate: selectedDate,
+            inline: true, // Kalender tampil permanen
+            onChange: (selectedDates) => {
+              setSelectedDate(selectedDates[0]);
+            },
+          }}
+          render={({ value, ...props }, ref) => (
+            <div ref={ref} {...props} />
+          )}
+        />
+      </div>
+
+      {/* Tampilkan tanggal terpilih (opsional) */}
+      <div
+        style={{
+          marginTop: '12px',
+          fontSize: '14px',
+          color: '#555',
+          textAlign: 'center',
+        }}
+      >
+        Tanggal dipilih: <strong>{formatDate(selectedDate)}</strong>
       </div>
     </div>
   );
