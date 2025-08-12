@@ -3,11 +3,10 @@ import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 const Kalender = () => {
-  // Pastikan initial date adalah Date valid
+  // Pastikan defaultDate adalah hari ini (bukan null)
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const formatDate = (date) => {
-    if (!date) return 'Pilih tanggal';
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const months = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -29,7 +28,7 @@ const Kalender = () => {
         boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
       }}
     >
-      {/* === DATEPICKER === */}
+      {/* === DATEPICKER (Seperti Excel) === */}
       <div
         style={{
           display: 'flex',
@@ -47,12 +46,11 @@ const Kalender = () => {
         <Flatpickr
           options={{
             dateFormat: 'Y-m-d',
-            defaultDate: selectedDate,
+            defaultDate: selectedDate, // Selalu valid
             clickOpens: true,
+            allowInput: false,
             onChange: (selectedDates) => {
-              // 🔴 Pastikan yang diset adalah Date object, bukan string
-              const validDate = selectedDates[0] ? new Date(selectedDates[0]) : new Date();
-              setSelectedDate(validDate);
+              setSelectedDate(selectedDates[0]); // Update state
             },
           }}
           render={({ value, ...props }, ref) => (
@@ -75,7 +73,7 @@ const Kalender = () => {
         />
       </div>
 
-      {/* === KALENDER INLINE === */}
+      {/* === KALENDER INLINE (TANPA NAVIGASI < >) === */}
       <div
         style={{
           marginTop: '10px',
@@ -83,39 +81,85 @@ const Kalender = () => {
           border: '1px solid #eee',
           borderRadius: '6px',
           backgroundColor: '#f9f9f9',
+          position: 'relative',
         }}
       >
+        {/* Sembunyikan header flatpickr (termasuk prev/next) */}
+        <style>
+          {`
+            .no-nav .flatpickr-month {
+              display: none !important;
+            }
+            .no-nav .flatpickr-current-month .flatpickr-monthDropdown-months,
+            .no-nav .flatpickr-current-month .flatpickr-monthDropdown-months ~ div {
+              display: none !important;
+            }
+            .no-nav .flatpickr-current-month {
+              pointer-events: none;
+            }
+          `}
+        </style>
+
         <Flatpickr
           options={{
             dateFormat: 'Y-m-d',
-            // 🔴 Pastikan defaultDate adalah Date object
             defaultDate: selectedDate,
             inline: true,
+            // Matikan navigasi
+            prevArrow: '',
+            nextArrow: '',
+            showMonths: 1,
+            animate: false,
+            // Matikan interaksi header
+            onReady: (selectedDates, dateStr, instance) => {
+              // Optional: tambah label bulan manual
+              const container = instance.calendarContainer;
+              if (!container.querySelector('.custom-month-label')) {
+                const label = document.createElement('div');
+                label.className = 'custom-month-label';
+                label.style.cssText = `
+                  text-align: center;
+                  font-weight: bold;
+                  margin-bottom: 8px;
+                  font-size: 14px;
+                  color: #333;
+                `;
+                const date = selectedDates[0] || new Date();
+                const months = [
+                  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ];
+                label.textContent = `${months[date.getMonth()]} ${date.getFullYear()}`;
+                container.insertBefore(label, container.firstChild);
+              }
+            },
             onChange: (selectedDates) => {
-              const validDate = selectedDates[0] ? new Date(selectedDates[0]) : new Date();
-              setSelectedDate(validDate);
+              setSelectedDate(selectedDates[0]);
             },
           }}
           render={({ value, ...props }, ref) => (
-            <div ref={ref} {...props} />
+            <div
+              ref={ref}
+              {...props}
+              className="no-nav" // untuk CSS custom
+              style={{
+                marginTop: '-10px', // offset karena label tambahan
+              }}
+            />
           )}
         />
       </div>
 
-      {/* Debug: Cek tahun yang sebenarnya */}
+      {/* Info Tanggal Terpilih */}
       <div
         style={{
           marginTop: '12px',
-          fontSize: '12px',
-          color: selectedDate.getFullYear() < 1000 ? 'red' : '#555',
+          fontSize: '14px',
+          color: '#555',
           textAlign: 'center',
         }}
       >
-        {selectedDate && !isNaN(selectedDate.getTime()) ? (
-          <>Tahun: <strong>{selectedDate.getFullYear()}</strong> (valid)</>
-        ) : (
-          <><strong style={{ color: 'red' }}>Error: Tanggal tidak valid!</strong></>
-        )}
+        Dipilih: <strong>{formatDate(selectedDate)}</strong>
       </div>
     </div>
   );
