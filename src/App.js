@@ -1,31 +1,15 @@
-// src/App.jsx
-import React, { useEffect } from 'react';
-import Header from './Header';
-import Kalender from './Kalender';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 
-const App = () => {
-  // Load CSS dari theme.php (dari database)
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://bos.ct.ws/api/theme.php'; // Ganti dengan domain kamu
-    link.id = 'dynamic-theme';
-    document.head.appendChild(link);
-
-    return () => {
-      const existing = document.getElementById('dynamic-theme');
-      if (existing) document.head.removeChild(existing);
-    };
-  }, []);
-
+function App() {
   return (
-    <div className="app">
-      <Header />
-      <main className="p-6">
-        <Kalender />
-      </main>
-    </div>
+    <Router>
+      <div>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Kalender />} />
+          <Route path="/hasil" element={<HasilWeton />} />
+        </Routes>
+      </div>
+    </Router>
   );
-};
-
-export default App;
+    }
