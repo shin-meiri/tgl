@@ -1,18 +1,41 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 const Kalender = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const calendarRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(new Date()); // Bisa di-set ke 622
+  const inlineCalendarRef = useRef(null);
   const fpInstance = useRef(null);
 
-  // Update kalender inline saat tanggal berubah
+  // Update inline calendar saat tanggal berubah
   useEffect(() => {
-    if (fpInstance.current && selectedDate) {
+    if (inlineCalendarRef.current && !fpInstance.current) {
+      fpInstance.current = flatpickr(inlineCalendarRef.current, {
+        inline: true,
+        defaultDate: selectedDate,
+        onChange: (dates) => {
+          setSelectedDate(dates[0]);
+        },
+        // Locale Indonesia (opsional)
+        // locale: require("flatpickr/dist/l10n/id.js").Indonesian,
+      });
+    } else if (fpInstance.current) {
       fpInstance.current.setDate(selectedDate);
     }
+
+    return () => {
+      if (fpInstance.current) {
+        fpInstance.current.destroy();
+        fpInstance.current = null;
+      }
+    };
   }, [selectedDate]);
+
+  const handleDateChange = (dates) => {
+    if (dates.length > 0) {
+      setSelectedDate(dates[0]);
+    }
+  };
 
   return (
     <div
@@ -23,7 +46,7 @@ const Kalender = () => {
         border: '1px solid #ddd',
         borderRadius: '8px',
         backgroundColor: '#fff',
-        width: '340px',
+        maxWidth: '320px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
       }}
     >
@@ -52,19 +75,11 @@ const Kalender = () => {
           options={{
             dateFormat: 'Y-m-d',
             defaultDate: selectedDate,
-            onChange: (dates) => {
-              if (dates.length > 0) {
-                setSelectedDate(dates[0]);
-              }
-            },
-            allowInput: true,
+            onChange: handleDateChange,
           }}
           render={({ value, ...props }, ref) => (
             <input
               ref={ref}
-              value={value}
-              placeholder="Pilih tanggal"
-              readOnly
               style={{
                 flex: 1,
                 padding: '8px 12px',
@@ -73,6 +88,9 @@ const Kalender = () => {
                 fontSize: '14px',
                 cursor: 'pointer',
               }}
+              value={value}
+              placeholder="Pilih tanggal"
+              readOnly
               {...props}
             />
           )}
@@ -88,24 +106,7 @@ const Kalender = () => {
           overflow: 'hidden',
         }}
       >
-        <Flatpickr
-          ref={calendarRef}
-          options={{
-            inline: true,
-            defaultDate: selectedDate,
-            onChange: (dates) => {
-              // Opsional: jika ingin klik di kalender juga ganti input
-              if (dates.length > 0) {
-                setSelectedDate(dates[0]);
-              }
-            },
-            // Locale Indonesia (opsional)
-            // locale: require('flatpickr/dist/l10n/id.js').Indonesian,
-          }}
-          render={({ value, ...props }, ref) => (
-            <div ref={ref} {...props} />
-          )}
-        />
+        <div ref={inlineCalendarRef} />
       </div>
     </div>
   );
