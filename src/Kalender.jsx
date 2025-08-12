@@ -1,102 +1,146 @@
-// App.js
 import React, { useState } from "react";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
-function App() {
-  const [range1, setRange1] = useState(""); // untuk dropdown
-  const [range2, setRange2] = useState(""); // untuk inline
+const DateRangeTest = () => {
+  const [range1, setRange1] = useState([]); // untuk dropdown
+  const [range2, setRange2] = useState([]); // untuk inline
+  const [duration1, setDuration1] = useState(0);
+  const [duration2, setDuration2] = useState(0);
 
-  const handleRangeChange = (dates, setRange) => {
-    if (dates.length === 2) {
-      const start = dates[0];
-      const end = dates[1];
-
-      const timeDiff = end - start;
-      const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-      const formatted = `${formatDate(start)} — ${formatDate(end)} (${daysDiff} hari)`;
-      setRange(formatted);
-    } else {
-      setRange("Pilih tanggal akhir...");
-    }
+  // Fungsi hitung durasi (hari)
+  const calculateDuration = (dates) => {
+    if (dates.length < 2) return 0;
+    const [start, end] = dates;
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // hari
   };
 
-  const formatDate = (date) => {
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
+  const handleDropdownChange = (dates) => {
+    setRange1(dates);
+    const days = calculateDuration(dates);
+    setDuration1(days);
   };
 
-  const commonOptions = {
-    mode: "range",
-    dateFormat: "Y-m-d",
-    onChange: (dates) => {
-      // Kita handle manual, bukan simpan array langsung
-    },
-    onReady: (selectedDates, dateStr, instance) => {
-      // Trigger onChange sekali saat siap
-      if (selectedDates.length === 2) {
-        handleRangeChange(selectedDates, instance.element === document.getElementById("inline") ? setRange2 : setRange1);
-      }
-    },
-    onChange: (selectedDates, dateStr, instance) => {
-      // Cek elemen mana yang memanggil
-      if (selectedDates.length === 2) {
-        if (instance.element.id === "inline") {
-          handleRangeRange(selectedDates, setRange2);
-        } else {
-          handleRangeChange(selectedDates, setRange1);
-        }
-      } else {
-        // Jika belum lengkap
-        const setter = instance.element.id === "inline" ? setRange2 : setRange1;
-        setter("Rentang belum lengkap...");
-      }
-    },
+  const handleInlineChange = (dates) => {
+    setRange2(dates);
+    const days = calculateDuration(dates);
+    setDuration2(days);
+  };
+
+  const formatRange = (dates) => {
+    if (dates.length === 0) return "Pilih rentang tanggal";
+    if (dates.length === 1) return "Tunggu tanggal akhir...";
+    const start = dates[0].toLocaleDateString();
+    const end = dates[1].toLocaleDateString();
+    return `${start} — ${end}`;
   };
 
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
-      <h2>🎯 Uji Flatpickr: Dropdown vs Inline (Range >3 Hari)</h2>
+    <div style={{ fontFamily: "Arial, sans-serif", padding: "20px" }}>
+      <h2>🔍 Uji Flatpickr: Dropdown vs Inline (Range >3 Hari)</h2>
 
-      <div style={{ marginBottom: "30px" }}>
-        <h3>📅 1. Dropdown (Input Click)</h3>
+      <hr />
+
+      {/* === DROPDOWN (Mirip Excel) === */}
+      <div style={{ marginBottom: "40px" }}>
+        <h3>1. Dropdown (Input - Mirip Excel)</h3>
+        <p>Pilih rentang tanggal (klik input → pilih awal & akhir)</p>
+
         <Flatpickr
-          id="dropdown"
-          options={commonOptions}
-          placeholder="Pilih rentang tanggal..."
-          style={{ padding: "8px", fontSize: "16px" }}
+          value={range1}
+          onChange={handleDropdownChange}
+          options={{
+            mode: "range",
+            dateFormat: "Y-m-d",
+            allowInput: true,
+            placeholder: "Pilih rentang tanggal...",
+            onClose: (selectedDates) => {
+              // Optional: logika tambahan saat popup ditutup
+            },
+          }}
+          style={{
+            padding: "10px",
+            fontSize: "16px",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+          }}
         />
-        <div style={{ marginTop: "10px", color: "#2c3e50", fontWeight: "bold" }}>
-          Hasil: {range1 || "Belum memilih"}
+
+        <div style={{ marginTop: "10px" }}>
+          <strong>Rentang:</strong> {formatRange(range1)} <br />
+          <strong>Durasi:</strong> {duration1} hari
+          {duration1 > 3 && (
+            <span style={{ color: "green", marginLeft: "10px" }}>
+              ✅ >3 hari terdeteksi dengan benar
+            </span>
+          )}
         </div>
       </div>
 
-      <div>
-        <h3>🗓️ 2. Inline (Kalender Selalu Tampil)</h3>
-        <div id="inline-container" style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "15px", backgroundColor: "#f9f9f9" }}>
+      <hr />
+
+      {/* === INLINE MODE === */}
+      <div style={{ marginBottom: "40px" }}>
+        <h3>2. Inline Mode (Kalender Selalu Tampil)</h3>
+        <p>Klik dua tanggal untuk membuat rentang</p>
+
+        <div
+          style={{
+            display: "inline-block",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            padding: "10px",
+            backgroundColor: "#f9f9f9",
+          }}
+        >
           <Flatpickr
-            id="inline"
+            value={range2}
+            onChange={handleInlineChange}
             options={{
-              ...commonOptions,
-              inline: true,
+              mode: "range",
+              inline: true, // Wajib untuk inline
+              dateFormat: "Y-m-d",
             }}
           />
         </div>
-        <div style={{ marginTop: "10px", color: "#2c3e50", fontWeight: "bold" }}>
-          Hasil: {range2 || "Belum memilih"}
+
+        <div style={{ marginTop: "10px" }}>
+          <strong>Rentang:</strong> {formatRange(range2)} <br />
+          <strong>Durasi:</strong> {duration2} hari
+          {duration2 > 3 && (
+            <span style={{ color: "green", marginLeft: "10px" }}>
+              ✅ >3 hari terdeteksi dengan benar
+            </span>
+          )}
         </div>
       </div>
 
-      <div style={{ marginTop: "30px", color: "#7f8c8d", fontSize: "14px" }}>
-        <p>💡 <strong>Instruksi:</strong> Pilih rentang lebih dari 3 hari (misal: 1 Jan 2025 → 15 Mar 2026) dan lihat apakah keduanya menunjukkan jumlah hari yang sama.</p>
-        <p>🔧 Jika hasilnya berbeda, berarti ada masalah di event handling atau UI.</p>
+      {/* === INFO TAMBAHAN === */}
+      <div style={{ marginTop: "40px", color: "#555", fontSize: "14px" }}>
+        <h4>💡 Catatan:</h4>
+        <ul>
+          <li>
+            Kedua mode menggunakan <code>mode: "range"</code> dan logika hitung yang sama.
+          </li>
+          <li>
+            Durasi hanya dihitung saat <strong>dua tanggal terpilih</strong>.
+          </li>
+          <li>
+            Jika hasilnya akurat (>3 hari terdeteksi), maka <strong>inline tidak bermasalah</strong>.
+          </li>
+          <li>
+            Jika inline "tidak akurat", cek:
+            <ul>
+              <li>Apakah CSS memotong kalender?</li>
+              <li>Apakah event <code>onChange</code> dipanggil prematur?</li>
+              <li>Apakah <code>inline: true</code> benar-benar di-set?</li>
+            </ul>
+          </li>
+        </ul>
       </div>
     </div>
   );
-}
+};
 
-export default App;
+export default DateRangeTest;
