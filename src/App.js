@@ -1,15 +1,12 @@
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import ExcelDatePicker from './ExcelDatePicker';
 
 function App() {
   return (
-    <Router>
-      <div>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Kalender />} />
-          <Route path="/hasil" element={<HasilWeton />} />
-        </Routes>
-      </div>
-    </Router>
+    <div className="App">
+      <h1>Excel-Style Date Picker</h1>
+      <ExcelDatePicker />
+    </div>
   );
-    }
+}
+
+export default App;
