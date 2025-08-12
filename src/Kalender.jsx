@@ -2,130 +2,115 @@ import React, { useState, useRef, useEffect } from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-const DatePicker = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+const CalendarNavigator = () => {
+  const today = new Date();
+  const [month, setMonth] = useState(today.getMonth()); // 0-11
+  const [year, setYear] = useState(today.getFullYear());
+  const [currentDate, setCurrentDate] = useState(today);
+
   const flatpickrRef = useRef(null);
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const months = [
+  // Daftar nama bulan dan hari
+  const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
-  const years = Array.from({ length: 3000 }, (_, i) => 0 + i); // 2020 - 2120
 
-  // Update date when dropdowns change
-  const handleDropdownChange = () => {
-    const day = parseInt(document.getElementById('day').value);
-    const month = parseInt(document.getElementById('month').value);
-    const year = parseInt(document.getElementById('year').value);
+  const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-    const newDate = new Date(year, month, day);
-    setSelectedDate(newDate);
+  // Daftar tahun (opsional: range 10 tahun ke depan & belakang)
+  const years = Array.from({ length: 21 }, (_, i) => today.getFullYear() - 10 + i);
 
-    // Update flatpickr view
-    if (flatpickrRef.current) {
-      flatpickrRef.current.flatpickr.setDate(newDate, false); // false = jangan trigger event
-    }
-  };
-
-  // Update dropdowns when date selected in calendar
-  const handleDateChange = (date) => {
-    setSelectedDate(date[0]);
-    // Kalender otomatis update tampilan
-  };
-
-  // Set default: hari ini
+  // Update kalender saat bulan/tahun berubah
   useEffect(() => {
-    const today = new Date();
-    setSelectedDate(today);
     if (flatpickrRef.current) {
-      flatpickrRef.current.flatpickr.setDate(today, false);
+      const fp = flatpickrRef.current.flatpickr;
+      fp.setDate(new Date(year, month, 1), false); // false = jangan trigger event
+      fp.redraw(); // refresh tampilan
+      fp.jumpToDate(new Date(year, month, 1)); // lompat ke bulan/tahun
     }
-  }, []);
+  }, [month, year]);
+
+  // Handle perubahan tanggal dari flatpickr (klik tanggal)
+  const handleDateChange = (selectedDates) => {
+    if (selectedDates.length > 0) {
+      setCurrentDate(new Date(selectedDates[0]));
+    }
+  };
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      <h3>Pilih Tanggal</h3>
+      {/* Judul */}
+      <h3>Navigasi Kalender</h3>
 
-      {/* Dropdown Tgl, Bulan, Tahun */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <div>
-          <label>Tgl:</label>
-          <select
-            id="day"
-            defaultValue={selectedDate.getDate()}
-            onChange={handleDropdownChange}
-            style={{ marginLeft: '5px' }}
-          >
-            {days.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        </div>
+      {/* Dropdown Bulan & Tahun */}
+      <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <label>Bulan: </label>
+        <select
+          value={month}
+          onChange={(e) => setMonth(parseInt(e.target.value))}
+          style={{ padding: '5px' }}
+        >
+          {monthNames.map((name, idx) => (
+            <option key={idx} value={idx}>
+              {name}
+            </option>
+          ))}
+        </select>
 
-        <div>
-          <label>Bulan:</label>
-          <select
-            id="month"
-            defaultValue={selectedDate.getMonth()}
-            onChange={handleDropdownChange}
-            style={{ marginLeft: '5px' }}
-          >
-            {months.map((m, idx) => (
-              <option key={idx} value={idx}>{m}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label>Tahun:</label>
-          <select
-            id="year"
-            defaultValue={selectedDate.getFullYear()}
-            onChange={handleDropdownChange}
-            style={{ marginLeft: '5px' }}
-          >
-            {years.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
+        <label>Tahun: </label>
+        <select
+          value={year}
+          onChange={(e) => setYear(parseInt(e.target.value))}
+          style={{ padding: '5px' }}
+        >
+          {years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Kalender Inline (Flatpickr) */}
-      <div>
-        <Flatpickr
-          ref={flatpickrRef}
-          options={{
-            inline: true,
-            defaultDate: selectedDate,
-            onChange: handleDateChange,
-            animate: true,
-            // Hapus tombol prev/next
-            prevArrow: '',
-            nextArrow: '',
-            // Custom fungsi render untuk menghilangkan nav lengkap
-            onMonthChange: (selectedDates) => {
-              const date = selectedDates[0] || selectedDate;
-              document.getElementById('day').value = date.getDate();
-              document.getElementById('month').value = date.getMonth();
-              document.getElementById('year').value = date.getFullYear();
-            },
-            onYearChange: (selectedDates) => {
-              const date = selectedDates[0] || selectedDate;
-              document.getElementById('day').value = date.getDate();
-              document.getElementById('month').value = date.getMonth();
-              document.getElementById('year').value = date.getFullYear();
-            }
-          }}
-        />
+      {/* Label Hari dalam Seminggu */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          backgroundColor: '#f0f0f0',
+          padding: '8px 0',
+          marginBottom: '5px',
+        }}
+      >
+        {dayNames.map((day) => (
+          <div key={day}>{day}</div>
+        ))}
       </div>
 
-      <p style={{ marginTop: '20px' }}>
-        <strong>Tanggal Terpilih:</strong> {selectedDate.toLocaleDateString('id-ID')}
-      </p>
+      {/* Kalender Inline dengan Flatpickr */}
+      <Flatpickr
+        ref={flatpickrRef}
+        options={{
+          inline: true,
+          monthSelectorType: 'static',
+          showMonths: 1,
+          defaultDate: currentDate,
+          onChange: handleDateChange,
+          onReady: (selectedDates, dateStr, instance) => {
+            // Pastikan tampilan sesuai dropdown saat pertama kali
+            instance.jumpToDate(new Date(year, month, 1));
+          },
+        }}
+        style={{
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          overflow: 'hidden',
+        }}
+      />
     </div>
   );
 };
 
-export default DatePicker;
+export default CalendarNavigator;
