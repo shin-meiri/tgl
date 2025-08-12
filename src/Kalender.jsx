@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import Flatpickr from 'react-flatpickr';
-import 'flatpickr/dist/flatpickr.min.css'; // Tetap butuh dasar
+import 'flatpickr/dist/flatpickr.min.css';
 
 const Kalender = () => {
-  // State: tanggal yang dipilih
+  // Pastikan initial date adalah Date valid
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Format tanggal untuk tampilan
   const formatDate = (date) => {
+    if (!date) return 'Pilih tanggal';
     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const months = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -29,7 +29,7 @@ const Kalender = () => {
         boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
       }}
     >
-      {/* === DATEPICKER (Dropdown seperti Excel) === */}
+      {/* === DATEPICKER === */}
       <div
         style={{
           display: 'flex',
@@ -49,9 +49,10 @@ const Kalender = () => {
             dateFormat: 'Y-m-d',
             defaultDate: selectedDate,
             clickOpens: true,
-            allowInput: false,
             onChange: (selectedDates) => {
-              setSelectedDate(selectedDates[0]);
+              // 🔴 Pastikan yang diset adalah Date object, bukan string
+              const validDate = selectedDates[0] ? new Date(selectedDates[0]) : new Date();
+              setSelectedDate(validDate);
             },
           }}
           render={({ value, ...props }, ref) => (
@@ -74,7 +75,7 @@ const Kalender = () => {
         />
       </div>
 
-      {/* === KALENDER INLINE (Menampilkan 1 bulan sesuai pilihan) === */}
+      {/* === KALENDER INLINE === */}
       <div
         style={{
           marginTop: '10px',
@@ -87,10 +88,12 @@ const Kalender = () => {
         <Flatpickr
           options={{
             dateFormat: 'Y-m-d',
+            // 🔴 Pastikan defaultDate adalah Date object
             defaultDate: selectedDate,
-            inline: true, // Kalender tampil permanen
+            inline: true,
             onChange: (selectedDates) => {
-              setSelectedDate(selectedDates[0]);
+              const validDate = selectedDates[0] ? new Date(selectedDates[0]) : new Date();
+              setSelectedDate(validDate);
             },
           }}
           render={({ value, ...props }, ref) => (
@@ -99,16 +102,20 @@ const Kalender = () => {
         />
       </div>
 
-      {/* Tampilkan tanggal terpilih (opsional) */}
+      {/* Debug: Cek tahun yang sebenarnya */}
       <div
         style={{
           marginTop: '12px',
-          fontSize: '14px',
-          color: '#555',
+          fontSize: '12px',
+          color: selectedDate.getFullYear() < 1000 ? 'red' : '#555',
           textAlign: 'center',
         }}
       >
-        Tanggal dipilih: <strong>{formatDate(selectedDate)}</strong>
+        {selectedDate && !isNaN(selectedDate.getTime()) ? (
+          <>Tahun: <strong>{selectedDate.getFullYear()}</strong> (valid)</>
+        ) : (
+          <><strong style={{ color: 'red' }}>Error: Tanggal tidak valid!</strong></>
+        )}
       </div>
     </div>
   );
