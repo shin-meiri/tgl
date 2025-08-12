@@ -11,7 +11,7 @@ const DatePicker = () => {
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
-  const years = Array.from({ length: 101 }, (_, i) => 2020 + i); // 2020 - 2120
+  const years = Array.from({ length: 3000 }, (_, i) => 0 + i); // 2020 - 2120
 
   // Update date when dropdowns change
   const handleDropdownChange = () => {
