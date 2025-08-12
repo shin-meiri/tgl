@@ -3,26 +3,18 @@ import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 const Kalender = () => {
-  // State: tanggal yang dipilih
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Konversi ke objek tanggal
   const selected = new Date(selectedDate);
-
-  // Dapatkan bulan & tahun dari tanggal terpilih
-  const month = selected.getMonth(); // 0-11
+  const month = selected.getMonth();
   const year = selected.getFullYear();
 
-  // Nama hari (Indonesia)
   const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-
-  // Nama bulan
   const monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  // Buat array tanggal untuk 1 bulan
   const renderCalendar = () => {
     const firstDay = new Date(year, month, 1).getDay(); // 0 = Minggu
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -31,41 +23,25 @@ const Kalender = () => {
     const weeks = [];
     let days = [];
 
-    // Isi awal dengan tanggal dari bulan sebelumnya
+    // 1. Tanggal dari bulan sebelumnya
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push(
-        <div
-          key={`prev-${i}`}
-          style={styles.dayInactive}
-        >
+        <div key={`prev-${i}`} style={styles.dayInactive}>
           {prevMonthDays - i}
         </div>
       );
     }
 
-    // Tanggal bulan ini
+    // 2. Tanggal bulan ini
     for (let date = 1; date <= daysInMonth; date++) {
       const isToday = new Date().toDateString() === new Date(year, month, date).toDateString();
       days.push(
-        <div
-          key={date}
-          style={isToday ? styles.dayToday : styles.dayActive}
-        >
+        <div key={`curr-${date}`} style={isToday ? styles.dayToday : styles.dayActive}>
           {date}
         </div>
       );
 
-      // Setiap 7 hari, mulai baris baru
-      if ((date + firstDay) % 7 === 0 || date === daysInMonth) {
-        // Tambahkan sisa hari ke minggu depan jika belum 7
-        while (days.length < 7) {
-          const nextDate = days.length - (prevMonthDays - firstDay + date) + 1;
-          days.push(
-            <div key={`next-${nextDate}`} style={styles.dayInactive}>
-              {nextDate}
-            </div>
-          );
-        }
+      if ((date + firstDay) % 7 === 0) {
         weeks.push(
           <div key={weeks.length} style={styles.week}>
             {days}
@@ -75,12 +51,30 @@ const Kalender = () => {
       }
     }
 
+    // 3. Tanggal dari bulan depan
+    let nextDate = 1;
+    while (days.length < 7) {
+      days.push(
+        <div key={`next-${nextDate}`} style={styles.dayInactive}>
+          {nextDate++}
+        </div>
+      );
+    }
+
+    if (days.length > 0) {
+      weeks.push(
+        <div key={weeks.length} style={styles.week}>
+          {days}
+        </div>
+      );
+    }
+
     return weeks;
   };
 
   return (
     <div style={styles.container}>
-      {/* === DATEPICKER === */}
+      {/* DATEPICKER */}
       <div style={styles.pickerWrapper}>
         <span style={styles.icon}>🗓️</span>
         <Flatpickr
@@ -107,14 +101,12 @@ const Kalender = () => {
         />
       </div>
 
-      {/* === KALENDER STATIS BULANAN === */}
+      {/* KALENDER BULANAN */}
       <div style={styles.calendarContainer}>
-        {/* Header Bulan */}
         <div style={styles.monthHeader}>
           {monthNames[month]} {year}
         </div>
 
-        {/* Nama Hari */}
         <div style={styles.week}>
           {dayNames.map((day) => (
             <div key={day} style={styles.dayHeader}>
@@ -123,14 +115,13 @@ const Kalender = () => {
           ))}
         </div>
 
-        {/* Tanggal-tanggal */}
         {renderCalendar()}
       </div>
     </div>
   );
 };
 
-// === STYLES (inline) ===
+// STYLES (sama seperti sebelumnya)
 const styles = {
   container: {
     display: 'inline-block',
