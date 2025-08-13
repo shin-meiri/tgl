@@ -1,17 +1,92 @@
-// SimpleDatePicker.jsx
-import React, { useState } from 'react';
+// ExcelDatePicker.jsx
+import React, { useState, useEffect } from 'react';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
-export default function SimpleDatePicker() {
-  const [tanggal, setTanggal] = useState('9 April 1478');
-  const [show, setShow] = useState(false);
+const hariSingkat = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-  // Daftar tahun (bisa disesuaikan)
-  const tahunList = Array.from({ length: 3000 }, (_, i) => 1 + i); // 1470–1489
+export default function ExcelDatePicker() {
+  const [tanggal, setTanggal] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
+  const [mode, setMode] = useState('date'); // 'date', 'month', 'year'
+  const [bulan, setBulan] = useState(0);
+  const [tahun, setTahun] = useState(2025);
+
+  // Default: hari ini (tapi aman untuk tahun < 1000)
+  useEffect(() => {
+    const now = new Date();
+    const hariIni = now.getDate();
+    const bulanIni = now.getMonth();
+    const tahunIni = now.getFullYear();
+
+    setBulan(bulanIni);
+    setTahun(tahunIni);
+    setTanggal(`${hariIni} ${bulanList[bulanIni]} ${tahunIni}`);
+  }, []);
+
+  // Grid: Tanggal 1–31
+  const renderDateGrid = () => {
+    return Array.from({ length: 31 }, (_, i) => i + 1).map(hari => (
+      <div
+        key={hari}
+        onClick={() => {
+          setTanggal(`${hari} ${bulanList[bulan]} ${tahun}`);
+          setShowPicker(false);
+        }}
+        style={style.cell}
+      >
+        {hari}
+      </div>
+    ));
+  };
+
+  // Grid: Bulan
+  const renderMonthGrid = () => {
+    return bulanList.map((nama, idx) => (
+      <div
+        key={nama}
+        onClick={() => {
+          setBulan(idx);
+          setMode('date');
+        }}
+        style={{
+          ...style.cell,
+          backgroundColor: idx === bulan ? '#0078D7' : 'transparent',
+          color: idx === bulan ? 'white' : '#333',
+        }}
+      >
+        {nama.slice(0, 3)}
+      </div>
+    ));
+  };
+
+  // Grid: Tahun (1–5000)
+  const renderYearGrid = () => {
+    const start = Math.floor((tahun - 1) / 12) * 12 + 1;
+    const years = Array.from({ length: 12 }, (_, i) => start + i);
+    return years.map(y => (
+      <div
+        key={y}
+        onClick={() => {
+          if (y >= 1 && y <= 5000) {
+            setTahun(y);
+            setMode('month');
+          }
+        }}
+        style={{
+          ...style.cell,
+          backgroundColor: y === tahun ? '#0078D7' : 'transparent',
+          color: y === tahun ? 'white' : (y < 1 || y > 5000 ? '#ccc' : '#333'),
+          cursor: y < 1 || y > 5000 ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {y}
+      </div>
+    ));
+  };
 
   return (
     <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Arial, sans-serif' }}>
@@ -20,21 +95,25 @@ export default function SimpleDatePicker() {
         type="text"
         value={tanggal}
         readOnly
-        onClick={() => setShow(!show)}
+        onClick={() => {
+          setShowPicker(true);
+          setMode('date');
+        }}
         style={{
-          padding: '10px',
-          width: '180px',
+          padding: '10px 12px',
+          width: '200px',
           fontSize: '14px',
           border: '1px solid #aaa',
           borderRadius: '4px',
           textAlign: 'center',
           cursor: 'pointer',
           backgroundColor: 'white',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
         }}
       />
 
-      {/* Popup */}
-      {show && (
+      {/* Popup Kalender */}
+      {showPicker && (
         <div
           style={{
             position: 'absolute',
@@ -45,111 +124,75 @@ export default function SimpleDatePicker() {
             borderRadius: '6px',
             boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
             zIndex: 1000,
-            width: '220px',
+            width: '240px',
             padding: '12px',
           }}
-          onClick={(e) => e.stopPropagation()}
         >
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#333' }}>
-            Pilih Tanggal
-          </h4>
+          {/* Header: Navigasi */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px' }}>
+            <span
+              onClick={() => setMode('month')}
+              style={{ fontWeight: 'bold', cursor: 'pointer', color: '#0078D7' }}
+            >
+              {bulanList[bulan]}
+            </span>
+            <span
+              onClick={() => setMode('year')}
+              style={{ fontWeight: 'bold', cursor: 'pointer', color: '#0078D7' }}
+            >
+              {tahun}
+            </span>
+          </div>
 
-          {/* Grid Tanggal */}
+          {/* Grid Isi */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '4px',
-              marginBottom: '10px',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '6px',
             }}
           >
-            {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(hari => (
-              <div
-                key={hari}
-                style={{
-                  fontSize: '11px',
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  color: '#555',
-                }}
-              >
-                {hari}
-              </div>
-            ))}
-
-            {/* Tanggal 1–31 (dummy, bisa diganti logika sesungguhnya) */}
-            {Array.from({ length: 31 }, (_, i) => i + 1).map(hari => (
-              <div
-                key={hari}
-                onClick={() => {
-                  setTanggal(`${hari} April 1478`);
-                  setShow(false);
-                }}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  margin: '0 auto',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f0f0f0';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                }}
-              >
-                {hari}
-              </div>
-            ))}
+            {mode === 'date' && renderDateGrid()}
+            {mode === 'month' && renderMonthGrid()}
+            {mode === 'year' && renderYearGrid()}
           </div>
 
-          {/* Dropdown Bulan & Tahun */}
-          <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
-            <select
-              defaultValue="April"
-              onChange={(e) => {
-                const bulan = e.target.value;
-                setTanggal(`${tanggal.split(' ')[0]} ${bulan} ${tanggal.split(' ')[2]}`);
-              }}
-              style={{ padding: '4px', fontSize: '12px' }}
-            >
-              {bulanList.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-
-            <select
-              defaultValue="1478"
-              onChange={(e) => {
-                const tahun = e.target.value;
-                setTanggal(`${tanggal.split(' ')[0]} ${tanggal.split(' ')[1]} ${tahun}`);
-              }}
-              style={{ padding: '4px', fontSize: '12px' }}
-            >
-              {tahunList.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+          {/* Footer: Info Mode */}
+          <div style={{ marginTop: '10px', fontSize: '11px', color: '#777', textAlign: 'center' }}>
+            {mode === 'date' && 'Pilih hari'}
+            {mode === 'month' && 'Pilih bulan'}
+            {mode === 'year' && 'Pilih tahun (1–5000)'}
           </div>
         </div>
       )}
 
-      {/* Tutup saat klik luar */}
-      {show && (
+      {/* Close saat klik luar */}
+      {showPicker && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
             zIndex: 999,
           }}
-          onClick={() => setShow(false)}
+          onClick={() => setShowPicker(false)}
         />
       )}
     </div>
   );
-                                                       }
+}
+
+// Gaya seperti Excel
+const style = {
+  cell: {
+    width: '40px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    margin: '2px auto',
+    transition: 'all 0.2s',
+  },
+};
