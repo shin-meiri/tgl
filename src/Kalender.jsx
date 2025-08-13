@@ -4,54 +4,71 @@ import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 export default function Kalender() {
-  const [tanggal, setTanggal] = useState('0622-08-10'); // Default: 10 Agustus 622
-  const [rawValue, setRawValue] = useState('0622-08-10'); // Simpan nilai asli dari flatpickr
+  const [rawOutput, setRawOutput] = useState(null);
 
-  const handleChange = (selectedDates, dateStr) => {
-    // 🔑 Ambil langsung string dari flatpickr
-    setTanggal(dateStr);
-    setRawValue(dateStr); // Ini nilai asli dari datepicker
+  const handleChange = (selectedDates, dateStr, instance) => {
+    // 🔥 INI YANG KAMU MAU:
+    // Tampilkan apa adanya dari flatpickr
+    setRawOutput({
+      dateStr,           // "0002-01-05" → inilah nilai asli
+      selectedDatesLen: selectedDates.length,
+      firstDate: selectedDates[0] ? selectedDates[0].toString() : null,
+    });
   };
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h3>Kalender Historis (Nilai Asli Ditampilkan)</h3>
+      <h3>🔍 Kalender: Tampilkan Hasil Asli Datepicker (Apa Adanya)</h3>
 
-      <div style={{ marginBottom: '20px' }}>
-        <label>Pilih Tanggal: </label>
+      <p><em>Pilih tanggal — lihat output mentah dari flatpickr di bawah.</em></p>
+
+      <div style={{ marginBottom: '30px' }}>
         <Flatpickr
-          value={tanggal}
           options={{
-            dateFormat: 'Y-m-d',        // Format simpan & tampilan internal
-            altFormat: 'F j, Y',        // Format di dropdown (opsional)
+            dateFormat: 'Y-m-d',
+            altFormat: 'F j, Y',
             allowInput: true,
             clickOpens: true,
           }}
-          onChange={handleChange}
-          className="flatpickr-input"
+          onChange={handleChange} // Tidak perlu value dulu
           style={{
-            padding: '8px 12px',
-            fontSize: '14px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
+            padding: '10px',
+            fontSize: '16px',
+            border: '2px solid #000',
+            borderRadius: '6px',
           }}
         />
       </div>
 
-      {/* Tampilkan nilai asli dari datepicker */}
-      <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-        <h4>🔍 Nilai Asli dari Datepicker:</h4>
-        <p style={{ fontSize: '18px', fontFamily: 'monospace', color: '#d32f2f' }}>
-          <strong>{rawValue}</strong>
-        </p>
-        <p><em>Ini adalah nilai string langsung dari <code>dateStr</code> — tidak melalui <code>Date</code> object.</em></p>
-      </div>
+      {/* Tampilkan hasil APA ADANYA */}
+      {rawOutput && (
+        <div
+          style={{
+            padding: '20px',
+            backgroundColor: '#f9f9f9',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          <strong>🔧 Hasil Asli dari Flatpickr (onChange):</strong>
+          <pre style={{ margin: '10px 0', lineHeight: '1.6' }}>
+{`dateStr (string): "${rawOutput.dateStr}"
 
-      {/* Info tambahan */}
-      <div style={{ marginTop: '20px', color: '#555', fontSize: '14px' }}>
-        <p>✅ <strong>Benar:</strong> Nilai ini tidak akan bergeser (misal: 10 → 13).</p>
-        <p>🚫 <strong>Jangan gunakan:</strong> <code>selectedDates[0].toISOString()</code> — itu bisa rusak karena timezone.</p>
-      </div>
+Jumlah tanggal dipilih: ${rawOutput.selectedDatesLen}
+
+Tanggal pertama (Date object):
+${rawOutput.firstDate}
+
+⚠️ Catatan:
+- "dateStr" adalah nilai string ASLI dari flatpickr.
+- Jika ini sudah salah (misal: "0002-01-03"), artinya flatpickr sendiri yang salah.
+- Jika ini benar ("0002-01-05"), tapi tampilan input salah → masalah di value/state.`}
+          </pre>
+        </div>
+      )}
     </div>
   );
-            }
+}
