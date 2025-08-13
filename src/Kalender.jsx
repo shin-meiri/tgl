@@ -139,7 +139,7 @@ export default function SimpleDatePicker() {
   // --- Render Grid Tahun (1-5000) ---
   const renderYearGrid = () => {
     const start = Math.floor((viewYear - 1) / 12) * 12 + 1;
-    const years = Array.from({ length: 12 }, (_, i) => start + i);
+    const years = Array.from({ length: 5000 }, (_, i) => start + i);
 
     return (
       <div
