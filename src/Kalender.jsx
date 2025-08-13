@@ -11,7 +11,7 @@ export default function SimpleDatePicker() {
   const [show, setShow] = useState(false);
 
   // Daftar tahun (bisa disesuaikan)
-  const tahunList = Array.from({ length: 20 }, (_, i) => 1470 + i); // 1470–1489
+  const tahunList = Array.from({ length: 3000 }, (_, i) => 1 + i); // 1470–1489
 
   return (
     <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Arial, sans-serif' }}>
