@@ -1,74 +1,51 @@
 // Kalender.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
 export default function Kalender() {
-  const [rawOutput, setRawOutput] = useState(null);
-
-  const handleChange = (selectedDates, dateStr, instance) => {
-    // 🔥 INI YANG KAMU MAU:
-    // Tampilkan apa adanya dari flatpickr
-    setRawOutput({
-      dateStr,           // "0002-01-05" → inilah nilai asli
-      selectedDatesLen: selectedDates.length,
-      firstDate: selectedDates[0] ? selectedDates[0].toString() : null,
-    });
-  };
-
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h3>🔍 Kalender: Tampilkan Hasil Asli Datepicker (Apa Adanya)</h3>
+      <h3>🎯 Tampilkan Hasil Datepicker: Apa Adanya</h3>
+      <p><em>Pilih tanggal — lihat output langsung dari flatpickr.</em></p>
 
-      <p><em>Pilih tanggal — lihat output mentah dari flatpickr di bawah.</em></p>
-
-      <div style={{ marginBottom: '30px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <Flatpickr
           options={{
-            dateFormat: 'Y-m-d',
-            altFormat: 'F j, Y',
+            dateFormat: 'Y-m-d',        // Format output
+            altFormat: 'F j, Y',        // Tampilan di picker
             allowInput: true,
             clickOpens: true,
           }}
-          onChange={handleChange} // Tidak perlu value dulu
+          // 🔴 Tidak ada value
+          // 🔴 Tidak ada useState
+          // 🔴 Tidak ada perantara
+          onChange={(selectedDates, dateStr) => {
+            // 🔥 INI YANG KAMU MAU:
+            // LANGSUNG TAMPILKAN, TANPA RUMUS
+            console.log('📅 Apa adanya dari flatpickr:', dateStr);
+            alert('Hasil asli: ' + dateStr); // Tampilkan langsung
+          }}
           style={{
-            padding: '10px',
+            padding: '12px',
             fontSize: '16px',
             border: '2px solid #000',
             borderRadius: '6px',
+            backgroundColor: '#fff',
           }}
         />
       </div>
 
-      {/* Tampilkan hasil APA ADANYA */}
-      {rawOutput && (
-        <div
-          style={{
-            padding: '20px',
-            backgroundColor: '#f9f9f9',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontFamily: 'monospace',
-            fontSize: '14px',
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          <strong>🔧 Hasil Asli dari Flatpickr (onChange):</strong>
-          <pre style={{ margin: '10px 0', lineHeight: '1.6' }}>
-{`dateStr (string): "${rawOutput.dateStr}"
-
-Jumlah tanggal dipilih: ${rawOutput.selectedDatesLen}
-
-Tanggal pertama (Date object):
-${rawOutput.firstDate}
-
-⚠️ Catatan:
-- "dateStr" adalah nilai string ASLI dari flatpickr.
-- Jika ini sudah salah (misal: "0002-01-03"), artinya flatpickr sendiri yang salah.
-- Jika ini benar ("0002-01-05"), tapi tampilan input salah → masalah di value/state.`}
-          </pre>
-        </div>
-      )}
+      <div style={{ color: '#555', fontSize: '14px' }}>
+        <p>📌 <strong>Instruksi:</strong></p>
+        <ol>
+          <li>Pilih tanggal (misal: 9 April 1478)</li>
+          <li>Lihat <strong>alert</strong> atau <strong>console</strong></li>
+          <li><strong>Itu dia hasil asli dari flatpickr — tanpa rumus, tanpa proses.</strong></li>
+        </ol>
+        <p>❌ Tidak ada <code>useState</code>, tidak ada <code>value</code>, tidak ada <code>setState</code>.</p>
+        <p>✅ Hanya: <code>onChange</code> → langsung <code>alert</code> / <code>console.log</code>.</p>
+      </div>
     </div>
   );
-}
+            }
