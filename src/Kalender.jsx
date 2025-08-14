@@ -8,8 +8,9 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+// Fungsi: jumlah hari per bulan (tanpa kabisat untuk tahun kuno)
 const getDaysInMonth = (bulan, tahun) => {
-  if (bulan === 1) return 28; // Februari, tetap 28 untuk tahun kuno
+  if (bulan === 1) return 28; // Februari selalu 28
   const days = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[bulan];
 };
@@ -33,43 +34,30 @@ export default function DatePicker() {
   };
 
   const { day: selectedDay, month: selectedMonth, year: selectedYear } = parse();
+  const [view, setView] = useState('day'); // 'day', 'month', 'year'
   const [viewMonth, setViewMonth] = useState(selectedMonth);
   const [viewYear, setViewYear] = useState(selectedYear);
 
-  const selectDate = (day) => {
+  // Saat pilih tanggal
+  const selectDay = (day) => {
     const tglStr = `${day} ${bulanList[viewMonth]} ${viewYear}`;
     setTanggal(tglStr);
     setShowPicker(false);
   };
 
-  const goToPrevYear = () => {
-    setViewYear(prev => (prev > 1 ? prev - 1 : 1));
+  // Saat pilih bulan
+  const selectMonth = (monthIndex) => {
+    setViewMonth(monthIndex);
+    setView('day');
   };
 
-  const goToNextYear = () => {
-    setViewYear(prev => (prev < 5000 ? prev + 1 : 5000));
+  // Saat pilih tahun
+  const selectYear = (year) => {
+    setViewYear(year);
+    setView('month');
   };
 
-  const editYear = () => {
-    const inputYear = prompt('Masukkan tahun (1–5000):', viewYear);
-    const yearNum = parseInt(inputYear);
-
-    if (isNaN(yearNum)) {
-      alert('Harus angka!');
-      return;
-    }
-    if (yearNum < 1) {
-      alert('Tahun minimal 1.');
-      return;
-    }
-    if (yearNum > 5000) {
-      alert('Tahun maksimal 5000.');
-      return;
-    }
-
-    setViewYear(yearNum);
-  };
-
+  // Render grid tanggal
   const renderDays = () => {
     const firstDay = new Date(viewYear, viewMonth, 1).getDay();
     const totalDays = getDaysInMonth(viewMonth, viewYear);
@@ -92,16 +80,16 @@ export default function DatePicker() {
 
     // Kosong awal
     for (let i = 0; i < firstDay; i++) {
-      grid.push(<div key={`empty-${i}`} style={{ height: '30px' }}></div>);
+      grid.push(<div key={`empty-start-${i}`} style={{ height: '30px' }}></div>);
     }
 
-    // Tanggal
+    // Tanggal 1 - akhir
     for (let day = 1; day <= totalDays; day++) {
       const isActive = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
       grid.push(
         <div
           key={day}
-          onClick={() => selectDate(day)}
+          onClick={() => selectDay(day)}
           style={{
             width: '30px',
             height: '30px',
@@ -130,6 +118,77 @@ export default function DatePicker() {
     return grid;
   };
 
+  // Render grid bulan
+  const renderMonths = () => {
+    return bulanList.map((bulan, i) => {
+      const isActive = i === selectedMonth && viewYear === selectedYear;
+      return (
+        <div
+          key={bulan}
+          onClick={() => selectMonth(i)}
+          style={{
+            width: '50px',
+            height: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: isActive ? '#0078D7' : 'transparent',
+            color: isActive ? 'white' : '#333',
+            margin: '4px'
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive) e.target.style.backgroundColor = '#f0f0f0';
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) e.target.style.backgroundColor = 'transparent';
+          }}
+        >
+          {bulan.slice(0, 3)}
+        </div>
+      );
+    });
+  };
+
+  // Render grid tahun (1 s.d. 5000)
+  const renderYears = () => {
+    const start = Math.floor((viewYear - 1) / 12) * 12 + 1;
+    const years = Array.from({ length: 12 }, (_, i) => start + i);
+
+    return years.map(year => {
+      const isActive = year === selectedYear;
+      return (
+        <div
+          key={year}
+          onClick={() => selectYear(year)}
+          style={{
+            width: '50px',
+            height: '30px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: isActive ? '#0078D7' : 'transparent',
+            color: isActive ? 'white' : '#333',
+            margin: '4px'
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive) e.target.style.backgroundColor = '#f0f0f0';
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) e.target.style.backgroundColor = 'transparent';
+          }}
+        >
+          {year}
+        </div>
+      );
+    });
+  };
+
   return (
     <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Arial, sans-serif' }}>
       {/* Input */}
@@ -140,11 +199,12 @@ export default function DatePicker() {
         onClick={() => {
           setViewMonth(selectedMonth);
           setViewYear(selectedYear);
+          setView('day');
           setShowPicker(true);
         }}
         style={{
           padding: '10px 14px',
-          width: '200px',
+          width: '220px',
           fontSize: '14px',
           border: '1px solid #aaa',
           borderRadius: '4px',
@@ -155,7 +215,7 @@ export default function DatePicker() {
         }}
       />
 
-      {/* Popup */}
+      {/* Popup Kalender */}
       {showPicker && (
         <div
           style={{
@@ -167,11 +227,11 @@ export default function DatePicker() {
             borderRadius: '6px',
             boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
             zIndex: 1000,
-            width: '240px',
+            width: '260px',
             padding: '12px',
           }}
         >
-          {/* Navigasi Tahun & Bulan */}
+          {/* Navigasi dan Judul */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -179,14 +239,28 @@ export default function DatePicker() {
             marginBottom: '10px'
           }}>
             <button
-              onClick={(e) => { e.stopPropagation(); goToPrevYear(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (view === 'year') {
+                  setViewYear(prev => Math.max(1, prev - 12));
+                } else if (view === 'month') {
+                  setViewYear(prev => Math.max(1, prev - 1));
+                } else {
+                  setViewMonth(prev => (prev === 0 ? 11 : prev - 1));
+                  if (viewMonth === 0) setViewYear(prev => Math.max(1, prev - 1));
+                }
+              }}
               style={{ fontSize: '16px', width: '24px', height: '24px' }}
             >
               ‹
             </button>
 
             <span
-              onClick={(e) => { e.stopPropagation(); editYear(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (view === 'day') setView('month');
+                else if (view === 'month') setView('year');
+              }}
               style={{
                 fontWeight: 'bold',
                 color: '#0078D7',
@@ -195,35 +269,75 @@ export default function DatePicker() {
                 borderRadius: '4px'
               }}
             >
-              {bulanList[viewMonth]} {viewYear}
+              {view === 'day' && `${bulanList[viewMonth]} ${viewYear}`}
+              {view === 'month' && `${viewYear}`}
+              {view === 'year' && `${Math.floor((viewYear - 1) / 12) * 12 + 1} - ${Math.floor((viewYear - 1) / 12) * 12 + 12}`}
             </span>
 
             <button
-              onClick={(e) => { e.stopPropagation(); goToNextYear(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (view === 'year') {
+                  setViewYear(prev => Math.min(4989, prev + 12));
+                } else if (view === 'month') {
+                  setViewYear(prev => Math.min(5000, prev + 1));
+                } else {
+                  setViewMonth(prev => (prev === 11 ? 0 : prev + 1));
+                  if (viewMonth === 11) setViewYear(prev => Math.min(5000, prev + 1));
+                }
+              }}
               style={{ fontSize: '16px', width: '24px', height: '24px' }}
             >
               ›
             </button>
           </div>
 
-          {/* Grid Hari */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)',
-            gap: '2px',
-            backgroundColor: '#f8f8f8',
-            padding: '2px',
-            borderRadius: '4px'
-          }}>
-            {renderDays()}
-          </div>
+          {/* Grid Berdasarkan View */}
+          {view === 'day' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '2px',
+              backgroundColor: '#f8f8f8',
+              padding: '2px',
+              borderRadius: '4px'
+            }}>
+              {renderDays()}
+            </div>
+          )}
+
+          {view === 'month' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '6px',
+              padding: '4px'
+            }}>
+              {renderMonths()}
+            </div>
+          )}
+
+          {view === 'year' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '6px',
+              padding: '4px'
+            }}>
+              {renderYears()}
+            </div>
+          )}
         </div>
       )}
 
       {/* Tutup saat klik luar */}
       {showPicker && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 999,
+          }}
           onClick={() => setShowPicker(false)}
         />
       )}
