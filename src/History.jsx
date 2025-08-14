@@ -1,10 +1,6 @@
+
 // src/utils/History.jsx
 
-/**
- * Cek apakah suatu tahun adalah tahun kabisat
- * Julian (sebelum 1582): habis dibagi 4
- * Gregorian (1582+): habis dibagi 4, kecuali abad bukan kelipatan 400
- */
 export function isKabisat(tahun) {
   if (tahun < 1 || !Number.isInteger(tahun)) {
     throw new Error('Tahun harus bilangan bulat positif');
@@ -17,10 +13,6 @@ export function isKabisat(tahun) {
   }
 }
 
-/**
- * Hitung hari dalam seminggu (untuk tahun historis)
- * Menggunakan Zeller's Congruence (Julian & Gregorian)
- */
 export function hitungHari(tanggal, bulan, tahun) {
   let m = bulan;
   let y = tahun;
@@ -44,11 +36,8 @@ export function hitungHari(tanggal, bulan, tahun) {
   return days[h];
 }
 
-/**
- * Jumlah hari dalam bulan tertentu
- */
 export function getDaysInMonth(bulan, tahun) {
-  if (bulan === 1) { // Februari
+  if (bulan === 1) {
     return isKabisat(tahun) ? 29 : 28;
   }
   const days = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
