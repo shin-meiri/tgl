@@ -8,9 +8,8 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-// Jumlah hari per bulan (Februari selalu 28 untuk tahun kuno)
 const getDaysInMonth = (bulan, tahun) => {
-  if (bulan === 1) return 28;
+  if (bulan === 1) return 28; // Februari, tetap 28 untuk tahun kuno
   const days = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[bulan];
 };
@@ -43,6 +42,34 @@ export default function DatePicker() {
     setShowPicker(false);
   };
 
+  const goToPrevYear = () => {
+    setViewYear(prev => (prev > 1 ? prev - 1 : 1));
+  };
+
+  const goToNextYear = () => {
+    setViewYear(prev => (prev < 5000 ? prev + 1 : 5000));
+  };
+
+  const editYear = () => {
+    const inputYear = prompt('Masukkan tahun (1–5000):', viewYear);
+    const yearNum = parseInt(inputYear);
+
+    if (isNaN(yearNum)) {
+      alert('Harus angka!');
+      return;
+    }
+    if (yearNum < 1) {
+      alert('Tahun minimal 1.');
+      return;
+    }
+    if (yearNum > 5000) {
+      alert('Tahun maksimal 5000.');
+      return;
+    }
+
+    setViewYear(yearNum);
+  };
+
   const renderDays = () => {
     const firstDay = new Date(viewYear, viewMonth, 1).getDay();
     const totalDays = getDaysInMonth(viewMonth, viewYear);
@@ -63,10 +90,12 @@ export default function DatePicker() {
       );
     });
 
+    // Kosong awal
     for (let i = 0; i < firstDay; i++) {
       grid.push(<div key={`empty-${i}`} style={{ height: '30px' }}></div>);
     }
 
+    // Tanggal
     for (let day = 1; day <= totalDays; day++) {
       const isActive = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
       grid.push(
@@ -86,8 +115,12 @@ export default function DatePicker() {
             color: isActive ? 'white' : '#333',
             margin: '2px auto'
           }}
-          onMouseEnter={e => !isActive && (e.target.style.backgroundColor = '#e6e6e6')}
-          onMouseLeave={e => !isActive && (e.target.style.backgroundColor = 'transparent')}
+          onMouseEnter={(e) => {
+            if (!isActive) e.target.style.backgroundColor = '#e6e6e6';
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) e.target.style.backgroundColor = 'transparent';
+          }}
         >
           {day}
         </div>
@@ -138,7 +171,7 @@ export default function DatePicker() {
             padding: '12px',
           }}
         >
-          {/* Navigasi Bulan & Tahun */}
+          {/* Navigasi Tahun & Bulan */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -146,26 +179,14 @@ export default function DatePicker() {
             marginBottom: '10px'
           }}>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setViewYear(prev => Math.max(1, prev - 1));
-              }}
+              onClick={(e) => { e.stopPropagation(); goToPrevYear(); }}
               style={{ fontSize: '16px', width: '24px', height: '24px' }}
             >
               ‹
             </button>
 
             <span
-              onClick={(e) => {
-                e.stopPropagation();
-                const input = prompt(`Masukkan tahun (1–5000):`, viewYear);
-                const year = parseInt(input);
-                if (year >= 1 && year <= 5000) {
-                  setViewYear(year);
-                } else if (input !== null) {
-                  alert('Tahun harus antara 1 dan 5000');
-                }
-              }}
+              onClick={(e) => { e.stopPropagation(); editYear(); }}
               style={{
                 fontWeight: 'bold',
                 color: '#0078D7',
@@ -178,10 +199,7 @@ export default function DatePicker() {
             </span>
 
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setViewYear(prev => Math.min(5000, prev + 1));
-              }}
+              onClick={(e) => { e.stopPropagation(); goToNextYear(); }}
               style={{ fontSize: '16px', width: '24px', height: '24px' }}
             >
               ›
@@ -189,16 +207,14 @@ export default function DatePicker() {
           </div>
 
           {/* Grid Hari */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '2px',
-              backgroundColor: '#f8f8f8',
-              padding: '2px',
-              borderRadius: '4px'
-            }}
-          >
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: '2px',
+            backgroundColor: '#f8f8f8',
+            padding: '2px',
+            borderRadius: '4px'
+          }}>
             {renderDays()}
           </div>
         </div>
