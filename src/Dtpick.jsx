@@ -1,6 +1,8 @@
 // src/components/Dtpick.jsx
 import React, { useState } from 'react';
-import { hitungHari, getDaysInMonth } from './History';
+// ❌ Hapus: import { hitungHari, getDaysInMonth } from './History';
+// ✅ Ganti dengan hanya yang dipakai:
+import { getDaysInMonth } from '../utils/History'; // Cuma ini yang dipakai
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -12,7 +14,6 @@ const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 export default function Dtpick({ value, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
 
-  // Parse value: "16 Juli 622"
   const parse = () => {
     const parts = value.split(' ');
     const day = parseInt(parts[0]);
@@ -32,8 +33,9 @@ export default function Dtpick({ value, onChange }) {
   };
 
   const renderDays = () => {
-    const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // Hanya untuk UI grid
-    const totalDays = getDaysInMonth(viewMonth, viewYear);
+    // Kita tetap pakai new Date() hanya untuk grid UI (bukan untuk logika historis)
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const totalDays = getDaysInMonth(viewMonth, viewYear); // ✅ dipakai
     const grid = [];
 
     // Header
@@ -159,4 +161,4 @@ export default function Dtpick({ value, onChange }) {
       )}
     </div>
   );
-                                }
+    }
