@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 // ❌ Hapus: import { hitungHari, getDaysInMonth } from './History';
 // ✅ Ganti dengan hanya yang dipakai:
-import { getDaysInMonth } from '../utils/History'; // Cuma ini yang dipakai
+import { getDaysInMonth } from './History'; // Cuma ini yang dipakai
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
