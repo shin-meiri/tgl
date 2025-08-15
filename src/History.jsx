@@ -1,15 +1,51 @@
 // src/utils/History.jsx
 
 /**
- * Cek apakah suatu tahun adalah tahun kabisat
- * Julian (sebelum 1582): habis dibagi 4
- * Gregorian (1582+): habis dibagi 4, kecuali abad bukan kelipatan 400
+ * Hitung Julian Day Number (JDN) untuk tanggal
  */
-export function isKabisat(tahun) {
-  if (tahun < 1 || !Number.isInteger(tahun)) {
-    throw new Error('Tahun harus bilangan bulat positif');
+export function julianDayNumber(day, month, year) {
+  let y = year;
+  let m = month;
+
+  if (month <= 2) {
+    y -= 1;
+    m += 12;
   }
 
+  let b;
+  if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
+    // Gregorian
+    const a = Math.floor(y / 100);
+    b = 2 - a + Math.floor(a / 4);
+  } else {
+    // Julian
+    b = 0;
+  }
+
+  const jd = Math.floor(365.25 * (y + 4716)) +
+             Math.floor(30.6001 * (m + 1)) +
+             day + b - 1524;
+
+  return Math.floor(jd);
+}
+
+/**
+ * Hitung hari dalam seminggu (Senin - Minggu)
+ * Berdasarkan JDN
+ */
+export function hitungHari(day, month, year) {
+  const jdn = julianDayNumber(day, month, year);
+  const baseJDN = 1721426; // 1 Januari 1 M = Senin
+  const selisih = jdn - baseJDN;
+  const hari = (selisih % 7 + 7) % 7; // Aman dari negatif
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  return days[hari];
+}
+
+/**
+ * Cek apakah tahun kabisat
+ */
+export function isKabisat(tahun) {
   if (tahun < 1582) {
     return tahun % 4 === 0; // Julian
   } else {
@@ -18,34 +54,7 @@ export function isKabisat(tahun) {
 }
 
 /**
- * Hitung hari dalam seminggu (untuk tahun historis)
- * Menggunakan Zeller's Congruence (Julian & Gregorian)
- */
-export function hitungHari(tanggal, bulan, tahun) {
-  let m = bulan;
-  let y = tahun;
-
-  if (bulan < 3) {
-    m += 12;
-    y -= 1;
-  }
-
-  let h;
-  if (tahun < 1582 || (tahun === 1582 && bulan < 10) || (tahun === 1582 && bulan === 10 && tanggal < 15)) {
-    // Julian Calendar
-    h = (tanggal + Math.floor((13 * (m + 1)) / 5) + y + Math.floor(y / 4) + 5) % 7;
-  } else {
-    // Gregorian Calendar
-    const century = Math.floor(y / 100);
-    h = (tanggal + Math.floor((13 * (m + 1)) / 5) + y + Math.floor(y / 4) + Math.floor(century / 4) - 2 * century + 5) % 7;
-  }
-
-  const days = ['Sabtu', 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
-  return days[h];
-}
-
-/**
- * Jumlah hari dalam bulan tertentu
+ * Jumlah hari dalam bulan
  */
 export function getDaysInMonth(bulan, tahun) {
   if (bulan === 1) { // Februari
