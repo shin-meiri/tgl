@@ -1,28 +1,27 @@
 // src/components/Weton.jsx
 import React from 'react';
 
-// Daftar pasaran (5 hari)
+// Daftar pasaran (5)
 const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// 🔧 TITIK ACUAN (INI YANG BISA DIRUBAH UNTUK KALIBRASI)
-// Format: [tahun, bulan, tanggal] = pasaranIndex (0=Legi, 1=Pahing, ...)
-// Contoh: 1 Januari 1 M = Senin Legi
+// 🔧 TITIK ACUAN — INI YANG BISA DIRUBAH UNTUK KALIBRASI
+// Contoh: 1 Januari 1 M = Senin Legi → pasaran: Legi = index 0
 const acuanTahun = 1;
-const acuanBulan = 1;      // Januari
+const acuanBulan = 1;        // 1 = Januari
 const acuanTanggal = 1;
-const acuanPasaranIndex = 0; // 0 = Legi, 1 = Pahing, dst.
+const acuanPasaranIndex = 0; // 0=Legi, 1=Pahing, 2=Pon, 3=Wage, 4=Kliwon
+// ✅ Sekarang akan digunakan
 
-// Fungsi: hitung hari Jawa (pasaran) dari tanggal
 function hitungPasaran(tanggal, bulan, tahun) {
   const targetJDN = julianDayNumber(tanggal, bulan, tahun);
   const acuanJDN = julianDayNumber(acuanTanggal, acuanBulan, acuanTahun);
 
   const selisihHari = targetJDN - acuanJDN;
-  const pasaranIndex = (selisihHari % 5 + 5) % 5; // 0-4
-  return pasaran[pasaranIndex];
+  // 🔢 Gunakan acuanPasaranIndex sebagai offset
+  const pasaranIndex = (selisihHari + acuanPasaranIndex) % 5;
+  return pasaran[(pasaranIndex + 5) % 5]; // Pastikan positif
 }
 
-// Fungsi: Julian Day Number (dari History)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -43,7 +42,6 @@ function julianDayNumber(day, month, year) {
 export default function Weton({ tanggal }) {
   if (!tanggal) return null;
 
-  // Parse: "31 Agustus 622"
   const parts = tanggal.split(' ');
   const day = parseInt(parts[0]);
   const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]) + 1;
@@ -58,7 +56,7 @@ export default function Weton({ tanggal }) {
   );
 }
 
-// CSS simpel
+// CSS
 const style = document.createElement('style');
 style.textContent = `
 .weton-display {
