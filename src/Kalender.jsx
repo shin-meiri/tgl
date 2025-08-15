@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Dtpick from './Dtpick';
 import Tanggal from './Tanggal';
-import { hitungHari } from './History';
+import { hitungHari } from '../utils/History';
 
 const bulanMap = {
   'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
@@ -34,7 +34,6 @@ export default function Kalender() {
       <h3>Kalender Historis</h3>
 
       <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start' }}>
-        {/* Datepicker */}
         <div>
           <Dtpick value={tanggal} onChange={setTanggal} />
           <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f8ff', borderRadius: '8px' }}>
@@ -43,7 +42,6 @@ export default function Kalender() {
           </div>
         </div>
 
-        {/* Kalender Bulan Penuh */}
         <div>
           <Tanggal tanggal={tanggal} />
         </div>
@@ -51,8 +49,3 @@ export default function Kalender() {
     </div>
   );
 }
-
-function isKabisat(tahun) {
-  if (tahun < 1582) return tahun % 4 === 0;
-  return (tahun % 4 === 0) && (tahun % 100 !== 0 || tahun % 400 === 0);
-        }
