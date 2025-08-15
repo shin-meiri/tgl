@@ -1,6 +1,6 @@
 // src/components/Dtpick.jsx
 import React, { useState } from 'react';
-import { getDaysInMonth, julianDayNumber } from '../utils/History';
+import { getDaysInMonth, julianDayNumber } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
