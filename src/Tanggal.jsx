@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
-import React from 'react';
-import { julianDayNumber } from './History';
+import React, { useEffect, useState } from 'react';
+import { julianDayNumber } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -10,15 +10,14 @@ const bulanList = [
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// 🔧 TITIK ACUAN UNTUK KALIBRASI WETON — INI YANG BISA DIRUBAH
+// 🔧 Titik kalibrasi weton
 const ACUAN = {
   tahun: 1900,
-  bulan: 1,        // Januari
+  bulan: 1,
   tanggal: 1,
-  pasaranIndex: 1  // 0=Legi, 1=Pahing, ..., 4=Kliwon → 1 Jan 1900 = Legi
+  pasaranIndex: 0 // 1 Jan 1900 = Legi
 };
 
-// Fungsi: hitung pasaran (0=Legi, ..., 4=Kliwon)
 function hitungPasaran(tanggal, bulan, tahun) {
   const targetJDN = julianDayNumber(tanggal, bulan, tahun);
   const acuanJDN = julianDayNumber(ACUAN.tanggal, ACUAN.bulan, ACUAN.tahun);
@@ -27,21 +26,15 @@ function hitungPasaran(tanggal, bulan, tahun) {
   return pasaranList[(index + 5) % 5];
 }
 
-// Fungsi: jumlah hari dalam bulan
 function getDaysInMonth(month, year) {
   if (month === 1) {
-    // Februari
-    if (year < 1582) {
-      return year % 4 === 0 ? 29 : 28;
-    } else {
-      return (year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
-    }
+    if (year < 1582) return year % 4 === 0 ? 29 : 28;
+    return (year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
   }
   const days = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[month];
 }
 
-// Fungsi: hitung hari (0=Min, 6=Sab) untuk grid
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
   const baseJDN = 1721425; // 1 Jan 1 M = Minggu
@@ -49,10 +42,33 @@ function getDayOfWeek(day, month, year) {
 }
 
 export default function Tanggal({ tanggal }) {
+  const [libur, setLibur] = useState([]);
+
   const parts = tanggal.split(' ');
   const selectedDay = parseInt(parts[0]);
   const month = bulanList.indexOf(parts[1]);
   const year = parseInt(parts[2]);
+
+  // Ambil libur dari API
+  useEffect(() => {
+    fetch(`/api/getLibur.php?tahun=${year}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          console.error('API Error:', data.error);
+          setLibur([]);
+        } else {
+          setLibur(data);
+        }
+      })
+      .catch(err => {
+        console.error('Fetch Error:', err);
+        setLibur([]);
+      });
+  }, [year]);
+
+  // Buat set tanggal libur untuk cepat cek
+  const liburSet = new Set(libur.map(l => l.tanggal)); // Format: "2024-12-25"
 
   const totalDays = getDaysInMonth(month, year);
   const firstDay = getDayOfWeek(1, month + 1, year);
@@ -73,12 +89,20 @@ export default function Tanggal({ tanggal }) {
                         month === new Date().getMonth() &&
                         year === new Date().getFullYear();
         const isSelected = date === selectedDay;
-        const pasaran = hitungPasaran(date, month + 1, year); // Hitung weton per tanggal
+
+        // Format YYYY-MM-DD untuk cek libur
+        const formattedDate = `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const isLibur = liburSet.has(formattedDate);
+        const isMinggu = j === 0; // Minggu = kolom pertama
+        const pasaran = hitungPasaran(date, month + 1, year);
 
         cells.push(
           <div
             key={date}
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+            style={{
+              color: isMinggu || isLibur ? 'red' : 'black'
+            }}
           >
             <div className="date-num">{date}</div>
             <div className="pasaran">{pasaran}</div>
@@ -101,7 +125,7 @@ export default function Tanggal({ tanggal }) {
 
       <div className="calendar-weekdays">
         {hariList.map(hari => (
-          <div key={hari} className="cal-cell weekday">
+          <div key={hari} className="cal-cell weekday" style={{ color: hari === 'Min' ? 'red' : 'inherit' }}>
             {hari}
           </div>
         ))}
@@ -114,7 +138,7 @@ export default function Tanggal({ tanggal }) {
   );
 }
 
-// CSS
+// CSS (sudah termasuk warna merah untuk Minggu & libur)
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
@@ -125,6 +149,7 @@ style.textContent = `
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
+  margin: 0 auto;
 }
 
 .calendar-header {
@@ -159,6 +184,10 @@ style.textContent = `
   color: #555;
   font-size: 12px;
   padding: 6px 0;
+}
+
+.cal-cell.weekday:nth-child(1) {
+  color: red;
 }
 
 .cal-row {
