@@ -9,15 +9,18 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+// Fungsi: hitung hari (0=Min, 1=Sen, ..., 6=Sab)
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
   const baseJDN = 1721425; // 1 Jan 1 M = Minggu
   const selisih = jdn - baseJDN;
-  return (selisih % 7 + 7) % 7;
+  return (selisih % 7 + 7) % 7; // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
 }
 
+// Fungsi: jumlah hari dalam bulan
 function getDaysInMonth(month, year) {
   if (month === 1) {
+    // Februari
     if (year < 1582) {
       return year % 4 === 0 ? 29 : 28;
     } else {
@@ -29,13 +32,14 @@ function getDaysInMonth(month, year) {
 }
 
 export default function Tanggal({ tanggal }) {
+  // Parse: "31 Agustus 622"
   const parts = tanggal.split(' ');
-  const day = parseInt(parts[0]);
+  const selectedDay = parseInt(parts[0]);
   const month = bulanList.indexOf(parts[1]);
   const year = parseInt(parts[2]);
 
   const totalDays = getDaysInMonth(month, year);
-  const firstDay = getDayOfWeek(1, month + 1, year);
+  const firstDay = getDayOfWeek(1, month + 1, year); // 0 = Minggu
 
   const rows = [];
   let date = 1;
@@ -45,14 +49,14 @@ export default function Tanggal({ tanggal }) {
 
     for (let j = 0; j < 7; j++) {
       if (i === 0 && j < firstDay) {
-        cells.push(<div key={`empty-start-${j}`} className="cal-cell empty"></div>);
+        cells.push(<div key={`empty-${i}-${j}`} className="cal-cell empty"></div>);
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="cal-cell empty"></div>);
       } else {
         const isToday = date === new Date().getDate() &&
-                       month === new Date().getMonth() &&
-                       year === new Date().getFullYear();
-        const isSelected = date === day;
+                        month === new Date().getMonth() &&
+                        year === new Date().getFullYear();
+        const isSelected = date === selectedDay;
 
         cells.push(
           <div
@@ -72,7 +76,7 @@ export default function Tanggal({ tanggal }) {
   }
 
   return (
-    <div className="calendar-container">
+    <div className="calendar-month-view">
       <div className="calendar-header">
         {bulanList[month]} {year}
       </div>
@@ -92,16 +96,16 @@ export default function Tanggal({ tanggal }) {
   );
 }
 
-// CSS Inline
+// CSS Inline (bisa dipindah ke .css file)
 const style = document.createElement('style');
 style.textContent = `
-.calendar-container {
-  width: 300px;
+.calendar-month-view {
+  width: 280px;
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
 }
 
@@ -109,25 +113,25 @@ style.textContent = `
   background: #0078D7;
   color: white;
   text-align: center;
-  padding: 12px;
+  padding: 14px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background: #f0f0f0;
-  border-bottom: 1px solid #ddd;
+  background: #f5f5f5;
+  border-bottom: 1px solid #eee;
 }
 
 .cal-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  font-size: 14px;
-  cursor: default;
+  height: 36px;
+  font-size: 13px;
+  color: #333;
   user-select: none;
 }
 
@@ -135,12 +139,7 @@ style.textContent = `
   font-weight: 600;
   color: #555;
   font-size: 12px;
-  padding: 8px 0;
-}
-
-.calendar-body {
-  display: flex;
-  flex-direction: column;
+  padding: 6px 0;
 }
 
 .cal-row {
@@ -152,23 +151,24 @@ style.textContent = `
   background: transparent;
 }
 
-.cal-cell:hover:not(.empty) {
-  background: #f5f5f5;
+.cal-cell:hover:not(.empty):not(.selected) {
+  background: #f0f0f0;
 }
 
 .cal-cell.selected {
   background: #0078D7;
   color: white;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   margin: 0 auto;
+  font-weight: 600;
 }
 
 .cal-cell.today {
-  border: 2px solid #0078D7;
+  border: 1.5px solid #0078D7;
   border-radius: 50%;
-  font-weight: bold;
+  font-weight: 600;
 }
 `;
 document.head.appendChild(style);
