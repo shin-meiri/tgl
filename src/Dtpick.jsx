@@ -11,7 +11,7 @@ const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721424; // 1 Januari 1 M = Senin
+  const baseJDN = 1721425; // 1 Januari 1 M = Senin
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
   return hari; // 0=Senin, 1=Selasa, ..., 6=Minggu
