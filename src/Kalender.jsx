@@ -1,7 +1,7 @@
 // src/components/Kalender.jsx
 import React, { useState } from 'react';
 import Dtpick from './Dtpick';
-import { hitungHari } from './History';
+import { hitungHari } from '../utils/History';
 
 const bulanMap = {
   'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
@@ -58,4 +58,4 @@ export default function Kalender() {
 function isKabisat(tahun) {
   if (tahun < 1582) return tahun % 4 === 0;
   return (tahun % 4 === 0) && (tahun % 100 !== 0 || tahun % 400 === 0);
-      }
+    }
