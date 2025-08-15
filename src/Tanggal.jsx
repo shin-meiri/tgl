@@ -51,7 +51,7 @@ export default function Tanggal({ tanggal }) {
 
   // Ambil libur dari API
   useEffect(() => {
-    fetch(`/api/libur.php?tahun=${year}`)
+    fetch(`/api/libur.php`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
