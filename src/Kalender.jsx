@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Dtpick from './Dtpick';
 import Tanggal from './Tanggal';
+import Weton from './Weton'; // ✅ Import
 import { hitungHari } from './History';
 
 const bulanMap = {
@@ -39,6 +40,7 @@ export default function Kalender() {
           <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0f8ff', borderRadius: '8px' }}>
             <p><strong>Tanggal:</strong> {tanggal}</p>
             <p><strong>Hari:</strong> {hari}</p>
+            <Weton tanggal={tanggal} /> {/* ✅ Weton di bawah */}
           </div>
         </div>
 
