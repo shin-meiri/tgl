@@ -15,7 +15,7 @@ const ACUAN = {
   tahun: 1900,
   bulan: 1,        // Januari
   tanggal: 1,
-  pasaranIndex: 0  // 0=Legi, 1=Pahing, ..., 4=Kliwon → 1 Jan 1900 = Legi
+  pasaranIndex: 4  // 0=Legi, 1=Pahing, ..., 4=Kliwon → 1 Jan 1900 = Legi
 };
 
 // Fungsi: hitung pasaran (0=Legi, ..., 4=Kliwon)
