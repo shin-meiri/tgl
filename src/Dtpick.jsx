@@ -1,6 +1,6 @@
 // src/components/Dtpick.jsx
 import React, { useState } from 'react';
-import { getDaysInMonth, julianDayNumber } from './History';
+import { getDaysInMonth, julianDayNumber } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -9,11 +9,12 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-// Fungsi: hitung hari dari 0 (Min) sampai 6 (Sab)
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const hari = (jdn - 1721423) % 7; // 1721423 = 31 Des 1 SM = Minggu
-  return (hari + 7) % 7;
+  const baseJDN = 1721424; // 1 Januari 1 M = Senin
+  const selisih = jdn - baseJDN;
+  const hari = (selisih % 7 + 7) % 7;
+  return hari; // 0=Senin, 1=Selasa, ..., 6=Minggu
 }
 
 export default function Dtpick({ value, onChange }) {
@@ -38,8 +39,8 @@ export default function Dtpick({ value, onChange }) {
     setShowPicker(false);
   };
 
-  // ✅ Gunakan logika historis untuk hari pertama
-  const firstDay = getDayOfWeek(1, viewMonth + 1, viewYear); // 0=Min, 6=Sab
+  // ✅ Sekarang benar: 1 Agustus 622 = Minggu
+  const firstDay = getDayOfWeek(1, viewMonth + 1, viewYear);
   const totalDays = getDaysInMonth(viewMonth, viewYear);
 
   const renderDays = () => {
@@ -96,7 +97,6 @@ export default function Dtpick({ value, onChange }) {
 
   return (
     <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Tahoma, sans-serif' }}>
-      {/* Input */}
       <input
         type="text"
         value={value}
@@ -117,7 +117,6 @@ export default function Dtpick({ value, onChange }) {
         }}
       />
 
-      {/* Popup Kalender */}
       {showPicker && (
         <div
           style={{
@@ -134,7 +133,6 @@ export default function Dtpick({ value, onChange }) {
             fontSize: '11px'
           }}
         >
-          {/* Navigasi Bulan & Tahun */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -159,11 +157,9 @@ export default function Dtpick({ value, onChange }) {
             <span
               onClick={(e) => {
                 e.stopPropagation();
-                const input = prompt('Masukkan tahun (1-5000):', viewYear);
+                const input = prompt('Tahun (1-5000):', viewYear);
                 const year = parseInt(input);
-                if (year >= 1 && year <= 5000) {
-                  setViewYear(year);
-                }
+                if (year >= 1 && year <= 5000) setViewYear(year);
               }}
               style={{ cursor: 'pointer' }}
             >
@@ -186,7 +182,6 @@ export default function Dtpick({ value, onChange }) {
             </button>
           </div>
 
-          {/* Grid Kalender */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
@@ -200,7 +195,6 @@ export default function Dtpick({ value, onChange }) {
         </div>
       )}
 
-      {/* Close saat klik luar */}
       {showPicker && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 999 }}
@@ -209,4 +203,4 @@ export default function Dtpick({ value, onChange }) {
       )}
     </div>
   );
-            }
+}
