@@ -1,9 +1,10 @@
-import ExcelDatePicker from './Kalender';
+import Kalender from './Kalender';
+import 'flatpickr/dist/flatpickr.min.css';
 
 function App() {
   return (
     <div className="App">
-      <ExcelDatePicker />
+      <Kalender />
     </div>
   );
 }
