@@ -36,6 +36,11 @@ function formatDate(year, month, day) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+// Format: 15 Agustus 1945
+function formatTampil(tanggal, bulan, tahun) {
+  return `${tanggal} ${bulanList[bulan - 1]} ${tahun}`;
+}
+
 export default function Tanggal({ tanggal }) {
   const [libur, setLibur] = useState([]);
 
@@ -43,15 +48,14 @@ export default function Tanggal({ tanggal }) {
     fetch('/api/libur.php')
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          setLibur(Array.isArray(data.data) ? data.data : []);
+        if (data.success && Array.isArray(data.data)) {
+          setLibur(data.data);
         } else {
-          console.warn('API libur:', data.error);
           setLibur([]);
         }
       })
       .catch(err => {
-        console.error('Fetch libur gagal:', err);
+        console.error('Gagal ambil libur:', err);
         setLibur([]);
       });
   }, []);
@@ -65,6 +69,12 @@ export default function Tanggal({ tanggal }) {
   const firstDay = getDayOfWeek(1, month + 1, year);
 
   const liburSet = new Set(libur.map(l => l.tanggal));
+
+  // Filter libur yang sesuai bulan dan tahun yang tampil
+  const liburBulanIni = libur.filter(item => {
+    const [y, m] = item.tanggal.split('-').map(Number);
+    return y === year && m === month + 1;
+  });
 
   const rows = [];
   let date = 1;
@@ -122,6 +132,29 @@ export default function Tanggal({ tanggal }) {
       <div className="calendar-body">
         {rows}
       </div>
+
+      {/* 🔽 Daftar Libur di Bulan Ini */}
+      {liburBulanIni.length > 0 && (
+        <div className="daftar-libur">
+          <strong>Libur {bulanList[month]} {year}:</strong>
+          {liburBulanIni.map((item, idx) => {
+            const [y, m, d] = item.tanggal.split('-');
+            const tglTampil = formatTampil(parseInt(d), parseInt(m), parseInt(y));
+            return (
+              <p key={idx} style={{ margin: '4px 0', fontSize: '13px' }}>
+                <span style={{ fontWeight: 'bold' }}>{tglTampil}</span>: {item.nama}
+              </p>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Jika tidak ada libur */}
+      {liburBulanIni.length === 0 && (
+        <div className="daftar-libur" style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+          Tidak ada libur di {bulanList[month]} {year}
+        </div>
+      )}
     </div>
   );
 }
@@ -195,6 +228,18 @@ style.textContent = `
   font-size: 11px;
   margin-top: 2px;
   opacity: 0.8;
+}
+.daftar-libur {
+  padding: 10px 15px;
+  background: #fff8f8;
+  border-top: 1px dashed #ddd;
+  font-size: 13px;
+  color: #d32f2f;
+}
+.daftar-libur strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
 }
 `;
 document.head.appendChild(style);
