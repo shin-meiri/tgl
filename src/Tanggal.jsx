@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React, { useEffect, useState } from 'react';
-import { julianDayNumber } from '../utils/History';
+import { julianDayNumber } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -15,7 +15,7 @@ const ACUAN = {
   tahun: 1900,
   bulan: 1,
   tanggal: 1,
-  pasaranIndex: 0 // 1 Jan 1900 = Legi
+  pasaranIndex: 1 // 1 Jan 1900 = Legi
 };
 
 function hitungPasaran(tanggal, bulan, tahun) {
@@ -51,7 +51,7 @@ export default function Tanggal({ tanggal }) {
 
   // Ambil libur dari API
   useEffect(() => {
-    fetch(`/api/getLibur.php?tahun=${year}`)
+    fetch(`/api/libur.php?tahun=${year}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
