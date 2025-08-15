@@ -9,18 +9,18 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-// Fungsi: hitung hari dari 0 (Min) sampai 6 (Sab)
-function getDayOfWeek(day, month, year) {
-  const jdn = julianDayNumber(day, month, year);
-  // JDN 1721423 = 31 Des 1 SM = Minggu
-  // (jdn - 1721423) % 7 = 0 → Minggu
-  const hari = (jdn - 1721423) % 7;
-  return (hari + 7) % 7; // Pastikan positif
+// ✅ Fungsi lokal: hitung hari (0=Min, 6=Sab) untuk grid
+function getFirstDayOfMonth(month, year) {
+  const jdn = julianDayNumber(1, month + 1, year);
+  const baseJDN = 1721423; // 31 Des 1 SM = Minggu
+  const day = (jdn - baseJDN) % 7;
+  return (day + 7) % 7; // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
 }
 
 export default function Dtpick({ value, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
 
+  // Parse value: "31 Agustus 622"
   const parse = () => {
     const parts = value.split(' ');
     return {
@@ -40,32 +40,29 @@ export default function Dtpick({ value, onChange }) {
     setShowPicker(false);
   };
 
-  // ✅ Gunakan logika historis, bukan new Date()
-  const firstDay = getDayOfWeek(1, viewMonth + 1, viewYear); // 0=Min, 6=Sab
+  // ✅ Pakai fungsi lokal untuk grid
+  const firstDay = getFirstDayOfMonth(viewMonth, viewYear); // 0=Min, ..., 6=Sab
   const totalDays = getDaysInMonth(viewMonth, viewYear);
 
   const renderDays = () => {
     const grid = [];
 
-    // Header
+    // Header hari
     hariList.forEach(hari => {
       grid.push(
-        <div
-          key={hari}
-          style={{
-            fontSize: '11px',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            padding: '6px 0',
-            color: '#555'
-          }}
-        >
+        <div key={hari} style={{
+          fontSize: '11px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          padding: '6px 0',
+          color: '#555'
+        }}>
           {hari}
         </div>
       );
     });
 
-    // Kosong di awal
+    // Kosong awal
     for (let i = 0; i < firstDay; i++) {
       grid.push(<div key={`empty-${i}`} style={{ height: '24px' }}></div>);
     }
@@ -101,6 +98,7 @@ export default function Dtpick({ value, onChange }) {
 
   return (
     <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Tahoma, sans-serif' }}>
+      {/* Input */}
       <input
         type="text"
         value={value}
@@ -121,6 +119,7 @@ export default function Dtpick({ value, onChange }) {
         }}
       />
 
+      {/* Popup Kalender */}
       {showPicker && (
         <div
           style={{
@@ -137,17 +136,37 @@ export default function Dtpick({ value, onChange }) {
             fontSize: '11px'
           }}
         >
+          {/* Navigasi */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             marginBottom: '6px',
             fontWeight: 'bold'
           }}>
-            <button onClick={(e) => { e.stopPropagation(); setViewMonth(v => (v === 0 ? 11 : v - 1)); if (viewMonth === 0) setViewYear(v => v - 1); }} style={{ width: '18px' }}>‹</button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMonth(v => (v === 0 ? 11 : v - 1));
+                if (viewMonth === 0) setViewYear(v => Math.max(1, v - 1));
+              }}
+              style={{ width: '18px' }}
+            >
+              ‹
+            </button>
             <span>{bulanList[viewMonth]} {viewYear}</span>
-            <button onClick={(e) => { e.stopPropagation(); setViewMonth(v => (v === 11 ? 0 : v + 1)); if (viewMonth === 11) setViewYear(v => v + 1); }} style={{ width: '18px' }}>›</button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMonth(v => (v === 11 ? 0 : v + 1));
+                if (viewMonth === 11) setViewYear(v => Math.min(5000, v + 1));
+              }}
+              style={{ width: '18px' }}
+            >
+              ›
+            </button>
           </div>
 
+          {/* Grid */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
@@ -161,6 +180,7 @@ export default function Dtpick({ value, onChange }) {
         </div>
       )}
 
+      {/* Close saat klik luar */}
       {showPicker && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 999 }}
