@@ -9,18 +9,16 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-// ✅ Fungsi lokal: hitung hari (0=Min, 6=Sab) untuk grid
-function getFirstDayOfMonth(month, year) {
-  const jdn = julianDayNumber(1, month + 1, year);
-  const baseJDN = 1721423; // 31 Des 1 SM = Minggu
-  const day = (jdn - baseJDN) % 7;
-  return (day + 7) % 7; // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+// Fungsi: hitung hari dari 0 (Min) sampai 6 (Sab)
+function getDayOfWeek(day, month, year) {
+  const jdn = julianDayNumber(day, month, year);
+  const hari = (jdn - 1721423) % 7; // 1721423 = 31 Des 1 SM = Minggu
+  return (hari + 7) % 7;
 }
 
 export default function Dtpick({ value, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
 
-  // Parse value: "31 Agustus 622"
   const parse = () => {
     const parts = value.split(' ');
     return {
@@ -40,14 +38,14 @@ export default function Dtpick({ value, onChange }) {
     setShowPicker(false);
   };
 
-  // ✅ Pakai fungsi lokal untuk grid
-  const firstDay = getFirstDayOfMonth(viewMonth, viewYear); // 0=Min, ..., 6=Sab
+  // ✅ Gunakan logika historis untuk hari pertama
+  const firstDay = getDayOfWeek(1, viewMonth + 1, viewYear); // 0=Min, 6=Sab
   const totalDays = getDaysInMonth(viewMonth, viewYear);
 
   const renderDays = () => {
     const grid = [];
 
-    // Header hari
+    // Header
     hariList.forEach(hari => {
       grid.push(
         <div key={hari} style={{
@@ -136,7 +134,7 @@ export default function Dtpick({ value, onChange }) {
             fontSize: '11px'
           }}
         >
-          {/* Navigasi */}
+          {/* Navigasi Bulan & Tahun */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -146,19 +144,41 @@ export default function Dtpick({ value, onChange }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setViewMonth(v => (v === 0 ? 11 : v - 1));
-                if (viewMonth === 0) setViewYear(v => Math.max(1, v - 1));
+                if (viewMonth === 0) {
+                  setViewMonth(11);
+                  setViewYear(prev => prev - 1);
+                } else {
+                  setViewMonth(prev => prev - 1);
+                }
               }}
               style={{ width: '18px' }}
             >
               ‹
             </button>
-            <span>{bulanList[viewMonth]} {viewYear}</span>
+
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                const input = prompt('Masukkan tahun (1-5000):', viewYear);
+                const year = parseInt(input);
+                if (year >= 1 && year <= 5000) {
+                  setViewYear(year);
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              {bulanList[viewMonth]} {viewYear}
+            </span>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setViewMonth(v => (v === 11 ? 0 : v + 1));
-                if (viewMonth === 11) setViewYear(v => Math.min(5000, v + 1));
+                if (viewMonth === 11) {
+                  setViewMonth(0);
+                  setViewYear(prev => prev + 1);
+                } else {
+                  setViewMonth(prev => prev + 1);
+                }
               }}
               style={{ width: '18px' }}
             >
@@ -166,7 +186,7 @@ export default function Dtpick({ value, onChange }) {
             </button>
           </div>
 
-          {/* Grid */}
+          {/* Grid Kalender */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
@@ -189,4 +209,4 @@ export default function Dtpick({ value, onChange }) {
       )}
     </div>
   );
-          }
+            }
