@@ -1,6 +1,6 @@
 // src/components/Dtpick.jsx
 import React, { useState } from 'react';
-import { getDaysInMonth } from './History';
+import { getDaysInMonth } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -31,11 +31,12 @@ export default function Dtpick({ value, onChange }) {
   };
 
   const renderDays = () => {
-    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    // Hitung hari pertama (dengan logika Julian/Gregorian bisa ditambah nanti)
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // Hanya untuk UI
     const totalDays = getDaysInMonth(viewMonth, viewYear);
     const grid = [];
 
-    // Header (mirip flatpickr)
+    // Header hari
     hariList.forEach(hari => {
       grid.push(
         <span key={hari} className="flatpickr-weekday">
@@ -51,7 +52,7 @@ export default function Dtpick({ value, onChange }) {
 
     // Tanggal
     for (let day = 1; day <= totalDays; day++) {
-      const isSelected = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
+      const isActive = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
       const isToday = day === new Date().getDate() &&
                      viewMonth === new Date().getMonth() &&
                      viewYear === new Date().getFullYear();
@@ -59,9 +60,8 @@ export default function Dtpick({ value, onChange }) {
       grid.push(
         <span
           key={day}
-          className={`flatpickr-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+          className={`flatpickr-day ${isActive ? 'selected' : ''} ${isToday ? 'today' : ''}`}
           onClick={() => selectDate(day)}
-          aria-label={day}
         >
           {day}
         </span>
@@ -73,7 +73,7 @@ export default function Dtpick({ value, onChange }) {
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Input (mirip flatpickr) */}
+      {/* Input */}
       <input
         type="text"
         value={value}
@@ -81,21 +81,20 @@ export default function Dtpick({ value, onChange }) {
         onClick={() => {
           setViewMonth(selectedMonth);
           setViewYear(selectedYear);
-          setShowPicker(!showPicker);
+          setShowPicker(true);
         }}
-        className="form-control flatpickr-input"
         style={{
-          padding: '10px 12px',
+          padding: '10px',
           width: '200px',
-          border: '1px solid #ced4da',
+          border: '1px solid #ccc',
           borderRadius: '4px',
-          fontSize: '14px',
+          textAlign: 'center',
           cursor: 'pointer',
-          backgroundColor: 'white',
+          fontFamily: 'Arial, sans-serif'
         }}
       />
 
-      {/* Popup Kalender (pakai class flatpickr) */}
+      {/* Popup Kalender — Pakai CSS flatpickr */}
       {showPicker && (
         <div
           className="flatpickr-calendar animate open"
@@ -106,12 +105,12 @@ export default function Dtpick({ value, onChange }) {
             zIndex: 1000,
             backgroundColor: 'white',
             border: '1px solid #e6e6e6',
-            borderRadius: '6px',
+            borderRadius: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            width: '240px',
-            padding: '12px',
+            width: '250px',
+            padding: '10px',
             fontFamily: 'Arial, sans-serif',
-            fontSize: '14px',
+            fontSize: '12px',
           }}
         >
           {/* Navigasi */}
@@ -119,10 +118,10 @@ export default function Dtpick({ value, onChange }) {
             <span className="flatpickr-prev-month" onClick={() => setViewMonth(v => (v === 0 ? 11 : v - 1))}>
               ‹
             </span>
-            <div className="flatpickr-month">
-              <div className="flatpickr-current-month">
-                <span className="cur-month">{bulanList[viewMonth]} {viewYear}</span>
-              </div>
+            <div className="flatpickr-current-month">
+              <span>
+                {bulanList[viewMonth]} {viewYear}
+              </span>
             </div>
             <span className="flatpickr-next-month" onClick={() => setViewMonth(v => (v === 11 ? 0 : v + 1))}>
               ›
@@ -130,24 +129,15 @@ export default function Dtpick({ value, onChange }) {
           </div>
 
           {/* Grid Hari */}
-          <div className="flatpickr-innerContainer">
-            <div className="flatpickr-rContainer">
-              <div className="flatpickr-weekdays">
-                <div className="flatpickr-weekdaycontainer">
-                  {renderDays().slice(0, 7)}
-                </div>
-              </div>
-              <div className="flatpickr-days">
-                <div className="dayContainer">
-                  {renderDays().slice(7)}
-                </div>
-              </div>
+          <div className="flatpickr-days" style={{ marginTop: '10px' }}>
+            <div className="dayContainer" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+              {renderDays()}
             </div>
           </div>
         </div>
       )}
 
-      {/* Tutup saat klik luar */}
+      {/* Close saat klik luar */}
       {showPicker && (
         <div
           style={{
@@ -160,4 +150,4 @@ export default function Dtpick({ value, onChange }) {
       )}
     </div>
   );
-    }
+      }
