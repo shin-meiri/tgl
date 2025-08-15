@@ -1,23 +1,24 @@
 // src/components/Dtpick.jsx
 import React, { useState } from 'react';
-import { getDaysInMonth } from './History';
+import { getDaysInMonth } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
-const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const hariSingkat = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 export default function Dtpick({ value, onChange }) {
   const [showPicker, setShowPicker] = useState(false);
 
   const parse = () => {
     const parts = value.split(' ');
-    const day = parseInt(parts[0]);
-    const month = bulanList.indexOf(parts[1]);
-    const year = parseInt(parts[2]);
-    return { day, month, year };
+    return {
+      day: parseInt(parts[0]),
+      month: bulanList.indexOf(parts[1]),
+      year: parseInt(parts[2])
+    };
   };
 
   const { day: selectedDay, month: selectedMonth, year: selectedYear } = parse();
@@ -30,41 +31,68 @@ export default function Dtpick({ value, onChange }) {
     setShowPicker(false);
   };
 
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const totalDays = getDaysInMonth(viewMonth, viewYear);
+
   const renderDays = () => {
-    // Hitung hari pertama (dengan logika Julian/Gregorian bisa ditambah nanti)
-    const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // Hanya untuk UI
-    const totalDays = getDaysInMonth(viewMonth, viewYear);
     const grid = [];
 
-    // Header hari
-    hariList.forEach(hari => {
+    // Header: hari
+    hariSingkat.forEach(hari => {
       grid.push(
-        <span key={hari} className="flatpickr-weekday">
+        <div
+          key={hari}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            color: '#555',
+            height: '20px',
+            userSelect: 'none'
+          }}
+        >
           {hari}
-        </span>
+        </div>
       );
     });
 
     // Kosong awal
     for (let i = 0; i < firstDay; i++) {
-      grid.push(<span key={`empty-${i}`} className="flatpickr-day" />);
+      grid.push(<div key={`empty-${i}`} style={{ height: '24px' }}></div>);
     }
 
     // Tanggal
     for (let day = 1; day <= totalDays; day++) {
       const isActive = day === selectedDay && viewMonth === selectedMonth && viewYear === selectedYear;
-      const isToday = day === new Date().getDate() &&
-                     viewMonth === new Date().getMonth() &&
-                     viewYear === new Date().getFullYear();
-
       grid.push(
-        <span
+        <div
           key={day}
-          className={`flatpickr-day ${isActive ? 'selected' : ''} ${isToday ? 'today' : ''}`}
           onClick={() => selectDate(day)}
+          style={{
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            borderRadius: '2px',
+            cursor: 'pointer',
+            backgroundColor: isActive ? '#0078D7' : 'transparent',
+            color: isActive ? 'white' : '#333',
+            margin: '1px',
+            userSelect: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive) e.target.style.backgroundColor = '#e6e6e6';
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) e.target.style.backgroundColor = 'transparent';
+          }}
         >
           {day}
-        </span>
+        </div>
       );
     }
 
@@ -72,7 +100,7 @@ export default function Dtpick({ value, onChange }) {
   };
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'inline-block', fontFamily: 'Tahoma, Segoe UI, Arial, sans-serif' }}>
       {/* Input */}
       <input
         type="text"
@@ -84,55 +112,107 @@ export default function Dtpick({ value, onChange }) {
           setShowPicker(true);
         }}
         style={{
-          padding: '10px',
-          width: '200px',
-          border: '1px solid #ccc',
+          padding: '6px 10px',
+          width: '180px',
+          fontSize: '13px',
+          border: '1px solid #999',
           borderRadius: '4px',
           textAlign: 'center',
           cursor: 'pointer',
-          fontFamily: 'Arial, sans-serif'
+          backgroundColor: 'white',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
         }}
       />
 
-      {/* Popup Kalender — Pakai CSS flatpickr */}
+      {/* Popup Kalender — Mirip Excel Beneran */}
       {showPicker && (
         <div
-          className="flatpickr-calendar animate open"
           style={{
             position: 'absolute',
             top: '100%',
             left: 0,
-            zIndex: 1000,
             backgroundColor: 'white',
-            border: '1px solid #e6e6e6',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            width: '250px',
-            padding: '10px',
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '12px',
+            border: '1px solid #999',
+            borderRadius: '4px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+            zIndex: 1000,
+            width: '180px',
+            padding: '6px',
+            fontSize: '11px',
           }}
         >
-          {/* Navigasi */}
-          <div className="flatpickr-months">
-            <span className="flatpickr-prev-month" onClick={() => setViewMonth(v => (v === 0 ? 11 : v - 1))}>
+          {/* Navigasi Bulan & Tahun */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '6px',
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMonth(prev => (prev === 0 ? 11 : prev - 1));
+                if (viewMonth === 0) setViewYear(prev => Math.max(1, prev - 1));
+              }}
+              style={{
+                width: '18px',
+                height: '18px',
+                fontSize: '12px',
+                border: '1px solid #ccc',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
               ‹
+            </button>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                const y = prompt('Tahun (1-5000):', viewYear);
+                const year = parseInt(y);
+                if (year >= 1 && year <= 5000) setViewYear(year);
+              }}
+              style={{
+                cursor: 'pointer',
+                padding: '2px 4px',
+                borderRadius: '3px'
+              }}
+            >
+              {bulanList[viewMonth]} {viewYear}
             </span>
-            <div className="flatpickr-current-month">
-              <span>
-                {bulanList[viewMonth]} {viewYear}
-              </span>
-            </div>
-            <span className="flatpickr-next-month" onClick={() => setViewMonth(v => (v === 11 ? 0 : v + 1))}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMonth(prev => (prev === 11 ? 0 : prev + 1));
+                if (viewMonth === 11) setViewYear(prev => Math.min(5000, prev + 1));
+              }}
+              style={{
+                width: '18px',
+                height: '18px',
+                fontSize: '12px',
+                border: '1px solid #ccc',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
               ›
-            </span>
+            </button>
           </div>
 
-          {/* Grid Hari */}
-          <div className="flatpickr-days" style={{ marginTop: '10px' }}>
-            <div className="dayContainer" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
-              {renderDays()}
-            </div>
+          {/* Grid Kalender */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, 1fr)',
+              gap: '1px',
+              backgroundColor: '#f0f0f0',
+              borderRadius: '3px',
+              padding: '1px'
+            }}
+          >
+            {renderDays()}
           </div>
         </div>
       )}
