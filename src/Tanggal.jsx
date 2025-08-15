@@ -8,13 +8,23 @@ const bulanList = [
 ];
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// Fungsi: hitung hari (0=Min, 1=Sen, ..., 6=Sab)
-function getDayOfWeek(day, month, year) {
-  const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721425; // 1 Jan 1 M = Minggu
-  const selisih = jdn - baseJDN;
-  return (selisih % 7 + 7) % 7; // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+// 🔧 TITIK ACUAN UNTUK KALIBRASI WETON — INI YANG BISA DIRUBAH
+const ACUAN = {
+  tahun: 1900,
+  bulan: 1,        // Januari
+  tanggal: 1,
+  pasaranIndex: 0  // 0=Legi, 1=Pahing, ..., 4=Kliwon → 1 Jan 1900 = Legi
+};
+
+// Fungsi: hitung pasaran (0=Legi, ..., 4=Kliwon)
+function hitungPasaran(tanggal, bulan, tahun) {
+  const targetJDN = julianDayNumber(tanggal, bulan, tahun);
+  const acuanJDN = julianDayNumber(ACUAN.tanggal, ACUAN.bulan, ACUAN.tahun);
+  const selisih = targetJDN - acuanJDN;
+  const index = (selisih + ACUAN.pasaranIndex) % 5;
+  return pasaranList[(index + 5) % 5];
 }
 
 // Fungsi: jumlah hari dalam bulan
@@ -31,15 +41,21 @@ function getDaysInMonth(month, year) {
   return days[month];
 }
 
+// Fungsi: hitung hari (0=Min, 6=Sab) untuk grid
+function getDayOfWeek(day, month, year) {
+  const jdn = julianDayNumber(day, month, year);
+  const baseJDN = 1721425; // 1 Jan 1 M = Minggu
+  return (jdn - baseJDN) % 7;
+}
+
 export default function Tanggal({ tanggal }) {
-  // Parse: "31 Agustus 622"
   const parts = tanggal.split(' ');
   const selectedDay = parseInt(parts[0]);
   const month = bulanList.indexOf(parts[1]);
   const year = parseInt(parts[2]);
 
   const totalDays = getDaysInMonth(month, year);
-  const firstDay = getDayOfWeek(1, month + 1, year); // 0 = Minggu
+  const firstDay = getDayOfWeek(1, month + 1, year);
 
   const rows = [];
   let date = 1;
@@ -49,7 +65,7 @@ export default function Tanggal({ tanggal }) {
 
     for (let j = 0; j < 7; j++) {
       if (i === 0 && j < firstDay) {
-        cells.push(<div key={`empty-${i}-${j}`} className="cal-cell empty"></div>);
+        cells.push(<div key={`empty-${j}`} className="cal-cell empty"></div>);
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="cal-cell empty"></div>);
       } else {
@@ -57,13 +73,15 @@ export default function Tanggal({ tanggal }) {
                         month === new Date().getMonth() &&
                         year === new Date().getFullYear();
         const isSelected = date === selectedDay;
+        const pasaran = hitungPasaran(date, month + 1, year); // Hitung weton per tanggal
 
         cells.push(
           <div
             key={date}
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
           >
-            {date}
+            <div className="date-num">{date}</div>
+            <div className="pasaran">{pasaran}</div>
           </div>
         );
         date++;
@@ -96,11 +114,11 @@ export default function Tanggal({ tanggal }) {
   );
 }
 
-// CSS Inline (bisa dipindah ke .css file)
+// CSS
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
-  width: 280px;
+  width: 320px;
   font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
   border: 1px solid #ddd;
   border-radius: 12px;
@@ -127,12 +145,13 @@ style.textContent = `
 
 .cal-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 36px;
+  height: 50px;
   font-size: 13px;
-  color: #333;
   user-select: none;
+  cursor: default;
 }
 
 .cal-cell.weekday {
@@ -158,17 +177,22 @@ style.textContent = `
 .cal-cell.selected {
   background: #0078D7;
   color: white;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  margin: 0 auto;
-  font-weight: 600;
 }
 
 .cal-cell.today {
   border: 1.5px solid #0078D7;
-  border-radius: 50%;
+  border-radius: 4px;
+}
+
+.date-num {
   font-weight: 600;
+  font-size: 14px;
+}
+
+.pasaran {
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.8;
 }
 `;
 document.head.appendChild(style);
