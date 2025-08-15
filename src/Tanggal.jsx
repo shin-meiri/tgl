@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React, { useEffect, useState } from 'react';
-import { julianDayNumber } from './History';
+import { julianDayNumber, getDaysInMonth } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -10,12 +10,12 @@ const bulanList = [
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-// 🔧 Titik kalibrasi weton
+// 🔧 Kalibrasi weton
 const ACUAN = {
   tahun: 1900,
   bulan: 1,
   tanggal: 1,
-  pasaranIndex: 1 // 1 Jan 1900 = Legi
+  pasaranIndex: 0 // 1 Jan 1900 = Legi
 };
 
 function hitungPasaran(tanggal, bulan, tahun) {
@@ -26,52 +26,45 @@ function hitungPasaran(tanggal, bulan, tahun) {
   return pasaranList[(index + 5) % 5];
 }
 
-function getDaysInMonth(month, year) {
-  if (month === 1) {
-    if (year < 1582) return year % 4 === 0 ? 29 : 28;
-    return (year % 4 === 0) && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
-  }
-  const days = [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return days[month];
-}
-
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
   const baseJDN = 1721425; // 1 Jan 1 M = Minggu
   return (jdn - baseJDN) % 7;
 }
 
+function formatDate(year, month, day) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 export default function Tanggal({ tanggal }) {
   const [libur, setLibur] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/libur.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setLibur(Array.isArray(data.data) ? data.data : []);
+        } else {
+          console.warn('API libur:', data.error);
+          setLibur([]);
+        }
+      })
+      .catch(err => {
+        console.error('Fetch libur gagal:', err);
+        setLibur([]);
+      });
+  }, []);
 
   const parts = tanggal.split(' ');
   const selectedDay = parseInt(parts[0]);
   const month = bulanList.indexOf(parts[1]);
   const year = parseInt(parts[2]);
 
-  // Ambil libur dari API
-  useEffect(() => {
-    fetch(`/api/libur.php`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          console.error('API Error:', data.error);
-          setLibur([]);
-        } else {
-          setLibur(data);
-        }
-      })
-      .catch(err => {
-        console.error('Fetch Error:', err);
-        setLibur([]);
-      });
-  }, [year]);
-
-  // Buat set tanggal libur untuk cepat cek
-  const liburSet = new Set(libur.map(l => l.tanggal)); // Format: "2024-12-25"
-
   const totalDays = getDaysInMonth(month, year);
   const firstDay = getDayOfWeek(1, month + 1, year);
+
+  const liburSet = new Set(libur.map(l => l.tanggal));
 
   const rows = [];
   let date = 1;
@@ -85,24 +78,19 @@ export default function Tanggal({ tanggal }) {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="cal-cell empty"></div>);
       } else {
-        const isToday = date === new Date().getDate() &&
-                        month === new Date().getMonth() &&
-                        year === new Date().getFullYear();
+        const isMinggu = j === 0;
+        const currentFormattedDate = formatDate(year, month + 1, date);
+        const isLibur = liburSet.has(currentFormattedDate);
+        const isToday = date === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
         const isSelected = date === selectedDay;
-
-        // Format YYYY-MM-DD untuk cek libur
-        const formattedDate = `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-        const isLibur = liburSet.has(formattedDate);
-        const isMinggu = j === 0; // Minggu = kolom pertama
         const pasaran = hitungPasaran(date, month + 1, year);
 
         cells.push(
           <div
             key={date}
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-            style={{
-              color: isMinggu || isLibur ? 'red' : 'black'
-            }}
+            style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit' }}
+            title={isLibur ? libur.find(l => l.tanggal === currentFormattedDate)?.nama : ''}
           >
             <div className="date-num">{date}</div>
             <div className="pasaran">{pasaran}</div>
@@ -125,7 +113,7 @@ export default function Tanggal({ tanggal }) {
 
       <div className="calendar-weekdays">
         {hariList.map(hari => (
-          <div key={hari} className="cal-cell weekday" style={{ color: hari === 'Min' ? 'red' : 'inherit' }}>
+          <div key={hari} className="cal-cell weekday">
             {hari}
           </div>
         ))}
@@ -138,20 +126,19 @@ export default function Tanggal({ tanggal }) {
   );
 }
 
-// CSS (sudah termasuk warna merah untuk Minggu & libur)
+// CSS
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
   width: 320px;
-  font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  margin: 0 auto;
+  font-family: 'Segoe UI', sans-serif;
   border: 1px solid #ddd;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
-  margin: 0 auto;
 }
-
 .calendar-header {
   background: #0078D7;
   color: white;
@@ -160,14 +147,12 @@ style.textContent = `
   font-size: 16px;
   font-weight: 600;
 }
-
 .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f5f5f5;
   border-bottom: 1px solid #eee;
 }
-
 .cal-cell {
   display: flex;
   flex-direction: column;
@@ -178,46 +163,34 @@ style.textContent = `
   user-select: none;
   cursor: default;
 }
-
 .cal-cell.weekday {
   font-weight: 600;
   color: #555;
   font-size: 12px;
   padding: 6px 0;
 }
-
-.cal-cell.weekday:nth-child(1) {
-  color: red;
-}
-
 .cal-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-
 .cal-cell.empty {
   background: transparent;
 }
-
 .cal-cell:hover:not(.empty):not(.selected) {
   background: #f0f0f0;
 }
-
 .cal-cell.selected {
   background: #0078D7;
   color: white;
 }
-
 .cal-cell.today {
   border: 1.5px solid #0078D7;
   border-radius: 4px;
 }
-
 .date-num {
   font-weight: 600;
   font-size: 14px;
 }
-
 .pasaran {
   font-size: 11px;
   margin-top: 2px;
