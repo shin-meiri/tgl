@@ -15,7 +15,7 @@ const ACUAN = {
   tahun: 1900,
   bulan: 1,
   tanggal: 1,
-  pasaranIndex: 0 // 1 Jan 1900 = Legi
+  pasaranIndex: 1 // 1 Jan 1900 = Legi
 };
 
 function hitungPasaran(tanggal, bulan, tahun) {
