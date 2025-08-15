@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React from 'react';
-import { julianDayNumber } from '../utils/History';
+import { julianDayNumber } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
