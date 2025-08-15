@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Dtpick from './Dtpick';
 import Tanggal from './Tanggal';
-import { hitungHari } from '../utils/History';
+import { hitungHari } from './History';
 
 const bulanMap = {
   'Januari': 1, 'Februari': 2, 'Maret': 3, 'April': 4, 'Mei': 5, 'Juni': 6,
