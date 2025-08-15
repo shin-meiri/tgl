@@ -16,9 +16,9 @@ export default function Kalender() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto' }}>
       {/* Input Pilih Tanggal */}
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <label style={{ display: 'block', marginBottom: '8px', fontSize: '16px', fontWeight: '600' }}>
+        <h3 style={{ display: 'block', marginBottom: '8px', fontSize: '16px', fontWeight: '600' }}>
           Pilih Tanggal:
-        </label>
+        </h3>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
 
