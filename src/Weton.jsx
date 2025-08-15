@@ -9,7 +9,7 @@ const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 const acuanTahun = 1;
 const acuanBulan = 1;        // 1 = Januari
 const acuanTanggal = 1;
-const acuanPasaranIndex = 0; // 0=Legi, 1=Pahing, 2=Pon, 3=Wage, 4=Kliwon
+const acuanPasaranIndex = 4; // 0=Legi, 1=Pahing, 2=Pon, 3=Wage, 4=Kliwon
 // ✅ Sekarang akan digunakan
 
 function hitungPasaran(tanggal, bulan, tahun) {
