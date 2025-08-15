@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React from 'react';
-import { julianDayNumber } from './History';
+import { julianDayNumber } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -9,18 +9,15 @@ const bulanList = [
 
 const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-// Fungsi: hitung hari (0=Min, 1=Sen, ..., 6=Sab)
 function getDayOfWeek(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721425; // 1 Jan 1 M = Minggu → 1721424 = Sabtu, 1721425 = Minggu
+  const baseJDN = 1721425; // 1 Jan 1 M = Minggu
   const selisih = jdn - baseJDN;
   return (selisih % 7 + 7) % 7;
 }
 
-// Fungsi: jumlah hari dalam bulan
 function getDaysInMonth(month, year) {
   if (month === 1) {
-    // Cek kabisat
     if (year < 1582) {
       return year % 4 === 0 ? 29 : 28;
     } else {
@@ -32,30 +29,29 @@ function getDaysInMonth(month, year) {
 }
 
 export default function Tanggal({ tanggal }) {
-  // Parse tanggal: "31 Agustus 622"
   const parts = tanggal.split(' ');
   const day = parseInt(parts[0]);
   const month = bulanList.indexOf(parts[1]);
   const year = parseInt(parts[2]);
 
   const totalDays = getDaysInMonth(month, year);
-  const firstDay = getDayOfWeek(1, month + 1, year); // 0=Min, 6=Sab
+  const firstDay = getDayOfWeek(1, month + 1, year);
 
-  // Buat grid tanggal
   const rows = [];
   let date = 1;
-  let isAfter = false;
 
   for (let i = 0; i < 6; i++) {
     const cells = [];
 
     for (let j = 0; j < 7; j++) {
       if (i === 0 && j < firstDay) {
-        cells.push(<div key={`empty-${j}`} className="cal-cell empty"></div>);
+        cells.push(<div key={`empty-start-${j}`} className="cal-cell empty"></div>);
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="cal-cell empty"></div>);
       } else {
-        const isToday = date === day && month === new Date().getMonth() && year === new Date().getFullYear();
+        const isToday = date === new Date().getDate() &&
+                       month === new Date().getMonth() &&
+                       year === new Date().getFullYear();
         const isSelected = date === day;
 
         cells.push(
@@ -70,11 +66,7 @@ export default function Tanggal({ tanggal }) {
       }
     }
 
-    rows.push(
-      <div key={i} className="cal-row">
-        {cells}
-      </div>
-    );
+    rows.push(<div key={i} className="cal-row">{cells}</div>);
 
     if (date > totalDays) break;
   }
@@ -100,7 +92,7 @@ export default function Tanggal({ tanggal }) {
   );
 }
 
-// CSS Inline (bisa dipindah ke file .css nanti)
+// CSS Inline
 const style = document.createElement('style');
 style.textContent = `
 .calendar-container {
