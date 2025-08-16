@@ -18,10 +18,9 @@ export default function Kalender() {
     setActiveTab(tab);
   };
 
-  // Saat pilih tanggal, otomatis pindah ke DESKRIPSI
-  const handleDateChange = (tgl) => {
+  const handleTanggalClick = (tgl) => {
     setTanggal(tgl);
-    setActiveTab('deskripsi'); // Otomatis pindah tab
+    setActiveTab('deskripsi'); // 🔥 Pindah ke DESKRIPSI saat klik tanggal di kalender
   };
 
   return (
@@ -33,9 +32,9 @@ export default function Kalender() {
       {activeTab === 'kalender' && (
         <div style={{ padding: '20px' }}>
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <Dtpick value={tanggal} onChange={handleDateChange} />
+            <Dtpick value={tanggal} onChange={setTanggal} />
           </div>
-          <Tanggal tanggal={tanggal} />
+          <Tanggal tanggal={tanggal} onTanggalClick={handleTanggalClick} />
         </div>
       )}
 
