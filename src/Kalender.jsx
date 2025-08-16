@@ -1,4 +1,3 @@
-// src/components/Kalender.jsx
 import React, { useState } from 'react';
 import Header from './Header';
 import Dtpick from './Dtpick';
@@ -14,26 +13,21 @@ export default function Kalender() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${defaultMonth} ${defaultYear}`);
   const [activeTab, setActiveTab] = useState('kalender');
 
-  const handleNavigate = (tab) => {
-    setActiveTab(tab);
-  };
-
+  const handleNavigate = (tab) => setActiveTab(tab);
   const handleTanggalClick = (tgl) => {
     setTanggal(tgl);
-    setActiveTab('deskripsi'); // ✅ Pindah tab
+    setActiveTab('deskripsi');
   };
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '400px', margin: '0 auto' }}>
+    <div className="app-container">
       <Header active={activeTab} onNavigate={handleNavigate} />
-
+      
       {activeTab === 'kalender' && (
-        <div style={{ padding: '20px' }}>
-          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <Dtpick value={tanggal} onChange={setTanggal} />
-          </div>
+        <>
+          <Dtpick value={tanggal} onChange={setTanggal} />
           <Tanggal tanggal={tanggal} onTanggalClick={handleTanggalClick} />
-        </div>
+        </>
       )}
 
       {activeTab === 'deskripsi' && (
@@ -41,4 +35,4 @@ export default function Kalender() {
       )}
     </div>
   );
-          }
+      }
