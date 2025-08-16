@@ -45,7 +45,7 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
 
   // ✅ Ambil libur dari API — tetap jalan
   useEffect(() => {
-    fetch('https://namadomain.epizy.com/api/libur.php')
+    fetch('/api/libur.php')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
