@@ -20,15 +20,13 @@ export default function Kalender() {
 
   const handleTanggalClick = (tgl) => {
     setTanggal(tgl);
-    setActiveTab('deskripsi'); // 🔥 Pindah ke DESKRIPSI saat klik tanggal di kalender
+    setActiveTab('deskripsi'); // ✅ Pindah tab
   };
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '400px', margin: '0 auto' }}>
-      {/* Header Navigasi */}
       <Header active={activeTab} onNavigate={handleNavigate} />
 
-      {/* Konten */}
       {activeTab === 'kalender' && (
         <div style={{ padding: '20px' }}>
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -43,4 +41,4 @@ export default function Kalender() {
       )}
     </div>
   );
-}
+          }
