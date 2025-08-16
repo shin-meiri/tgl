@@ -1,0 +1,33 @@
+/* src/components/Header.css */
+.header-nav {
+  display: flex;
+  background: #0078D7;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.nav-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  flex: 1;
+  transition: background 0.3s;
+}
+
+.nav-item:hover {
+  background: #005a9e;
+}
+
+.nav-item.active {
+  background: #ffffff;
+  color: #0078D7;
+  font-weight: 700;
+}
+
+.nav-item:not(:last-child) {
+  border-right: 1px solid #005a9e;
+}
