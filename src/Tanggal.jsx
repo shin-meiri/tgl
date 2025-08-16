@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { julianDayNumber, getDaysInMonth } from '../utils/History';
+import { julianDayNumber, getDaysInMonth } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
