@@ -4,13 +4,13 @@ import './Desk.css';
 
 // Neptu Hari & Pasaran
 const neptuHari = {
+  'Minggu': 5,
   'Senin': 4,
   'Selasa': 3,
   'Rabu': 7,
   'Kamis': 8,
   'Jumat': 6,
   'Sabtu': 9,
-  'Minggu': 5,
 };
 
 const neptuPasaran = {
