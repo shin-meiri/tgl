@@ -43,6 +43,7 @@ function formatTampil(tanggal, bulan, tahun) {
 export default function Tanggal({ tanggal, onTanggalClick }) {
   const [libur, setLibur] = useState([]);
 
+  // ✅ Ambil libur dari API — tetap jalan
   useEffect(() => {
     fetch('https://namadomain.epizy.com/api/libur.php')
       .then(res => res.json())
@@ -88,7 +89,6 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
         const isSelected = date === selectedDay;
         const pasaran = hitungPasaran(date, month + 1, year);
 
-        // Format: "31 Agustus 622"
         const tglStr = `${date} ${bulanList[month]} ${year}`;
 
         cells.push(
@@ -97,7 +97,7 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
             style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit', cursor: 'pointer' }}
             title={isLibur ? libur.find(l => l.tanggal === currentFormattedDate)?.nama : ''}
-            onClick={() => onTanggalClick?.(tglStr)} // 🔥 Klik → kirim ke parent
+            onClick={() => onTanggalClick?.(tglStr)} // 🔥 Klik → pindah tab
           >
             <div className="date-num">{date}</div>
             <div className="pasaran">{pasaran}</div>
@@ -111,6 +111,12 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
 
     if (date > totalDays) break;
   }
+
+  // ✅ Filter libur di bulan ini
+  const liburBulanIni = libur.filter(item => {
+    const [y, m] = item.tanggal.split('-').map(Number);
+    return y === year && m === month + 1;
+  });
 
   return (
     <div className="calendar-month-view">
@@ -130,13 +136,11 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
         {rows}
       </div>
 
-      {libur.filter(item => {
-        const [y, m] = item.tanggal.split('-').map(Number);
-        return y === year && m === month + 1;
-      }).length > 0 && (
+      {/* ✅ Daftar libur di bawah tetap muncul */}
+      {liburBulanIni.length > 0 ? (
         <div className="daftar-libur">
           <strong>Libur {bulanList[month]} {year}:</strong>
-          {libur.map((item, idx) => {
+          {liburBulanIni.map((item, idx) => {
             const [y, m, d] = item.tanggal.split('-');
             const tglTampil = formatTampil(parseInt(d), parseInt(m), parseInt(y));
             return (
@@ -146,12 +150,16 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
             );
           })}
         </div>
+      ) : (
+        <div className="daftar-libur" style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+          Tidak ada libur di {bulanList[month]} {year}
+        </div>
       )}
     </div>
   );
 }
 
-// CSS (sama seperti sebelumnya)
+// CSS (sudah termasuk warna merah untuk Minggu & libur)
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
