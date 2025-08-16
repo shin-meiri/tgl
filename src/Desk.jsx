@@ -54,7 +54,7 @@ function hitungHari(day, month, year) {
   const baseJDN = 1721425;
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
-  const days = [ 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu';]
+  const days = [ 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   return days[hari];
 }
 
