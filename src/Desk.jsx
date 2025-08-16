@@ -104,7 +104,7 @@ export default function Desk({ tanggal }) {
 // Fungsi: hitung hari (Senin, Selasa, ...)
 function hitungHari(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721424; // 1 Jan 1 M = Senin
+  const baseJDN = 1721425; // 1 Jan 1 M = Senin
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
