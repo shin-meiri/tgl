@@ -114,7 +114,7 @@ function hitungHari(day, month, year) {
 // Fungsi: hitung pasaran
 function hitungPasaran(day, month, year) {
   // 🔧 Titik acuan: 1 Jan 1900 = Senin Legi
-  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 0 }; // Legi = 0
+  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 1 }; // Legi = 0
 
   const targetJDN = julianDayNumber(day, month, year);
   const acuanJDN = julianDayNumber(acuan.tanggal, acuan.bulan, acuan.tahun);
