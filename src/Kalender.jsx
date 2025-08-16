@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Header from './Header';
 import Dtpick from './Dtpick';
 import Tanggal from './Tanggal';
+import Desk from './Desk';
 
 export default function Kalender() {
   const now = new Date();
@@ -15,11 +16,14 @@ export default function Kalender() {
 
   const handleNavigate = (tab) => {
     setActiveTab(tab);
-    // Di sini nanti bisa tambah logika: ganti konten
   };
 
-  // Hanya tampilkan halaman kalender untuk sekarang
-  // Bisa dikembangkan: jika activeTab === 'deskripsi' → tampilkan deskripsi
+  // Saat pilih tanggal, otomatis pindah ke DESKRIPSI
+  const handleDateChange = (tgl) => {
+    setTanggal(tgl);
+    setActiveTab('deskripsi'); // Otomatis pindah tab
+  };
+
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '400px', margin: '0 auto' }}>
       {/* Header Navigasi */}
@@ -28,28 +32,16 @@ export default function Kalender() {
       {/* Konten */}
       {activeTab === 'kalender' && (
         <div style={{ padding: '20px' }}>
-          {/* Datepicker tanpa label */}
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <Dtpick value={tanggal} onChange={setTanggal} />
+            <Dtpick value={tanggal} onChange={handleDateChange} />
           </div>
-
-          {/* Kalender Bulan + Weton + Libur */}
           <Tanggal tanggal={tanggal} />
         </div>
       )}
 
       {activeTab === 'deskripsi' && (
-        <div style={{ padding: '20px', textAlign: 'center', color: '#555' }}>
-          <h4>Deskripsi Fitur Kalender</h4>
-          <p>Kalender ini mendukung:</p>
-          <ul style={{ textAlign: 'left', fontSize: '14px' }}>
-            <li>Tanggal historis (1 M - 5000 M)</li>
-            <li>Weton Jawa (Legi, Pahing, Pon, Wage, Kliwon)</li>
-            <li>Hari libur dari database</li>
-            <li>Akurasi kalender Julian & Gregorian</li>
-          </ul>
-        </div>
+        <Desk tanggal={tanggal} />
       )}
     </div>
   );
-          }
+}
