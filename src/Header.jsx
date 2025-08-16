@@ -1,13 +1,22 @@
 // src/components/Header.jsx
 import React from 'react';
+import './Header.css'; // Kita buat CSS terpisah agar mudah di-styling
 
-const Header = () => {
+export default function Header({ active, onNavigate }) {
   return (
-    <header className="header">
-      <h1>Primbon Jawa</h1>
-      <p>Cek Weton & Kalender Jawa Kuno</p>
-    </header>
+    <div className="header-nav">
+      <div
+        className={`nav-item ${active === 'kalender' ? 'active' : ''}`}
+        onClick={() => onNavigate?.('kalender')}
+      >
+        KALENDER
+      </div>
+      <div
+        className={`nav-item ${active === 'deskripsi' ? 'active' : ''}`}
+        onClick={() => onNavigate?.('deskripsi')}
+      >
+        DESKRIPSI
+      </div>
+    </div>
   );
-};
-
-export default Header;
+}
