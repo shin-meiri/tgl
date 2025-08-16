@@ -26,7 +26,7 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
   const year = parseInt(parts[2]);
 
   useEffect(() => {
-    fetch('https://namadomain.epizy.com/api/libur.php')
+    fetch('./api/libur.php')
       .then(r => r.json())
       .then(d => setLibur(d.success ? d.data : []))
       .catch(() => setLibur([]));
