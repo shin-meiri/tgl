@@ -3,7 +3,7 @@ import Header from './Header';
 import Dtpick from './Dtpick';
 import Tanggal from './Tanggal';
 import Desk from './Desk';
-import url('./api/style.php');
+import url('/api/style.php');
 
 export default function Kalender() {
   const now = new Date();
