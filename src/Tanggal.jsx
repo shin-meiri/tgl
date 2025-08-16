@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React, { useEffect, useState } from 'react';
-import { julianDayNumber, getDaysInMonth } from './History';
+import { julianDayNumber, getDaysInMonth } from '../utils/History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -36,16 +36,15 @@ function formatDate(year, month, day) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-// Format: 15 Agustus 1945
 function formatTampil(tanggal, bulan, tahun) {
   return `${tanggal} ${bulanList[bulan - 1]} ${tahun}`;
 }
 
-export default function Tanggal({ tanggal }) {
+export default function Tanggal({ tanggal, onTanggalClick }) {
   const [libur, setLibur] = useState([]);
 
   useEffect(() => {
-    fetch('/api/libur.php')
+    fetch('https://namadomain.epizy.com/api/libur.php')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -70,12 +69,6 @@ export default function Tanggal({ tanggal }) {
 
   const liburSet = new Set(libur.map(l => l.tanggal));
 
-  // Filter libur yang sesuai bulan dan tahun yang tampil
-  const liburBulanIni = libur.filter(item => {
-    const [y, m] = item.tanggal.split('-').map(Number);
-    return y === year && m === month + 1;
-  });
-
   const rows = [];
   let date = 1;
 
@@ -95,12 +88,16 @@ export default function Tanggal({ tanggal }) {
         const isSelected = date === selectedDay;
         const pasaran = hitungPasaran(date, month + 1, year);
 
+        // Format: "31 Agustus 622"
+        const tglStr = `${date} ${bulanList[month]} ${year}`;
+
         cells.push(
           <div
             key={date}
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-            style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit' }}
+            style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit', cursor: 'pointer' }}
             title={isLibur ? libur.find(l => l.tanggal === currentFormattedDate)?.nama : ''}
+            onClick={() => onTanggalClick?.(tglStr)} // 🔥 Klik → kirim ke parent
           >
             <div className="date-num">{date}</div>
             <div className="pasaran">{pasaran}</div>
@@ -133,11 +130,13 @@ export default function Tanggal({ tanggal }) {
         {rows}
       </div>
 
-      {/* 🔽 Daftar Libur di Bulan Ini */}
-      {liburBulanIni.length > 0 && (
+      {libur.filter(item => {
+        const [y, m] = item.tanggal.split('-').map(Number);
+        return y === year && m === month + 1;
+      }).length > 0 && (
         <div className="daftar-libur">
           <strong>Libur {bulanList[month]} {year}:</strong>
-          {liburBulanIni.map((item, idx) => {
+          {libur.map((item, idx) => {
             const [y, m, d] = item.tanggal.split('-');
             const tglTampil = formatTampil(parseInt(d), parseInt(m), parseInt(y));
             return (
@@ -148,18 +147,11 @@ export default function Tanggal({ tanggal }) {
           })}
         </div>
       )}
-
-      {/* Jika tidak ada libur */}
-      {liburBulanIni.length === 0 && (
-        <div className="daftar-libur" style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
-          Tidak ada libur di {bulanList[month]} {year}
-        </div>
-      )}
     </div>
   );
 }
 
-// CSS
+// CSS (sama seperti sebelumnya)
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
@@ -194,7 +186,7 @@ style.textContent = `
   height: 50px;
   font-size: 13px;
   user-select: none;
-  cursor: default;
+  cursor: pointer;
 }
 .cal-cell.weekday {
   font-weight: 600;
@@ -209,7 +201,7 @@ style.textContent = `
 .cal-cell.empty {
   background: transparent;
 }
-.cal-cell:hover:not(.empty):not(.selected) {
+.cal-cell:hover:not(.empty) {
   background: #f0f0f0;
 }
 .cal-cell.selected {
