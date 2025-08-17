@@ -1,4 +1,3 @@
-// src/components/Tanggal.jsx
 import React, { useEffect, useState } from 'react';
 import { julianDayNumber, getDaysInMonth } from './History';
 
@@ -45,7 +44,7 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
 
   // ✅ Ambil libur dari API — tetap jalan
   useEffect(() => {
-    fetch('https://namadomain.epizy.com/api/libur.php')
+    fetch('/api/libur.php')
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.data)) {
@@ -158,88 +157,3 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
     </div>
   );
 }
-
-// CSS (sudah termasuk warna merah untuk Minggu & libur)
-const style = document.createElement('style');
-style.textContent = `
-.calendar-month-view {
-  width: 320px;
-  margin: 0 auto;
-  font-family: 'Segoe UI', sans-serif;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  background: white;
-}
-.calendar-header {
-  background: #0078D7;
-  color: white;
-  text-align: center;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 600;
-}
-.calendar-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  background: #f5f5f5;
-  border-bottom: 1px solid #eee;
-}
-.cal-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-  font-size: 13px;
-  user-select: none;
-  cursor: pointer;
-}
-.cal-cell.weekday {
-  font-weight: 600;
-  color: #555;
-  font-size: 12px;
-  padding: 6px 0;
-}
-.cal-row {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-.cal-cell.empty {
-  background: transparent;
-}
-.cal-cell:hover:not(.empty) {
-  background: #f0f0f0;
-}
-.cal-cell.selected {
-  background: #0078D7;
-  color: white;
-}
-.cal-cell.today {
-  border: 1.5px solid #0078D7;
-  border-radius: 4px;
-}
-.date-num {
-  font-weight: 600;
-  font-size: 14px;
-}
-.pasaran {
-  font-size: 11px;
-  margin-top: 2px;
-  opacity: 0.8;
-}
-.daftar-libur {
-  padding: 10px 15px;
-  background: #fff8f8;
-  border-top: 1px dashed #ddd;
-  font-size: 13px;
-  color: #d32f2f;
-}
-.daftar-libur strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-`;
-document.head.appendChild(style);
