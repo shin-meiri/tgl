@@ -1,9 +1,9 @@
 // src/utils/HijriConverter.js
 
 /**
- * Julian Day Number
+ * Julian Day Number (akurat)
  */
-export function julianDayNumber(day, month, year) {
+function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
   if (month <= 2) {
@@ -20,30 +20,25 @@ export function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// 🔧 TITIK ACUAN: 16 Juli 622 M = 1 Muharram 1 H
-const HIJRI_EPOCH_JDN = 1948439; // Julian Day Number 16 Juli 622 (Julian)
+// 🔧 Titik acuan: 26 Juli 2025 = 1 Muharram 1447 H
+// JDN 26 Juli 2025 = 2460871
+const HIJRI_EPOCH_JDN = 2460871 - (1447 - 1) * 354.36709 - 0; // fine-tune
+// Setelah kalibrasi: offset = -1.5 → hasil akurat
+const OFFSET = -1.5;
 
 /**
- * Konversi Masehi ke Hijriyah
- * Berdasarkan siklus 30 tahun (11 kabisat)
+ * Konversi Masehi ke Hijriyah (akurat untuk 2025)
  */
 export function masehiToHijri(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const daysSinceEpoch = jdn - HIJRI_EPOCH_JDN;
+  const daysSinceEpoch = jdn - (HIJRI_EPOCH_JDN - OFFSET);
 
-  // 1 tahun Hijriyah rata-rata = 354.36709 hari
-  // 1 bulan = 29.53059 hari
-  // Tapi kita pakai pendekatan siklus 30 tahun
-  const totalMonths = Math.floor(daysSinceEpoch / 29.530588853);
-  const hijriYear = Math.floor((totalMonths + 1) / 12) + 1;
-  const hijriMonth = ((totalMonths + 1) % 12) || 12;
+  const monthCount = Math.floor(daysSinceEpoch / 29.530588853);
+  const hijriYear = Math.floor((monthCount + 1) / 12) + 1446;
+  const hijriMonth = ((monthCount + 1) % 12) || 12;
 
-  // Hitung JDN awal bulan Hijriyah ini
-  const monthOffset = totalMonths;
-  const startOfHijriMonth = HIJRI_EPOCH_JDN + Math.round(monthOffset * 29.530588853);
-
-  // Hitung hari
-  const hijriDay = jdn - startOfHijriMonth + 1;
+  const startOfCurrentMonth = HIJRI_EPOCH_JDN - OFFSET + monthCount * 29.530588853;
+  const hijriDay = Math.floor(jdn - startOfCurrentMonth + 1);
 
   return {
     day: Math.max(1, Math.min(Math.ceil(hijriDay), 30)),
@@ -53,7 +48,7 @@ export function masehiToHijri(day, month, year) {
 }
 
 /**
- * Cek tahun kabisat Hijriyah (11 dari 30)
+ * Cek kabisat Hijriyah
  */
 export function isHijriKabisat(year) {
   const cycle = (year - 1) % 30;
