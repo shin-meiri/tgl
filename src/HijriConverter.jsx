@@ -1,6 +1,8 @@
 // src/utils/HijriConverter.js
 
-// Julian Day Number (dari sebelumnya)
+/**
+ * Julian Day Number (akurat untuk Julian & Gregorian)
+ */
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -10,36 +12,60 @@ function julianDayNumber(day, month, year) {
   }
   let b;
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
+    // Gregorian
     const a = Math.floor(y / 100);
     b = 2 - a + Math.floor(a / 4);
   } else {
+    // Julian
     b = 0;
   }
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// Konversi Julian Day ke Hijriyah
-export function jdToHijri(jd) {
-  const jd0 = jd - 1721425.5;
-  const cycle = Math.floor(jd0 / 10631);
-  const jd1 = jd0 - 10631 * cycle;
-  const jd2 = Math.floor(jd1 / 10631 * 30) + 1;
-  const jd3 = jd1 - Math.floor((jd2 - 1) / 30 * 10631);
-  const year = 30 * cycle + jd2;
-  const month = Math.ceil((jd3 + 29.5) / 29.530588853);
-  const day = jd3 - Math.floor((month - 1) * 29.530588853) + 1;
+// 🔧 TITIK ACUAN HIJRAH: 16 Juli 622 M = 1 Muharram 1 H
+const HIJRI_EPOCH_JDN = julianDayNumber(16, 7, 622); // 1 Muharram 1 H
+const GREGORIAN_EPOCH_JDN = 1721426; // 1 Jan 1 M (Senin)
+
+/**
+ * Konversi Masehi ke Hijriyah
+ * Berdasarkan JDN dan titik acuan Hijrah
+ */
+export function masehiToHijri(day, month, year) {
+  const jdn = julianDayNumber(day, month, year);
+  const daysSinceEpoch = jdn - HIJRI_EPOCH_JDN;
+
+  // Rata-rata panjang bulan Hijriyah: 29.530588853 hari
+  const monthCount = Math.floor(daysSinceEpoch / 29.530588853);
+  const year = Math.floor((monthCount + 1) / 12) + 1;
+  const month = ((monthCount + 1) % 12) || 12;
+
+  // Hitung hari di bulan ini
+  const startOfCurrentMonth = HIJRI_EPOCH_JDN + monthCount * 29.530588853;
+  const day = Math.floor(jdn - startOfCurrentMonth + 1);
 
   return {
-    day: Math.floor(day),
-    month: Math.min(12, Math.floor(month)),
-    year: Math.floor(year)
+    day: Math.max(1, Math.min(day, 30)), // Pastikan 1-30
+    month: month,
+    year: year
   };
 }
 
-// Konversi Masehi ke Hijriyah
-export function masehiToHijri(day, month, year) {
-  const jd = julianDayNumber(day, month, year);
-  return jdToHijri(jd);
+/**
+ * Cek apakah tahun Hijriyah kabisat
+ * Siklus 30 tahun: 11 tahun kabisat
+ */
+export function isHijriKabisat(year) {
+  const cycle = (year - 1) % 30;
+  return [2, 5, 7, 10, 13, 15, 18, 21, 24, 26, 29].includes(cycle);
+}
+
+/**
+ * Jumlah hari dalam bulan Hijriyah
+ */
+export function getHijriDaysInMonth(month, year) {
+  if (month % 2 === 1) return 30; // Bulan ganjil = 30 hari
+  if (month === 12 && isHijriKabisat(year)) return 30; // Dzulhijjah kabisat
+  return 29;
 }
 
 // Nama bulan Hijriyah
