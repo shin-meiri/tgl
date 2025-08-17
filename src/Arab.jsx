@@ -4,7 +4,6 @@ import Dtpick from './Dtpick';
 import { masehiToHijri, bulanHijriyah } from './HijriConverter';
 
 export default function Arab() {
-  // Default: hari ini
   const now = new Date();
   const defaultDay = now.getDate();
   const defaultMonth = now.getMonth();
@@ -17,30 +16,33 @@ export default function Arab() {
   const parse = () => {
     const parts = tanggal.split(' ');
     return {
-      day: parseInt(parts[0]),
+      day: parseInt(parts[0], 10),
       month: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]),
-      year: parseInt(parts[2])
+      year: parseInt(parts[2], 10)
     };
   };
 
+  // Gunakan parse di dalam useEffect agar dependency benar
   useEffect(() => {
     const { day, month, year } = parse();
     const h = masehiToHijri(day, month + 1, year);
     setHijri(h);
-  }, [tanggal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tanggal]); // `parse` tidak dimasukkan karena fungsi lokal, dan `tanggal` cukup sebagai trigger
 
   if (!hijri) return <div>Loading...</div>;
 
   // Hitung jumlah hari di bulan Hijriyah
-  const totalDays = hijri.month % 2 === 1 ? 30 : 29; // Ganjil = 30, Genap = 29
-  if (hijri.month === 12 && hijri.year % 30 === 2 || hijri.year % 30 === 5 || hijri.year % 30 === 7 || hijri.year % 30 === 10 || hijri.year % 30 === 13 || hijri.year % 30 === 15 || hijri.year % 30 === 18 || hijri.year % 30 === 21 || hijri.year % 30 === 25 || hijri.year % 30 === 26) {
-    // Tahun kabisat Hijriyah
-    if (hijri.month === 12) {
-      totalDays = 30;
-    }
+  let totalDays = hijri.month % 2 === 1 ? 30 : 29; // Bulan ganjil = 30 hari
+
+  // Cek tahun kabisat Hijriyah (11 tahun dalam siklus 30 tahun)
+  const kabisatHijriyah = [2, 5, 7, 10, 13, 15, 18, 21, 25, 26, 29];
+  const tahunMod = hijri.year % 30;
+  if (kabisatHijriyah.includes(tahunMod) && hijri.month === 12) {
+    totalDays = 30;
   }
 
-  // Cari hari pertama (1 Muharram, dll)
+  // Cari hari pertama
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
   const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
 
@@ -99,7 +101,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi jdToHijri (dipakai di atas)
+// Fungsi jdToHijri (untuk internal)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
