@@ -1,6 +1,6 @@
 // src/components/Tanggal.jsx
 import React, { useEffect, useState } from 'react';
-import { julianDayNumber, getDaysInMonth } from '../utils/History';
+import { julianDayNumber, getDaysInMonth } from './History';
 
 const bulanList = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -15,7 +15,7 @@ const ACUAN = {
   tahun: 1900,
   bulan: 1,
   tanggal: 1,
-  pasaranIndex: 0 // 1 Jan 1900 = Legi
+  pasaranIndex: 1 // 1 Jan 1900 = Legi
 };
 
 function hitungPasaran(tanggal, bulan, tahun) {
