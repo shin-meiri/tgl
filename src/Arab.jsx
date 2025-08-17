@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from './HijriConverter';
+import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah, julianDayNumber } from './HijriConverter';
 
 export default function Arab() {
   const now = new Date();
@@ -16,31 +16,26 @@ export default function Arab() {
 
   const [hijri, setHijri] = useState(null);
 
-  // Konversi Masehi ke Hijriyah
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
-    const monthIndex = [
+    const month = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ].indexOf(parts[1]);
+    ].indexOf(parts[1]) + 1;
     const year = parseInt(parts[2], 10);
 
-    const result = masehiToHijri(day, monthIndex + 1, year);
+    const result = masehiToHijri(day, month, year);
     setHijri(result);
   }, [tanggal]);
 
-  if (!hijri) {
-    return <div>Loading...</div>;
-  }
+  if (!hijri) return <div>Loading...</div>;
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Hitung hari pertama bulan Hijriyah (dalam JDN)
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
+  const firstDayOfWeek = (firstJd - 1721425) % 7;
 
-  // Hitung JDN hari ini
   const today = new Date();
   const todayJd = julianDayNumber(
     today.getDate(),
@@ -59,13 +54,13 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // Hitung JDN untuk tanggal ini
-        const thisDateJd = firstJd + date - 1;
-        const isToday = thisDateJd === todayJd;
-        const todayClass = isToday ? 'today' : '';
-
+        const thisJd = firstJd + date - 1;
+        const isToday = thisJd === todayJd;
         cells.push(
-          <div key={date} className={`hijri-cell ${todayClass}`}>
+          <div
+            key={date}
+            className={`hijri-cell ${isToday ? 'today' : ''}`}
+          >
             <div className="date-num">{date}</div>
           </div>
         );
@@ -78,7 +73,6 @@ export default function Arab() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
-
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
@@ -89,10 +83,8 @@ export default function Arab() {
         </div>
 
         <div className="hijri-weekdays">
-          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
-            <div key={hari} className="hijri-cell weekday">
-              {hari}
-            </div>
+          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(hari => (
+            <div key={hari} className="hijri-cell weekday">{hari}</div>
           ))}
         </div>
 
@@ -108,25 +100,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi internal: Julian Day Number
-function julianDayNumber(day, month, year) {
-  let y = year;
-  let m = month;
-  if (month <= 2) {
-    y -= 1;
-    m += 12;
-  }
-  let b;
-  if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
-    const a = Math.floor(y / 100);
-    b = 2 - a + Math.floor(a / 4);
-  } else {
-    b = 0;
-  }
-  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
-}
-
-// CSS Inline
+// CSS Inline — background hijau seperti Tanggal.jsx
 const style = document.createElement('style');
 style.textContent = `
 .hijri-calendar {
@@ -154,11 +128,13 @@ style.textContent = `
 }
 .hijri-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 50px;
   font-size: 13px;
   user-select: none;
+  cursor: default;
 }
 .hijri-cell.weekday {
   font-weight: 600;
@@ -173,12 +149,8 @@ style.textContent = `
 .hijri-cell.empty {
   background: transparent;
 }
-.hijri-cell:hover:not(.empty) {
+.hijri-cell:hover:not(.empty):not(.today) {
   background: #f0f0f0;
-}
-.date-num {
-  font-weight: 600;
-  font-size: 14px;
 }
 .hijri-cell.today {
   background: #2e7d32 !important;
@@ -187,6 +159,10 @@ style.textContent = `
   width: 30px;
   height: 30px;
   margin: 0 auto;
+  font-weight: 600;
+}
+.date-num {
+  font-size: 14px;
 }
 `;
 document.head.appendChild(style);
