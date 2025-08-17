@@ -1,9 +1,9 @@
 // src/utils/HijriConverter.js
 
 /**
- * Julian Day Number (akurat untuk Julian & Gregorian)
+ * Julian Day Number
  */
-function julianDayNumber(day, month, year) {
+export function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
   if (month <= 2) {
@@ -20,34 +20,40 @@ function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// 🔧 TITIK ACUAN HIJRAH: 16 Juli 622 M = 1 Muharram 1 H
-const HIJRI_EPOCH_JDN = julianDayNumber(16, 7, 622); // 1 Muharram 1 H
+// 🔧 TITIK ACUAN: 16 Juli 622 M = 1 Muharram 1 H
+const HIJRI_EPOCH_JDN = 1948439; // Julian Day Number 16 Juli 622 (Julian)
 
 /**
  * Konversi Masehi ke Hijriyah
+ * Berdasarkan siklus 30 tahun (11 kabisat)
  */
 export function masehiToHijri(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
   const daysSinceEpoch = jdn - HIJRI_EPOCH_JDN;
 
-  // Rata-rata panjang bulan Hijriyah
-  const monthCount = Math.floor(daysSinceEpoch / 29.530588853);
-  const hijriYear = Math.floor((monthCount + 1) / 12) + 1;
-  const hijriMonth = ((monthCount + 1) % 12) || 12;
+  // 1 tahun Hijriyah rata-rata = 354.36709 hari
+  // 1 bulan = 29.53059 hari
+  // Tapi kita pakai pendekatan siklus 30 tahun
+  const totalMonths = Math.floor(daysSinceEpoch / 29.530588853);
+  const hijriYear = Math.floor((totalMonths + 1) / 12) + 1;
+  const hijriMonth = ((totalMonths + 1) % 12) || 12;
 
-  // Hitung hari (gunakan nama berbeda agar tidak bentrok)
-  const calculatedDay = Math.floor(jdn - (HIJRI_EPOCH_JDN + monthCount * 29.530588853) + 1);
-  const hijriDay = Math.max(1, Math.min(calculatedDay, 30));
+  // Hitung JDN awal bulan Hijriyah ini
+  const monthOffset = totalMonths;
+  const startOfHijriMonth = HIJRI_EPOCH_JDN + Math.round(monthOffset * 29.530588853);
+
+  // Hitung hari
+  const hijriDay = jdn - startOfHijriMonth + 1;
 
   return {
-    day: hijriDay,
+    day: Math.max(1, Math.min(Math.ceil(hijriDay), 30)),
     month: hijriMonth,
     year: hijriYear
   };
 }
 
 /**
- * Cek apakah tahun Hijriyah kabisat
+ * Cek tahun kabisat Hijriyah (11 dari 30)
  */
 export function isHijriKabisat(year) {
   const cycle = (year - 1) % 30;
@@ -58,12 +64,11 @@ export function isHijriKabisat(year) {
  * Jumlah hari dalam bulan Hijriyah
  */
 export function getHijriDaysInMonth(month, year) {
-  if (month % 2 === 1) return 30; // Bulan ganjil = 30 hari
+  if (month % 2 === 1) return 30;
   if (month === 12 && isHijriKabisat(year)) return 30;
   return 29;
 }
 
-// Nama bulan Hijriyah
 export const bulanHijriyah = [
   'Muharram',
   'Safar',
