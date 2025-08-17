@@ -12,35 +12,34 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  const parse = () => {
-    const parts = tanggal.split(' ');
-    return {
-      day: parseInt(parts[0], 10),
-      month: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]),
-      year: parseInt(parts[2], 10)
-    };
-  };
-
   useEffect(() => {
-    const { day, month, year } = parse();
+    // ✅ parse dipindah ke dalam useEffect
+    const parts = tanggal.split(' ');
+    const day = parseInt(parts[0], 10);
+    const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]);
+    const year = parseInt(parts[2], 10);
+
     const h = masehiToHijri(day, month + 1, year);
     setHijri(h);
-  }, [tanggal]);
+  }, [tanggal]); // ✅ Cukup [tanggal]
 
   if (!hijri) return <div>Loading...</div>;
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Cari hari pertama bulan Hijriyah
+  // Cari hari pertama
   const firstJdn = julianDayNumber(1, hijri.month, hijri.year);
   const firstDayOfWeek = (firstJdn - 1721425) % 7; // 0 = Minggu
 
-  // Hari ini (Masehi)
+  // Hari ini
   const today = new Date();
-  const isToday = (d, m, y) => {
-    const { day, month, year } = parse();
-    // Kita cari apakah tanggal d adalah hari ini
-    const jd = julianDayNumber(d, m, y);
+  const isToday = (d) => {
+    const parts = tanggal.split(' ');
+    const day = parseInt(parts[0], 10);
+    const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]) + 1;
+    const year = parseInt(parts[2], 10);
+
+    const jd = julianDayNumber(d, hijri.month, hijri.year);
     const todayJd = julianDayNumber(today.getDate(), today.getMonth() + 1, today.getFullYear());
     return jd === todayJd;
   };
@@ -56,7 +55,7 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        const todayClass = isToday(date, hijri.month, hijri.year) ? 'today' : '';
+        const todayClass = isToday(date) ? 'today' : '';
         cells.push(
           <div key={date} className={`hijri-cell ${todayClass}`}>
             <div className="date-num">{date}</div>
@@ -129,7 +128,6 @@ style.textContent = `
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
 }
-
 .hijri-header {
   background: #0078D7;
   color: white;
@@ -138,14 +136,12 @@ style.textContent = `
   font-size: 16px;
   font-weight: 600;
 }
-
 .hijri-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f5f5f5;
   border-bottom: 1px solid #eee;
 }
-
 .hijri-cell {
   display: flex;
   align-items: center;
@@ -154,32 +150,26 @@ style.textContent = `
   font-size: 13px;
   user-select: none;
 }
-
 .hijri-cell.weekday {
   font-weight: 600;
   color: #555;
   font-size: 12px;
   padding: 6px 0;
 }
-
 .hijri-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-
 .hijri-cell.empty {
   background: transparent;
 }
-
 .hijri-cell:hover:not(.empty) {
   background: #f0f0f0;
 }
-
 .date-num {
   font-weight: 600;
   font-size: 14px;
 }
-
 .hijri-cell.today {
   background: #2e7d32 !important;
   color: white;
