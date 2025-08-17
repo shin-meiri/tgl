@@ -13,18 +13,31 @@ export default function Kalender() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${defaultMonth} ${defaultYear}`);
   const [activeTab, setActiveTab] = useState('kalender');
 
+  const handleNavigate = (tab) => {
+    setActiveTab(tab);
+  };
+
+  const handleTanggalClick = (tgl) => {
+    setTanggal(tgl);
+    setActiveTab('deskripsi'); // ✅ Pindah tab
+  };
+
   return (
-    <div>
-      <Header active={activeTab} onNavigate={setActiveTab} />
+    <div >
+      <Header active={activeTab} onNavigate={handleNavigate} />
+
       {activeTab === 'kalender' && (
-        <>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div >
+          <div >
             <Dtpick value={tanggal} onChange={setTanggal} />
           </div>
-          <Tanggal tanggal={tanggal} onTanggalClick={setTanggal} />
-        </>
+          <Tanggal tanggal={tanggal} onTanggalClick={handleTanggalClick} />
+        </div>
       )}
-      {activeTab === 'deskripsi' && <Desk tanggal={tanggal} />}
+
+      {activeTab === 'deskripsi' && (
+        <Desk tanggal={tanggal} />
+      )}
     </div>
   );
-}
+    }
