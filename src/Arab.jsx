@@ -29,7 +29,7 @@ export default function Arab() {
 
   // Hitung hari pertama bulan Hijriyah
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721428) % 7; // 0 = Minggu
+  const firstDayOfWeek = (firstJd - 1721427) % 7; // 0 = Minggu
 
   // JDN hari ini
   const today = new Date();
