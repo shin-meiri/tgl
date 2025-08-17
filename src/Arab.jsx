@@ -29,9 +29,7 @@ export default function Arab() {
     setHijri(result);
   }, [tanggal]);
 
-  if (!hijri) {
-    return <div>Loading...</div>;
-  }
+  if (!hijri) return <div>Loading...</div>;
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
@@ -58,10 +56,11 @@ export default function Arab() {
       } else {
         const thisDateJd = firstJd + date - 1;
         const isToday = thisDateJd === todayJd;
-        const todayClass = isToday ? 'today' : '';
-
         cells.push(
-          <div key={date} className={`hijri-cell ${todayClass}`}>
+          <div
+            key={date}
+            className={`hijri-cell ${isToday ? 'today' : ''}`}
+          >
             <div className="date-num">{date}</div>
           </div>
         );
@@ -74,7 +73,8 @@ export default function Arab() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
-   
+      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
+
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
@@ -122,7 +122,7 @@ function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// CSS (background hijau seperti Tanggal.jsx)
+// CSS Inline
 const style = document.createElement('style');
 style.textContent = `
 .hijri-calendar {
@@ -150,13 +150,11 @@ style.textContent = `
 }
 .hijri-cell {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: 40px;
   font-size: 13px;
   user-select: none;
-  cursor: default;
 }
 .hijri-cell.weekday {
   font-weight: 600;
@@ -171,20 +169,20 @@ style.textContent = `
 .hijri-cell.empty {
   background: transparent;
 }
-.hijri-cell:hover:not(.empty):not(.today) {
+.hijri-cell:hover:not(.empty) {
   background: #f0f0f0;
 }
+.date-num {
+  font-weight: 600;
+  font-size: 14px;
+}
 .hijri-cell.today {
-  background: #2e7d32;
+  background: #2e7d32 !important;
   color: white;
   border-radius: 50%;
   width: 30px;
   height: 30px;
   margin: 0 auto;
-  font-weight: 600;
-}
-.date-num {
-  font-size: 14px;
 }
 `;
 document.head.appendChild(style);
