@@ -1,49 +1,72 @@
 import React, { useEffect, useState } from 'react';
 import { julianDayNumber, getDaysInMonth } from './History';
 
-const bulanList = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const hariList = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-const pasaranList = ['Legi','Pahing','Pon','Wage','Kliwon'];
+const bulanList = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
 
-const ACUAN = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 1 };
+const hariList = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
-function hitungPasaran(t, b, y) {
-  const jdn = julianDayNumber(t, b, y);
+// 🔧 Kalibrasi weton
+const ACUAN = {
+  tahun: 1900,
+  bulan: 1,
+  tanggal: 1,
+  pasaranIndex: 1 // 1 Jan 1900 = Legi
+};
+
+function hitungPasaran(tanggal, bulan, tahun) {
+  const targetJDN = julianDayNumber(tanggal, bulan, tahun);
   const acuanJDN = julianDayNumber(ACUAN.tanggal, ACUAN.bulan, ACUAN.tahun);
-  const selisih = jdn - acuanJDN;
-  return pasaranList[(selisih + ACUAN.pasaranIndex) % 5];
+  const selisih = targetJDN - acuanJDN;
+  const index = (selisih + ACUAN.pasaranIndex) % 5;
+  return pasaranList[(index + 5) % 5];
 }
 
-function getDayOfWeek(d, m, y) {
-  const jdn = julianDayNumber(d, m, y);
-  return (jdn - 1721425) % 7;
+function getDayOfWeek(day, month, year) {
+  const jdn = julianDayNumber(day, month, year);
+  const baseJDN = 1721425; // 1 Jan 1 M = Minggu
+  return (jdn - baseJDN) % 7;
 }
 
-function formatDate(y, m, d) {
-  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+function formatDate(year, month, day) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function formatTampil(t, b, y) {
-  return `${t} ${bulanList[b-1]} ${y}`;
+function formatTampil(tanggal, bulan, tahun) {
+  return `${tanggal} ${bulanList[bulan - 1]} ${tahun}`;
 }
 
 export default function Tanggal({ tanggal, onTanggalClick }) {
   const [libur, setLibur] = useState([]);
 
+  // ✅ Ambil libur dari API — tetap jalan
   useEffect(() => {
-    fetch('/api/libur.php')
-      .then(r => r.json())
-      .then(d => setLibur(d.success ? d.data : []))
-      .catch(e => setLibur([]));
+    fetch('./api/libur.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setLibur(data.data);
+        } else {
+          setLibur([]);
+        }
+      })
+      .catch(err => {
+        console.error('Gagal ambil libur:', err);
+        setLibur([]);
+      });
   }, []);
 
-  const [day, monthName, year] = tanggal.split(' ');
-  const month = bulanList.indexOf(monthName);
-  const yearNum = parseInt(year);
-  const dayNum = parseInt(day);
+  const parts = tanggal.split(' ');
+  const selectedDay = parseInt(parts[0]);
+  const month = bulanList.indexOf(parts[1]);
+  const year = parseInt(parts[2]);
 
-  const totalDays = getDaysInMonth(month, yearNum);
-  const firstDay = getDayOfWeek(1, month + 1, yearNum);
+  const totalDays = getDaysInMonth(month, year);
+  const firstDay = getDayOfWeek(1, month + 1, year);
+
   const liburSet = new Set(libur.map(l => l.tanggal));
 
   const rows = [];
@@ -51,26 +74,29 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
 
   for (let i = 0; i < 6; i++) {
     const cells = [];
+
     for (let j = 0; j < 7; j++) {
       if (i === 0 && j < firstDay) {
-        cells.push(<div key={j} className="cal-cell empty"></div>);
+        cells.push(<div key={`empty-${j}`} className="cal-cell empty"></div>);
       } else if (date > totalDays) {
-        cells.push(<div key={`e${j}`} className="cal-cell empty"></div>);
+        cells.push(<div key={`empty-end-${j}`} className="cal-cell empty"></div>);
       } else {
         const isMinggu = j === 0;
-        const current = formatDate(yearNum, month + 1, date);
-        const isLibur = liburSet.has(current);
-        const isToday = date === new Date().getDate() && month === new Date().getMonth() && yearNum === new Date().getFullYear();
-        const isSelected = date === dayNum;
-        const pasaran = hitungPasaran(date, month + 1, yearNum);
-        const tglStr = `${date} ${bulanList[month]} ${yearNum}`;
+        const currentFormattedDate = formatDate(year, month + 1, date);
+        const isLibur = liburSet.has(currentFormattedDate);
+        const isToday = date === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+        const isSelected = date === selectedDay;
+        const pasaran = hitungPasaran(date, month + 1, year);
+
+        const tglStr = `${date} ${bulanList[month]} ${year}`;
 
         cells.push(
           <div
             key={date}
             className={`cal-cell ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-            style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit' }}
-            onClick={() => onTanggalClick(tglStr)}
+            style={{ color: isMinggu || isLibur ? '#d32f2f' : 'inherit', cursor: 'pointer' }}
+            title={isLibur ? libur.find(l => l.tanggal === currentFormattedDate)?.nama : ''}
+            onClick={() => onTanggalClick?.(tglStr)} // 🔥 Klik → pindah tab
           >
             <div className="date-num">{date}</div>
             <div className="pasaran">{pasaran}</div>
@@ -79,30 +105,55 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
         date++;
       }
     }
+
     rows.push(<div key={i} className="cal-row">{cells}</div>);
+
     if (date > totalDays) break;
   }
 
-  const liburBulanIni = libur.filter(l => {
-    const [y, m] = l.tanggal.split('-').map(Number);
-    return y === yearNum && m === month + 1;
+  // ✅ Filter libur di bulan ini
+  const liburBulanIni = libur.filter(item => {
+    const [y, m] = item.tanggal.split('-').map(Number);
+    return y === year && m === month + 1;
   });
 
   return (
     <div className="calendar-month-view">
-      <div className="calendar-header">{bulanList[month]} {yearNum}</div>
+      <div className="calendar-header">
+        {bulanList[month]} {year}
+      </div>
+
       <div className="calendar-weekdays">
-        {hariList.map(h => <div key={h} className="cal-cell weekday">{h}</div>)}
+        {hariList.map(hari => (
+          <div key={hari} className="cal-cell weekday">
+            {hari}
+          </div>
+        ))}
       </div>
-      <div className="calendar-body">{rows}</div>
-      <div className="daftar-libur">
-        <strong>Libur {bulanList[month]} {yearNum}:</strong>
-        {liburBulanIni.length > 0 ? liburBulanIni.map((l, i) => {
-          const [y, m, d] = l.tanggal.split('-');
-          const t = formatTampil(parseInt(d), parseInt(m), parseInt(y));
-          return <p key={i}><b>{t}</b>: {l.nama}</p>;
-        }) : <p>Tidak ada libur</p>}
+
+      <div className="calendar-body">
+        {rows}
       </div>
+
+      {/* ✅ Daftar libur di bawah tetap muncul */}
+      {liburBulanIni.length > 0 ? (
+        <div className="daftar-libur">
+          <strong>Libur {bulanList[month]} {year}:</strong>
+          {liburBulanIni.map((item, idx) => {
+            const [y, m, d] = item.tanggal.split('-');
+            const tglTampil = formatTampil(parseInt(d), parseInt(m), parseInt(y));
+            return (
+              <p key={idx} style={{ margin: '4px 0', fontSize: '13px' }}>
+                <span style={{ fontWeight: 'bold' }}>{tglTampil}</span>: {item.nama}
+              </p>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="daftar-libur" style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+          Tidak ada libur di {bulanList[month]} {year}
+        </div>
+      )}
     </div>
   );
-                                }
+}
