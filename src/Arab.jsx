@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, bulanHijriyah } from './HijriConverter';
+import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from './HijriConverter';
 
 export default function Arab() {
   const now = new Date();
@@ -12,7 +12,6 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse tanggal Masehi
   const parse = () => {
     const parts = tanggal.split(' ');
     return {
@@ -26,27 +25,25 @@ export default function Arab() {
     const { day, month, year } = parse();
     const h = masehiToHijri(day, month + 1, year);
     setHijri(h);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tanggal]);
 
   if (!hijri) return <div>Loading...</div>;
 
-  // Cek apakah kalender yang tampil adalah bulan saat ini (Masehi)
-  const { day: todayMasehi, month: monthMasehi, year: yearMasehi } = parse();
+  const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Hitung jumlah hari di bulan Hijriyah
-  let totalDays = hijri.month % 2 === 1 ? 30 : 29;
+  // Cari hari pertama bulan Hijriyah
+  const firstJdn = julianDayNumber(1, hijri.month, hijri.year);
+  const firstDayOfWeek = (firstJdn - 1721425) % 7; // 0 = Minggu
 
-  // Tahun kabisat Hijriyah: 11 dari 30 tahun
-  const kabisatHijriyah = [2, 5, 7, 10, 13, 15, 18, 21, 25, 26, 29];
-  const tahunMod = hijri.year % 30;
-  if (kabisatHijriyah.includes(tahunMod) && hijri.month === 12) {
-    totalDays = 30;
-  }
-
-  // Julian Day untuk 1 hari pertama bulan Hijriyah
-  const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
+  // Hari ini (Masehi)
+  const today = new Date();
+  const isToday = (d, m, y) => {
+    const { day, month, year } = parse();
+    // Kita cari apakah tanggal d adalah hari ini
+    const jd = julianDayNumber(d, m, y);
+    const todayJd = julianDayNumber(today.getDate(), today.getMonth() + 1, today.getFullYear());
+    return jd === todayJd;
+  };
 
   const rows = [];
   let date = 1;
@@ -59,13 +56,9 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // Cek apakah ini hari ini (Masehi == input == hari ini?)
-        const isToday = date === hijri.day &&
-                       hijri.month === masehiToHijri(todayMasehi, monthMasehi + 1, yearMasehi).month &&
-                       hijri.year === masehiToHijri(todayMasehi, monthMasehi + 1, yearMasehi).year;
-
+        const todayClass = isToday(date, hijri.month, hijri.year) ? 'today' : '';
         cells.push(
-          <div key={date} className={`hijri-cell ${isToday ? 'today' : ''}`}>
+          <div key={date} className={`hijri-cell ${todayClass}`}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -78,7 +71,6 @@ export default function Arab() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
-      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
 
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
@@ -99,7 +91,6 @@ export default function Arab() {
           {rows}
         </div>
 
-        {/* ✅ Hanya tampilkan tanggal, tanpa "Masehi" dan "Hijriyah" */}
         <div style={{ marginTop: '10px', fontSize: '14px', color: '#555', textAlign: 'center' }}>
           {tanggal} = {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
         </div>
@@ -126,7 +117,7 @@ function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// CSS Inline — tambah class 'today'
+// CSS Inline
 const style = document.createElement('style');
 style.textContent = `
 .hijri-calendar {
@@ -189,17 +180,13 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* ✅ Highlight hari ini */
 .hijri-cell.today {
-  background: #0078D7;
+  background: #2e7d32 !important;
   color: white;
   border-radius: 50%;
   width: 30px;
   height: 30px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 `;
 document.head.appendChild(style);
