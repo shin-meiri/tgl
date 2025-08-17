@@ -9,33 +9,29 @@ export default function Arab() {
   const defaultMonth = now.getMonth();
   const defaultYear = now.getFullYear();
 
-  const [tanggal, setTanggal] = useState(`${defaultDay} ${[
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ][defaultMonth]} ${defaultYear}`);
-
+  const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
+  // Parse dan konversi
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
-    const monthIndex = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ].indexOf(parts[1]);
+    const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]);
     const year = parseInt(parts[2], 10);
 
-    const result = masehiToHijri(day, monthIndex + 1, year);
-    setHijri(result);
+    const h = masehiToHijri(day, month + 1, year);
+    setHijri(h);
   }, [tanggal]);
 
-  if (!hijri) return <div>Loading...</div>;
+  if (!hijri) return <div></div>;
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
+  // Hitung hari pertama bulan Hijriyah
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721425) % 7;
+  const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
 
+  // JDN hari ini
   const today = new Date();
   const todayJd = julianDayNumber(
     today.getDate(),
@@ -54,13 +50,12 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        const thisDateJd = firstJd + date - 1;
-        const isToday = thisDateJd === todayJd;
+        // Hitung JDN tanggal ini
+        const thisJd = firstJd + date - 1;
+        const isToday = thisJd === todayJd;
+        const todayClass = isToday ? 'today' : '';
         cells.push(
-          <div
-            key={date}
-            className={`hijri-cell ${isToday ? 'today' : ''}`}
-          >
+          <div key={date} className={`hijri-cell ${todayClass}`}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -85,10 +80,8 @@ export default function Arab() {
         </div>
 
         <div className="hijri-weekdays">
-          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
-            <div key={hari} className="hijri-cell weekday">
-              {hari}
-            </div>
+          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(hari => (
+            <div key={hari} className="hijri-cell weekday">{hari}</div>
           ))}
         </div>
 
@@ -104,7 +97,7 @@ export default function Arab() {
   );
 }
 
-// Internal function
+// Fungsi bantuan: Julian Day Number
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
