@@ -1,5 +1,4 @@
 import React from 'react';
-import './Desk.css';
 
 const neptuHari = {
   'Senin': 4,
@@ -101,17 +100,17 @@ export default function Desk({ tanggal }) {
 // Fungsi: hitung hari (Senin, Selasa, ...)
 function hitungHari(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721424; // 1 Jan 1 M = Senin
+  const baseJDN = 1721425; // 1 Jan 1 M = Senin
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
-  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  const days = [ 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu' ];
   return days[hari];
 }
 
 // Fungsi: hitung pasaran
 function hitungPasaran(day, month, year) {
   // 🔧 Titik acuan: 1 Jan 1900 = Senin Legi
-  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 0 }; // Legi = 0
+  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 1 }; // Legi = 0
 
   const targetJDN = julianDayNumber(day, month, year);
   const acuanJDN = julianDayNumber(acuan.tanggal, acuan.bulan, acuan.tahun);
