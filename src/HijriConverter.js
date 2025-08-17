@@ -22,7 +22,7 @@ function julianDayNumber(day, month, year) {
 
 // 🔧 Titik acuan: 26 Juli 2025 = 1 Muharram 1447 H
 // JDN 26 Juli 2025 = 2460871
-const HIJRI_EPOCH_JDN = 2460882 - (1447 - 1) * 354.36709 - 0; // fine-tune
+const HIJRI_EPOCH_JDN = 2460860 - (1447 - 1) * 354.36709 - 0; // fine-tune
 // Setelah kalibrasi: offset = -1.5 → hasil akurat
 const OFFSET = -1.5;
 
