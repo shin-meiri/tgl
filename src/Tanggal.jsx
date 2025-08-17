@@ -159,7 +159,7 @@ export default function Tanggal({ tanggal, onTanggalClick }) {
   );
 }
 
-// CSS (sudah termasuk warna merah untuk Minggu & libur)
+/*/ CSS (sudah termasuk warna merah untuk Minggu & libur)
 const style = document.createElement('style');
 style.textContent = `
 .calendar-month-view {
@@ -243,3 +243,4 @@ style.textContent = `
 }
 `;
 document.head.appendChild(style);
+*/
