@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from '../utils/HijriConverter';
+import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from './HijriConverter';
 
 export default function Arab() {
   const now = new Date();
