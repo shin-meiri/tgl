@@ -1,4 +1,5 @@
 import React from 'react';
+import './Desk.css';
 
 const neptuHari = {
   'Senin': 4,
