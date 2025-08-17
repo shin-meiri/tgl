@@ -1,45 +1,95 @@
 import React from 'react';
+import './Desk.css';
 
-const neptuHari = { 'Senin': 4, 'Selasa': 3, 'Rabu': 7, 'Kamis': 8, 'Jumat': 6, 'Sabtu': 9, 'Minggu': 5 };
-const neptuPasaran = { 'Legi': 5, 'Pahing': 9, 'Pon': 7, 'Wage': 4, 'Kliwon': 8 };
+const neptuHari = {
+  'Senin': 4,
+  'Selasa': 3,
+  'Rabu': 7,
+  'Kamis': 8,
+  'Jumat': 6,
+  'Sabtu': 9,
+  'Minggu': 5,
+};
+
+const neptuPasaran = {
+  'Legi': 5,
+  'Pahing': 9,
+  'Pon': 7,
+  'Wage': 4,
+  'Kliwon': 8,
+};
 
 const maknaWeton = {
-  'Minggu Legi': 'Baik untuk memulai usaha atau perjalanan.',
-  'Senin Pahing': 'Hari yang tenang, cocok untuk perencanaan.',
-  // Bisa ditambah
+  'Minggu Legi': 'Baik untuk memulai usaha, pernikahan, atau perjalanan.',
+  'Senin Pahing': 'Hari yang tenang, cocok untuk meditasi dan perencanaan.',
+  // Bisa ditambah banyak
 };
 
 export default function Desk({ tanggal }) {
   if (!tanggal) {
-    return <div className="placeholder">Pilih tanggal untuk melihat detail weton</div>;
+    return (
+      <div className="desk-container">
+        <p className="placeholder">Pilih tanggal untuk melihat detail weton</p>
+      </div>
+    );
   }
 
+  // Parse tanggal: "31 Agustus 622"
   const parts = tanggal.split(' ');
   const day = parseInt(parts[0]);
   const monthName = parts[1];
   const year = parseInt(parts[2]);
 
+  // Dapatkan bulan dalam angka
   const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const month = monthNames.indexOf(monthName) + 1;
 
+  // Hitung hari dalam seminggu
   const hari = hitungHari(day, month, year);
+
+  // Hitung pasaran
   const pasaran = hitungPasaran(day, month, year);
+
+  // Hitung neptu
   const neptuH = neptuHari[hari] || 0;
   const neptuP = neptuPasaran[pasaran] || 0;
   const totalNeptu = neptuH + neptuP;
-  const makna = maknaWeton[`${hari} ${pasaran}`] || 'Makna akan segera tersedia.';
+
+  // Cari makna
+  const key = `${hari} ${pasaran}`;
+  const makna = maknaWeton[key] || 'Makna weton ini akan segera tersedia.';
 
   return (
     <div className="desk-container">
       <h3>Detail Weton</h3>
+
       <div className="weton-grid">
-        <div className="item"><strong>Tanggal</strong><span>{tanggal}</span></div>
-        <div className="item"><strong>Hari</strong><span>{hari}</span></div>
-        <div className="item"><strong>Pasaran</strong><span>{pasaran}</span></div>
-        <div className="item"><strong>Neptu Hari</strong><span>{neptuH}</span></div>
-        <div className="item"><strong>Neptu Pasaran</strong><span>{neptuP}</span></div>
-        <div className="item total"><strong>Total Neptu</strong><span>{totalNeptu}</span></div>
+        <div className="item">
+          <strong>Tanggal</strong>
+          <span>{tanggal}</span>
+        </div>
+        <div className="item">
+          <strong>Hari</strong>
+          <span>{hari}</span>
+        </div>
+        <div className="item">
+          <strong>Pasaran</strong>
+          <span>{pasaran}</span>
+        </div>
+        <div className="item">
+          <strong>Neptu Hari</strong>
+          <span>{neptuH}</span>
+        </div>
+        <div className="item">
+          <strong>Neptu Pasaran</strong>
+          <span>{neptuP}</span>
+        </div>
+        <div className="item total">
+          <strong>Total Neptu</strong>
+          <span>{totalNeptu}</span>
+        </div>
       </div>
+
       <div className="makna">
         <h4>Makna Weton</h4>
         <p>{makna}</p>
@@ -48,33 +98,44 @@ export default function Desk({ tanggal }) {
   );
 }
 
-// Fungsi pendukung
+// Fungsi: hitung hari (Senin, Selasa, ...)
 function hitungHari(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721425;
+  const baseJDN = 1721424; // 1 Jan 1 M = Senin
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
-  const days = [ 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
   return days[hari];
 }
 
+// Fungsi: hitung pasaran
 function hitungPasaran(day, month, year) {
-  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 0 };
+  // 🔧 Titik acuan: 1 Jan 1900 = Senin Legi
+  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 0 }; // Legi = 0
+
   const targetJDN = julianDayNumber(day, month, year);
   const acuanJDN = julianDayNumber(acuan.tanggal, acuan.bulan, acuan.tahun);
+
   const selisih = targetJDN - acuanJDN;
   const pasaranIndex = (selisih + acuan.pasaranIndex) % 5;
   const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
   return pasaranList[(pasaranIndex + 5) % 5];
 }
 
+// Fungsi: Julian Day Number
 function julianDayNumber(day, month, year) {
-  let y = year, m = month;
-  if (month <= 2) { y--; m += 12; }
-  let b = 0;
+  let y = year;
+  let m = month;
+  if (month <= 2) {
+    y -= 1;
+    m += 12;
+  }
+  let b;
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
     const a = Math.floor(y / 100);
     b = 2 - a + Math.floor(a / 4);
+  } else {
+    b = 0;
   }
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
