@@ -67,6 +67,7 @@ export default function Arab() {
   }
 
   return (
+    <div>
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
