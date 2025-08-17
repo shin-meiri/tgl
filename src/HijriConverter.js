@@ -20,24 +20,26 @@ function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// 🔧 Titik acuan: 26 Juli 2025 = 1 Muharram 1447 H
-// JDN 26 Juli 2025 = 2460871
-const HIJRI_EPOCH_JDN = 2460860 - (1447 - 1) * 354.36709 - 0; // fine-tune
-// Setelah kalibrasi: offset = -1.5 → hasil akurat
-const OFFSET = -1.5;
+// 🔧 TITIK ACUAN: 1 Muharram 1447 H = 26 Juli 2025 M
+// JDN 2460882 = 26 Juli 2025
+// JDN 1948439 = 16 Juli 622
+// Kita pakai acuan modern: 1 Muharram 1447 H = 26 Juli 2025
+const HIJRI_EPOCH_JDN = julianDayNumber(26, 7, 2025) - (1447 - 1) * 354.36709 - 29.530588853 * 6; // Koreksi empiris
 
 /**
- * Konversi Masehi ke Hijriyah (akurat untuk 2025)
+ * Konversi Masehi ke Hijriyah (dengan koreksi akurat)
  */
 export function masehiToHijri(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const daysSinceEpoch = jdn - (HIJRI_EPOCH_JDN - OFFSET);
+  const daysSinceEpoch = jdn - HIJRI_EPOCH_JDN;
 
+  // Panjang rata-rata bulan Hijriyah
   const monthCount = Math.floor(daysSinceEpoch / 29.530588853);
-  const hijriYear = Math.floor((monthCount + 1) / 12) + 1446;
+  const hijriYear = Math.floor((monthCount + 1) / 12) + 1;
   const hijriMonth = ((monthCount + 1) % 12) || 12;
 
-  const startOfCurrentMonth = HIJRI_EPOCH_JDN - OFFSET + monthCount * 29.530588853;
+  // Hitung hari
+  const startOfCurrentMonth = HIJRI_EPOCH_JDN + monthCount * 29.530588853;
   const hijriDay = Math.floor(jdn - startOfCurrentMonth + 1);
 
   return {
@@ -48,7 +50,7 @@ export function masehiToHijri(day, month, year) {
 }
 
 /**
- * Cek kabisat Hijriyah
+ * Cek tahun kabisat Hijriyah
  */
 export function isHijriKabisat(year) {
   const cycle = (year - 1) % 30;
