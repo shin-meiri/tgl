@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, bulanHijriyah } from '../utils/HijriConverter';
+import { masehiToHijri, bulanHijriyah } from './HijriConverter';
 
 export default function Arab() {
   // Default: hari ini
