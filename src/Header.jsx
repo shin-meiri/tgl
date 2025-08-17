@@ -1,6 +1,5 @@
-// src/components/Header.jsx
 import React from 'react';
-//import './Header.css'; // Kita buat CSS terpisah agar mudah di-styling
+import './Header.css';
 
 export default function Header({ active, onNavigate }) {
   return (
