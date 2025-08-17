@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import React from 'react';
 //import './Header.css';
 
@@ -11,6 +12,12 @@ export default function Header({ active, onNavigate }) {
         KALENDER
       </div>
       <div
+        className={`nav-item ${active === 'hijriah' ? 'active' : ''}`}
+        onClick={() => onNavigate?.('hijriah')}
+      >
+        HIJRIAH
+      </div>
+      <div
         className={`nav-item ${active === 'deskripsi' ? 'active' : ''}`}
         onClick={() => onNavigate?.('deskripsi')}
       >
@@ -18,4 +25,4 @@ export default function Header({ active, onNavigate }) {
       </div>
     </div>
   );
-}
+    }
