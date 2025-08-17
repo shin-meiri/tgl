@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah, julianDayNumber } from './HijriConverter';
+import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from './HijriConverter';
 
 export default function Arab() {
   const now = new Date();
@@ -19,17 +19,19 @@ export default function Arab() {
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
-    const month = [
+    const monthIndex = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ].indexOf(parts[1]) + 1;
+    ].indexOf(parts[1]);
     const year = parseInt(parts[2], 10);
 
-    const result = masehiToHijri(day, month, year);
+    const result = masehiToHijri(day, monthIndex + 1, year);
     setHijri(result);
   }, [tanggal]);
 
-  if (!hijri) return <div>Loading...</div>;
+  if (!hijri) {
+    return <div>Loading...</div>;
+  }
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
@@ -54,13 +56,12 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        const thisJd = firstJd + date - 1;
-        const isToday = thisJd === todayJd;
+        const thisDateJd = firstJd + date - 1;
+        const isToday = thisDateJd === todayJd;
+        const todayClass = isToday ? 'today' : '';
+
         cells.push(
-          <div
-            key={date}
-            className={`hijri-cell ${isToday ? 'today' : ''}`}
-          >
+          <div key={date} className={`hijri-cell ${todayClass}`}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -73,6 +74,7 @@ export default function Arab() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
+   
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
@@ -83,8 +85,10 @@ export default function Arab() {
         </div>
 
         <div className="hijri-weekdays">
-          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(hari => (
-            <div key={hari} className="hijri-cell weekday">{hari}</div>
+          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((hari) => (
+            <div key={hari} className="hijri-cell weekday">
+              {hari}
+            </div>
           ))}
         </div>
 
@@ -100,7 +104,25 @@ export default function Arab() {
   );
 }
 
-// CSS Inline — background hijau seperti Tanggal.jsx
+// Internal function
+function julianDayNumber(day, month, year) {
+  let y = year;
+  let m = month;
+  if (month <= 2) {
+    y -= 1;
+    m += 12;
+  }
+  let b;
+  if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
+    const a = Math.floor(y / 100);
+    b = 2 - a + Math.floor(a / 4);
+  } else {
+    b = 0;
+  }
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
+}
+
+// CSS (background hijau seperti Tanggal.jsx)
 const style = document.createElement('style');
 style.textContent = `
 .hijri-calendar {
@@ -153,7 +175,7 @@ style.textContent = `
   background: #f0f0f0;
 }
 .hijri-cell.today {
-  background: #2e7d32 !important;
+  background: #2e7d32;
   color: white;
   border-radius: 50%;
   width: 30px;
