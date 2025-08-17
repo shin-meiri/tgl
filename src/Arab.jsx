@@ -22,27 +22,29 @@ export default function Arab() {
     };
   };
 
-  // Gunakan parse di dalam useEffect agar dependency benar
   useEffect(() => {
     const { day, month, year } = parse();
     const h = masehiToHijri(day, month + 1, year);
     setHijri(h);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tanggal]); // `parse` tidak dimasukkan karena fungsi lokal, dan `tanggal` cukup sebagai trigger
+  }, [tanggal]);
 
   if (!hijri) return <div>Loading...</div>;
 
-  // Hitung jumlah hari di bulan Hijriyah
-  let totalDays = hijri.month % 2 === 1 ? 30 : 29; // Bulan ganjil = 30 hari
+  // Cek apakah kalender yang tampil adalah bulan saat ini (Masehi)
+  const { day: todayMasehi, month: monthMasehi, year: yearMasehi } = parse();
 
-  // Cek tahun kabisat Hijriyah (11 tahun dalam siklus 30 tahun)
+  // Hitung jumlah hari di bulan Hijriyah
+  let totalDays = hijri.month % 2 === 1 ? 30 : 29;
+
+  // Tahun kabisat Hijriyah: 11 dari 30 tahun
   const kabisatHijriyah = [2, 5, 7, 10, 13, 15, 18, 21, 25, 26, 29];
   const tahunMod = hijri.year % 30;
   if (kabisatHijriyah.includes(tahunMod) && hijri.month === 12) {
     totalDays = 30;
   }
 
-  // Cari hari pertama
+  // Julian Day untuk 1 hari pertama bulan Hijriyah
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
   const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
 
@@ -57,8 +59,13 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
+        // Cek apakah ini hari ini (Masehi == input == hari ini?)
+        const isToday = date === hijri.day &&
+                       hijri.month === masehiToHijri(todayMasehi, monthMasehi + 1, yearMasehi).month &&
+                       hijri.year === masehiToHijri(todayMasehi, monthMasehi + 1, yearMasehi).year;
+
         cells.push(
-          <div key={date} className="hijri-cell">
+          <div key={date} className={`hijri-cell ${isToday ? 'today' : ''}`}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -92,9 +99,9 @@ export default function Arab() {
           {rows}
         </div>
 
+        {/* ✅ Hanya tampilkan tanggal, tanpa "Masehi" dan "Hijriyah" */}
         <div style={{ marginTop: '10px', fontSize: '14px', color: '#555', textAlign: 'center' }}>
-          <strong>Tanggal Masehi:</strong> {tanggal} <br />
-          <strong>Hijriyah:</strong> {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
+          {tanggal} = {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
         </div>
       </div>
     </div>
@@ -119,7 +126,7 @@ function julianDayNumber(day, month, year) {
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
-// CSS Inline
+// CSS Inline — tambah class 'today'
 const style = document.createElement('style');
 style.textContent = `
 .hijri-calendar {
@@ -180,6 +187,19 @@ style.textContent = `
 .date-num {
   font-weight: 600;
   font-size: 14px;
+}
+
+/* ✅ Highlight hari ini */
+.hijri-cell.today {
+  background: #0078D7;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 `;
 document.head.appendChild(style);
