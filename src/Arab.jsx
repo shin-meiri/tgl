@@ -67,9 +67,6 @@ export default function Arab() {
   }
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
-      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
-
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
