@@ -1,7 +1,7 @@
 // src/components/Arab.jsx
 import React, { useState, useEffect } from 'react';
 import Dtpick from './Dtpick';
-import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from './HijriConverter';
+import { masehiToHijri, getHijriDaysInMonth, bulanHijriyah } from '../utils/HijriConverter';
 
 export default function Arab() {
   const now = new Date();
@@ -12,8 +12,8 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
+  // Parse dan konversi dalam useEffect
   useEffect(() => {
-    // ✅ parse dipindah ke dalam useEffect
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
     const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]);
@@ -21,28 +21,43 @@ export default function Arab() {
 
     const h = masehiToHijri(day, month + 1, year);
     setHijri(h);
-  }, [tanggal]); // ✅ Cukup [tanggal]
+  }, [tanggal]);
 
   if (!hijri) return <div>Loading...</div>;
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Cari hari pertama
-  const firstJdn = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJdn - 1721425) % 7; // 0 = Minggu
+  // Julian Day Number (untuk hari ini)
+  function julianDayNumber(day, month, year) {
+    let y = year;
+    let m = month;
+    if (month <= 2) {
+      y -= 1;
+      m += 12;
+    }
+    let b;
+    if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
+      const a = Math.floor(y / 100);
+      b = 2 - a + Math.floor(a / 4);
+    } else {
+      b = 0;
+    }
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
+  }
 
-  // Hari ini
+  // Ambil tanggal hari ini (Masehi)
   const today = new Date();
-  const isToday = (d) => {
-    const parts = tanggal.split(' ');
-    const day = parseInt(parts[0], 10);
-    const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]) + 1;
-    const year = parseInt(parts[2], 10);
+  const todayJd = julianDayNumber(
+    today.getDate(),
+    today.getMonth() + 1,
+    today.getFullYear()
+  );
 
-    const jd = julianDayNumber(d, hijri.month, hijri.year);
-    const todayJd = julianDayNumber(today.getDate(), today.getMonth() + 1, today.getFullYear());
-    return jd === todayJd;
-  };
+  // Hitung JDN dari tanggal yang sedang ditampilkan (dalam Hijriyah)
+  const currentJd = julianDayNumber(1, hijri.month, hijri.year) + hijri.day - 1;
+
+  const firstJd = julianDayNumber(1, hijri.month, hijri.year);
+  const firstDayOfWeek = (firstJd - 1721425) % 7;
 
   const rows = [];
   let date = 1;
@@ -55,7 +70,9 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        const todayClass = isToday(date) ? 'today' : '';
+        // Hitung JDN untuk tanggal ini
+        const thisJd = firstJd + date - 1;
+        const todayClass = thisJd === todayJd ? 'today' : '';
         cells.push(
           <div key={date} className={`hijri-cell ${todayClass}`}>
             <div className="date-num">{date}</div>
@@ -70,6 +87,7 @@ export default function Arab() {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
+      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
 
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
@@ -96,24 +114,6 @@ export default function Arab() {
       </div>
     </div>
   );
-}
-
-// Fungsi jdToHijri (untuk internal)
-function julianDayNumber(day, month, year) {
-  let y = year;
-  let m = month;
-  if (month <= 2) {
-    y -= 1;
-    m += 12;
-  }
-  let b;
-  if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
-    const a = Math.floor(y / 100);
-    b = 2 - a + Math.floor(a / 4);
-  } else {
-    b = 0;
-  }
-  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
 
 // CSS Inline
