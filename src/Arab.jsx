@@ -40,7 +40,7 @@ export default function Arab() {
 
   // Hitung hari pertama
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
+  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
 
   const rows = [];
   let date = 1;
