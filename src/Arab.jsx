@@ -12,7 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse dan konversi
+  // Parse dan konversi tanggal yang dipilih
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -27,11 +27,11 @@ export default function Arab() {
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Hitung hari pertama bulan Hijriyah
+  // Hitung JDN untuk 1 hari di bulan Hijriyah ini
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
   const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
 
-  // JDN hari ini
+  // 🔹 JDN hari ini (Masehi)
   const today = new Date();
   const todayJd = julianDayNumber(
     today.getDate(),
@@ -50,24 +50,26 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
+        // 🔹 Hitung JDN untuk tanggal ini di kalender Hijriyah
         const thisJd = firstJd + date - 1;
+
+        // 🔹 Apakah ini hari ini?
         const isToday = thisJd === todayJd;
 
-        // Tentukan hari dalam seminggu (0 = Minggu, 1 = Senin, ..., 6 = Sabtu)
+        // Tentukan hari dalam seminggu (0 = Minggu, ..., 6 = Sabtu)
         const dayOfWeek = (firstDayOfWeek + date - 1) % 7;
 
-        // Warna berdasarkan hari
-        let colorClass = '';
+        let className = 'hijri-cell';
         if (isToday) {
-          colorClass = 'today'; // biru muda
-        } else if (dayOfWeek === 0) { // Minggu
-          colorClass = 'minggu';
-        } else if (dayOfWeek === 5) { // Jumat
-          colorClass = 'jumat';
+          className += ' today'; // biru muda
+        } else if (dayOfWeek === 0) {
+          className += ' minggu'; // merah
+        } else if (dayOfWeek === 5) {
+          className += ' jumat'; // hijau muda
         }
 
         cells.push(
-          <div key={date} className={`hijri-cell ${colorClass}`}>
+          <div key={date} className={className}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -105,7 +107,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi Julian Day Number (untuk internal)
+// Fungsi bantuan: Julian Day Number
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -113,7 +115,7 @@ function julianDayNumber(day, month, year) {
     y -= 1;
     m += 12;
   }
-  let b = 0; // Julian untuk kuno, tapi tetap pakai logika
+  let b = 0;
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
     const a = Math.floor(y / 100);
     b = 2 - a + Math.floor(a / 4);
@@ -184,23 +186,24 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* Hari ini - biru muda */
+/* 🔹 Hari ini: biru muda + lingkaran */
 .hijri-cell.today {
-  background: #e3f2fd !important;
-  color: #1565c0;
+  background: #bbdefb !important;
+  color: #0d47a1;
   border-radius: 50%;
   width: 30px;
   height: 30px;
   margin: 0 auto;
-}
-
-/* Minggu - merah */
-.hijri-cell.minggu {
-  color: #d32f2f;
   font-weight: 600;
 }
 
-/* Jumat - hijau muda */
+/* Minggu: merah */
+.hijri-cell.minggu {
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* Jumat: hijau muda */
 .hijri-cell.jumat {
   color: #2e7d32;
   font-weight: 600;
