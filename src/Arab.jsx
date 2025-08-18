@@ -12,7 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse dan konversi tanggal yang ditampilkan
+  // Parse dan konversi tanggal yang dipilih
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -27,20 +27,19 @@ export default function Arab() {
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // 🔹 Konversi HARI INI (Masehi) ke Hijriyah
+  // 🔹 Hitung hari pertama bulan Hijriyah (untuk grid)
+  const firstDayOfWeek = getFirstDayOfHijriMonth(hijri.month, hijri.year);
+
+  // 🔹 Konversi hari ini (Masehi) ke Hijriyah
   const today = new Date();
-  const hijriToday = masehiToHijri(
+  const todayHijri = masehiToHijri(
     today.getDate(),
     today.getMonth() + 1,
     today.getFullYear()
   );
 
-  // Cek apakah hari ini ada di bulan yang sedang ditampilkan
-  const isTodayInThisMonth = hijri.year === hijriToday.year && hijri.month === hijriToday.month;
-
-  // Hitung hari pertama
-  const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
+  // 🔹 Apakah bulan yang tampil = bulan hari ini (Hijriyah)?
+  const isCurrentHijriMonth = hijri.month === todayHijri.month && hijri.year === todayHijri.year;
 
   const rows = [];
   let date = 1;
@@ -53,11 +52,11 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // 🔹 Cek: apakah tanggal ini adalah hari ini?
-        const isToday = isTodayInThisMonth && date === hijriToday.day;
+        // 🔹 Apakah ini hari ini?
+        const isToday = isCurrentHijriMonth && date === todayHijri.day;
 
         // Tentukan hari dalam seminggu
-        const dayOfWeek = (firstDayOfWeek + date - 1) % 7;
+        const dayOfWeek = (firstDayOfWeek + date - 1) % 7; // 0 = Minggu
 
         let className = 'hijri-cell';
         if (isToday) {
@@ -106,7 +105,23 @@ export default function Arab() {
   );
 }
 
-// Fungsi bantuan: Julian Day Number (untuk internal, tidak dipakai untuk today)
+// Fungsi: hitung hari pertama bulan Hijriyah (0 = Minggu)
+function getFirstDayOfHijriMonth(hijriMonth, hijriYear) {
+  // Konversi 1 [hijriMonth] [hijriYear] ke Masehi dulu
+  // Kita butuh JDN dari 1 hari itu
+  const jdn = getJdnFromHijri(1, hijriMonth, hijriYear);
+  return (jdn - 1721425) % 7; // 0 = Minggu
+}
+
+// Fungsi: konversi Hijriyah ke JDN (untuk hitung hari)
+function getJdnFromHijri(day, month, year) {
+  // Gunakan: 1 Muharram 1 H = 16 Juli 622 M (Julian) = JDN 1948340
+  const hijriEpochJdn = 1948340;
+  const daysSinceEpoch = (year - 1) * 354.367 + (month - 1) * 29.530588853 + (day - 1);
+  return Math.floor(hijriEpochJdn + daysSinceEpoch);
+}
+
+// Fungsi: Julian Day Number (untuk masehiToHijri)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -187,7 +202,7 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* 🔹 Hari ini: biru muda */
+/* 🔹 Penanda hari ini: biru muda */
 .hijri-cell.today {
   background: #e3f2fd;
   color: #1565c0;
@@ -206,7 +221,7 @@ style.textContent = `
 
 /* Jumat: hijau muda */
 .hijri-cell.jumat {
-  color: #2e7d32;
+  color: #388e3c;
   font-weight: 600;
 }
 `;
