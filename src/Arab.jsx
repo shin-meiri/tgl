@@ -12,7 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse dan konversi
+  // Parse dan konversi tanggal yang ditampilkan
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -27,17 +27,20 @@ export default function Arab() {
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // 🔹 JDN hari ini (Masehi)
+  // 🔹 Konversi HARI INI (Masehi) ke Hijriyah
   const today = new Date();
-  const todayJd = julianDayNumber(
+  const hijriToday = masehiToHijri(
     today.getDate(),
     today.getMonth() + 1,
     today.getFullYear()
   );
 
-  // 🔹 JDN untuk 1 hari di bulan Hijriyah ini
+  // Cek apakah hari ini ada di bulan yang sedang ditampilkan
+  const isTodayInThisMonth = hijri.year === hijriToday.year && hijri.month === hijriToday.month;
+
+  // Hitung hari pertama
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
+  const firstDayOfWeek = (firstJd - 1721425) % 7; // 0 = Minggu
 
   const rows = [];
   let date = 1;
@@ -50,13 +53,10 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // 🔹 Hitung JDN untuk tanggal ini di kalender Hijriyah
-        const thisJd = firstJd + date - 1;
+        // 🔹 Cek: apakah tanggal ini adalah hari ini?
+        const isToday = isTodayInThisMonth && date === hijriToday.day;
 
-        // 🔹 Apakah ini hari ini?
-        const isToday = thisJd === todayJd;
-
-        // Tentukan hari dalam seminggu (0 = Minggu, ..., 6 = Sabtu)
+        // Tentukan hari dalam seminggu
         const dayOfWeek = (firstDayOfWeek + date - 1) % 7;
 
         let className = 'hijri-cell';
@@ -81,8 +81,7 @@ export default function Arab() {
   }
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
-      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
+    <div>
 
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
@@ -107,7 +106,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi bantuan: Julian Day Number
+// Fungsi bantuan: Julian Day Number (untuk internal, tidak dipakai untuk today)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -188,10 +187,10 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* 🔹 Penanda hari ini — seperti Tanggal.jsx */
+/* 🔹 Hari ini: biru muda */
 .hijri-cell.today {
-  background: #2196f3 !important;
-  color: white;
+  background: #e3f2fd;
+  color: #1565c0;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -207,7 +206,7 @@ style.textContent = `
 
 /* Jumat: hijau muda */
 .hijri-cell.jumat {
-  color: #388e3c;
+  color: #2e7d32;
   font-weight: 600;
 }
 `;
