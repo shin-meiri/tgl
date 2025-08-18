@@ -12,7 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse dan konversi tanggal yang dipilih
+  // Parse dan konversi
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -27,10 +27,6 @@ export default function Arab() {
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Hitung JDN untuk 1 hari di bulan Hijriyah ini
-  const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
-
   // 🔹 JDN hari ini (Masehi)
   const today = new Date();
   const todayJd = julianDayNumber(
@@ -38,6 +34,10 @@ export default function Arab() {
     today.getMonth() + 1,
     today.getFullYear()
   );
+
+  // 🔹 JDN untuk 1 hari di bulan Hijriyah ini
+  const firstJd = julianDayNumber(1, hijri.month, hijri.year);
+  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
 
   const rows = [];
   let date = 1;
@@ -154,11 +154,13 @@ style.textContent = `
 
 .hijri-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 50px;
   font-size: 13px;
   user-select: none;
+  cursor: default;
 }
 
 .hijri-cell.weekday {
@@ -177,7 +179,7 @@ style.textContent = `
   background: transparent;
 }
 
-.hijri-cell:hover:not(.empty) {
+.hijri-cell:hover:not(.empty):not(.today) {
   background: #f0f0f0;
 }
 
@@ -186,10 +188,10 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* 🔹 Hari ini: biru muda + lingkaran */
+/* 🔹 Penanda hari ini — seperti Tanggal.jsx */
 .hijri-cell.today {
-  background: #bbdefb !important;
-  color: #0d47a1;
+  background: #2196f3 !important;
+  color: white;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -199,13 +201,13 @@ style.textContent = `
 
 /* Minggu: merah */
 .hijri-cell.minggu {
-  color: #c62828;
+  color: #d32f2f;
   font-weight: 600;
 }
 
 /* Jumat: hijau muda */
 .hijri-cell.jumat {
-  color: #2e7d32;
+  color: #388e3c;
   font-weight: 600;
 }
 `;
