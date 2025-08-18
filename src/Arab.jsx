@@ -50,12 +50,24 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // Hitung JDN tanggal ini
         const thisJd = firstJd + date - 1;
         const isToday = thisJd === todayJd;
-        const todayClass = isToday ? 'today' : '';
+
+        // Tentukan hari dalam seminggu (0 = Minggu, 1 = Senin, ..., 6 = Sabtu)
+        const dayOfWeek = (firstDayOfWeek + date - 1) % 7;
+
+        // Warna berdasarkan hari
+        let colorClass = '';
+        if (isToday) {
+          colorClass = 'today'; // biru muda
+        } else if (dayOfWeek === 0) { // Minggu
+          colorClass = 'minggu';
+        } else if (dayOfWeek === 5) { // Jumat
+          colorClass = 'jumat';
+        }
+
         cells.push(
-          <div key={date} className={`hijri-cell ${todayClass}`}>
+          <div key={date} className={`hijri-cell ${colorClass}`}>
             <div className="date-num">{date}</div>
           </div>
         );
@@ -67,7 +79,9 @@ export default function Arab() {
   }
 
   return (
-    <div>
+    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
+      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
+
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
       </div>
@@ -86,16 +100,12 @@ export default function Arab() {
         <div className="hijri-body">
           {rows}
         </div>
-
-        <div style={{ marginTop: '10px', fontSize: '14px', color: '#555', textAlign: 'center' }}>
-          {tanggal} = {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
-        </div>
       </div>
     </div>
   );
 }
 
-// Fungsi bantuan: Julian Day Number
+// Fungsi Julian Day Number (untuk internal)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -103,12 +113,10 @@ function julianDayNumber(day, month, year) {
     y -= 1;
     m += 12;
   }
-  let b;
+  let b = 0; // Julian untuk kuno, tapi tetap pakai logika
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
     const a = Math.floor(y / 100);
     b = 2 - a + Math.floor(a / 4);
-  } else {
-    b = 0;
   }
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
@@ -125,6 +133,7 @@ style.textContent = `
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
 }
+
 .hijri-header {
   background: #0078D7;
   color: white;
@@ -133,12 +142,14 @@ style.textContent = `
   font-size: 16px;
   font-weight: 600;
 }
+
 .hijri-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f5f5f5;
   border-bottom: 1px solid #eee;
 }
+
 .hijri-cell {
   display: flex;
   align-items: center;
@@ -147,33 +158,52 @@ style.textContent = `
   font-size: 13px;
   user-select: none;
 }
+
 .hijri-cell.weekday {
   font-weight: 600;
   color: #555;
   font-size: 12px;
   padding: 6px 0;
 }
+
 .hijri-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
+
 .hijri-cell.empty {
   background: transparent;
 }
+
 .hijri-cell:hover:not(.empty) {
   background: #f0f0f0;
 }
+
 .date-num {
   font-weight: 600;
   font-size: 14px;
 }
+
+/* Hari ini - biru muda */
 .hijri-cell.today {
-  background: #2e7d32 !important;
-  color: white;
+  background: #e3f2fd !important;
+  color: #1565c0;
   border-radius: 50%;
   width: 30px;
   height: 30px;
   margin: 0 auto;
+}
+
+/* Minggu - merah */
+.hijri-cell.minggu {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+/* Jumat - hijau muda */
+.hijri-cell.jumat {
+  color: #2e7d32;
+  font-weight: 600;
 }
 `;
 document.head.appendChild(style);
