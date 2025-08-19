@@ -1,226 +1,164 @@
 // src/components/Desk.jsx
 import React, { useState } from 'react';
 import Dtpick from './Dtpick';
+import { hitungHari as hitungHariUtil } from '../utils/History';
+import { masehiToWeton, neptuHari, neptuPasaran } from '../utils/WetonUtils';
 
-// Neptu Hari & Pasaran
-const neptuHari = {
-  'Senin': 4,
-  'Selasa': 3,
-  'Rabu': 7,
-  'Kamis': 8,
-  'Jumat': 6,
-  'Sabtu': 9,
-  'Minggu': 5,
-};
-
-const neptuPasaran = {
-  'Legi': 5,
-  'Pahing': 9,
-  'Pon': 7,
-  'Wage': 4,
-  'Kliwon': 8,
-};
-
-// Makna umum (opsional)
-const maknaWeton = {
-  'Minggu Legi': 'Baik untuk memulai usaha, pernikahan, atau perjalanan.',
-  'Senin Pahing': 'Hari yang tenang, cocok untuk meditasi dan perencanaan.',
-  // Bisa dikembangkan
-};
+// Nama bulan
+const bulanList = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
 
 export default function Desk({ tanggal }) {
-  const [pasangan, setPasangan] = useState('1 Januari 1990'); // Default
+  // Tanggal kamu (dari props)
+  const [pasangan, setPasangan] = useState('1 Januari 2000'); // default
 
-  if (!tanggal) {
-    return (
-      <div className="desk-container">
-        <p className="placeholder">Pilih tanggal untuk melihat detail weton</p>
-      </div>
-    );
-  }
+  // Hitung weton kamu
+  const wetonKamu = tanggal ? masehiToWeton(tanggal) : null;
+  const wetonPasangan = masehiToWeton(pasangan);
 
-  // Parse tanggal Anda
-  const anda = parseTanggal(tanggal);
-  const hariAnda = hitungHari(andu.day, andu.month, andu.year);
-  const pasaranAnda = hitungPasaran(andu.day, andu.month, andu.year);
-  const neptuHariAnda = neptuHari[hariAnda] || 0;
-  const neptuPasaranAnda = neptuPasaran[pasaranAnda] || 0;
-  const totalNeptuAnda = neptuHariAnda + neptuPasaranAnda;
-
-  // Parse tanggal pasangan
-  const andu = parseTanggal(pasangan);
-  const hariPasangan = hitungHari(andu.day, andu.month, andu.year);
-  const pasaranPasangan = hitungPasaran(andu.day, andu.month, andu.year);
-  const neptuHariPasangan = neptuHari[hariPasangan] || 0;
-  const neptuPasaranPasangan = neptuPasaran[pasaranPasangan] || 0;
-  const totalNeptuPasangan = neptuHariPasangan + neptuPasaranPasangan;
-
-  const totalGabungan = totalNeptuAnda + totalNeptuPasangan;
+  // Hitung neptu
+  const neptuKamu = wetonKamu ? neptuHari[wetonKamu.hari] + neptuPasaran[wetonKamu.pasaran] : 0;
+  const neptuPas = wetonPasangan ? neptuHari[wetonPasangan.hari] + neptuPasaran[wetonPasangan.pasaran] : 0;
+  const totalNeptu = neptuKamu + neptuPas;
 
   return (
     <div className="desk-container">
-      <h3>Detail Weton</h3>
+      <h3>Analisis Weton Pasangan</h3>
 
-      {/* Anda */}
-      <div className="section">
-        <h4>Anda: {tanggal}</h4>
-        <div className="weton-grid">
-          <div className="item"><strong>Hari</strong><span>{hariAnda}</span></div>
-          <div className="item"><strong>Pasaran</strong><span>{pasaranAnda}</span></div>
-          <div className="item"><strong>Neptu Hari</strong><span>{neptuHariAnda}</span></div>
-          <div className="item"><strong>Neptu Pasaran</strong><span>{neptuPasaranAnda}</span></div>
-          <div className="item total"><strong>Total Neptu</strong><span>{totalNeptuAnda}</span></div>
+      {/* Input Tanggal Pasangan */}
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <div style={{ fontSize: '14px', marginBottom: '6px', color: '#333' }}>
+          <strong>Pasangan =</strong>
         </div>
+        <Dtpick value={pasangan} onChange={setPasangan} />
       </div>
 
-      <hr className="divider" />
-
-      {/* Pasangan */}
-      <div className="section">
-        <h4>Pasangan</h4>
-        <div style={{ marginBottom: '12px' }}>
-          <Dtpick value={pasangan} onChange={setPasangan} />
+      {/* Detail Weton Kamu */}
+      {wetonKamu && (
+        <div className="weton-section">
+          <h4>Weton Anda</h4>
+          <div className="weton-grid">
+            <div><strong>Tanggal</strong><span>{tanggal}</span></div>
+            <div><strong>Hari</strong><span>{wetonKamu.hari}</span></div>
+            <div><strong>Pasaran</strong><span>{wetonKamu.pasaran}</span></div>
+            <div><strong>Neptu Hari</strong><span>{neptuHari[wetonKamu.hari]}</span></div>
+            <div><strong>Neptu Pasaran</strong><span>{neptuPasaran[wetonKamu.pasaran]}</span></div>
+            <div className="total"><strong>Total Neptu</strong><span>{neptuKamu}</span></div>
+          </div>
         </div>
-        <div className="weton-grid">
-          <div className="item"><strong>Hari</strong><span>{hariPasangan}</span></div>
-          <div className="item"><strong>Pasaran</strong><span>{pasaranPasangan}</span></div>
-          <div className="item"><strong>Neptu Hari</strong><span>{neptuHariPasangan}</span></div>
-          <div className="item"><strong>Neptu Pasaran</strong><span>{neptuPasaranPasangan}</span></div>
-          <div className="item total"><strong>Total Neptu</strong><span>{totalNeptuPasangan}</span></div>
+      )}
+
+      {/* Detail Weton Pasangan */}
+      {wetonPasangan && (
+        <div className="weton-section">
+          <h4>Weton Pasangan</h4>
+          <div className="weton-grid">
+            <div><strong>Tanggal</strong><span>{pasangan}</span></div>
+            <div><strong>Hari</strong><span>{wetonPasangan.hari}</span></div>
+            <div><strong>Pasaran</strong><span>{wetonPasangan.pasaran}</span></div>
+            <div><strong>Neptu Hari</strong><span>{neptuHari[wetonPasangan.hari]}</span></div>
+            <div><strong>Neptu Pasaran</strong><span>{neptuPasaran[wetonPasangan.pasaran]}</span></div>
+            <div className="total"><strong>Total Neptu</strong><span>{neptuPas}</span></div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <hr className="divider" />
-
-      {/* Jumlah Neptu Pasangan */}
-      <div className="summary">
+      {/* Total Neptu */}
+      <div className="total-neptu">
         <h4>Jumlah Neptu Pasangan</h4>
-        <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#0078D7' }}>
-          {totalGabungan}
+        <div className="total-box">
+          <strong>{neptuKamu} + {neptuPas} = {totalNeptu}</strong>
+        </div>
+      </div>
+
+      {/* Makna (opsional) */}
+      <div className="makna">
+        <h4>Makna</h4>
+        <p>
+          {totalNeptu < 20
+            ? 'Neptu rendah, perlu penyesuaian dalam hubungan.'
+            : totalNeptu <= 30
+            ? 'Neptu seimbang, potensi harmonis.'
+            : 'Neptu tinggi, kuat tapi perlu pengendalian.'}
         </p>
       </div>
     </div>
   );
 }
 
-// Fungsi: parse string tanggal
-function parseTanggal(tanggalStr) {
-  const parts = tanggalStr.split(' ');
-  return {
-    day: parseInt(parts[0], 10),
-    month: ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]) + 1,
-    year: parseInt(parts[2], 10)
-  };
-}
-
-// Fungsi: hitung hari
-function hitungHari(day, month, year) {
-  const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721424; // 1 Jan 1 M = Senin
-  const selisih = jdn - baseJDN;
-  const hari = (selisih % 7 + 7) % 7;
-  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-  return days[hari];
-}
-
-// Fungsi: hitung pasaran
-function hitungPasaran(day, month, year) {
-  const acuan = { tahun: 1900, bulan: 1, tanggal: 1, pasaranIndex: 0 }; // 1 Jan 1900 = Legi
-  const targetJDN = julianDayNumber(day, month, year);
-  const acuanJDN = julianDayNumber(acuan.tanggal, acuan.bulan, acuan.tahun);
-  const selisih = targetJDN - acuanJDN;
-  const pasaranIndex = (selisih + acuan.pasaranIndex) % 5;
-  const pasaranList = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
-  return pasaranList[(pasaranIndex + 5) % 5];
-}
-
-// Fungsi: Julian Day Number
-function julianDayNumber(day, month, year) {
-  let y = year;
-  let m = month;
-  if (month <= 2) {
-    y -= 1;
-    m += 12;
-  }
-  let b;
-  if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
-    const a = Math.floor(y / 100);
-    b = 2 - a + Math.floor(a / 4);
-  } else {
-    b = 0;
-  }
-  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
-}
-
-// CSS
+// CSS Inline
 const style = document.createElement('style');
 style.textContent = `
 .desk-container {
   padding: 20px;
   font-family: 'Segoe UI', sans-serif;
   color: #333;
+  max-width: 360px;
+  margin: 0 auto;
 }
 
-.desk-container h3 {
+.desk-container h3, .weton-section h4 {
   margin-top: 0;
   color: #0078D7;
-  border-bottom: 2px solid #0078D7;
-  padding-bottom: 8px;
-  font-size: 18px;
 }
 
-.section {
-  margin: 20px 0;
-}
-
-.section h4 {
-  margin: 0 0 12px 0;
-  color: #005a9e;
-  font-size: 16px;
+.weton-section {
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9f9f9;
 }
 
 .weton-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.item {
-  padding: 10px;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  gap: 10px;
   font-size: 14px;
 }
 
-.item strong {
+.weton-grid > div {
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.weton-grid strong {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   color: #555;
   margin-bottom: 4px;
 }
 
-.item.total {
+.weton-grid .total {
   grid-column: span 2;
   background: #d1ecf1;
   border-color: #bee5eb;
   text-align: center;
 }
 
-.item.total span {
-  font-size: 18px;
-  font-weight: bold;
-  color: #0c5460;
-}
-
-.divider {
-  border: none;
-  border-top: 1px dashed #ccc;
+.total-neptu {
   margin: 20px 0;
+  text-align: center;
 }
 
-.summary {
-  text-align: center;
+.total-box {
+  padding: 12px;
+  background: #f0f8ff;
+  border: 2px dashed #0078D7;
+  border-radius: 8px;
+  font-size: 18px;
+  color: #0078D7;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.makna {
+  margin-top: 20px;
   padding: 15px;
   background: #fff8e1;
   border: 1px solid #ffcc80;
@@ -229,7 +167,7 @@ style.textContent = `
   color: #5d4037;
 }
 
-.summary h4 {
+.makna h4 {
   margin: 0 0 8px 0;
   color: #e65100;
   font-size: 15px;
