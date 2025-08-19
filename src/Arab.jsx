@@ -12,7 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // Parse dan konversi
+  // Parse dan konversi input Masehi ke Hijriyah
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -31,13 +31,30 @@ export default function Arab() {
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
   const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
 
-  // Hari ini (Masehi)
+  // Hari ini (untuk penanda hijau)
   const today = new Date();
   const todayJd = julianDayNumber(
     today.getDate(),
     today.getMonth() + 1,
     today.getFullYear()
   );
+
+  // Parse input Masehi untuk konversi
+  const parseInput = () => {
+    const parts = tanggal.split(' ');
+    const day = parseInt(parts[0], 10);
+    const month = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].indexOf(parts[1]);
+    const year = parseInt(parts[2], 10);
+    return { day, month: month + 1, year };
+  };
+
+  // Konversi input Masehi ke Hijriyah
+  const { day: inputDay, month: inputMonth, year: inputYear } = parseInput();
+  const converted = masehiToHijri(inputDay, inputMonth, inputYear);
+
+  // Apakah bulan Hijriyah yang tampil = bulan hasil konversi?
+  const isConvertedMonth = converted.year === hijri.year && converted.month === hijri.month;
+  const targetDate = isConvertedMonth ? converted.day : null;
 
   const rows = [];
   let date = 1;
@@ -53,19 +70,16 @@ export default function Arab() {
         // Hitung JDN untuk tanggal ini
         const thisJd = firstJd + date - 1;
         const isToday = thisJd === todayJd;
-
-        // 🔹 Cek apakah tanggal ini = tanggal yang dipilih (dalam Hijriyah)
-        const isSelected = hijri && date === hijri.day && hijri.month === hijri.month && hijri.year === hijri.year;
-
         const isMinggu = j === 0;
         const isJumat = j === 5;
+        const isConvertedTarget = targetDate && date === targetDate;
 
         const className = [
           'hijri-cell',
           isToday && 'today',
           isMinggu && 'minggu',
           isJumat && 'jumat',
-          isSelected && 'selected-hijri' // 🔵 Tanggal hijriyah yang dipilih
+          isConvertedTarget && 'converted'
         ].filter(Boolean).join(' ');
 
         cells.push(
@@ -81,7 +95,8 @@ export default function Arab() {
   }
 
   return (
-    <div>
+    <div style={{ fontFamily: 'Arial, sans-serif', maxWidth: '360px', margin: '0 auto', padding: '20px' }}>
+      <h3 style={{ textAlign: 'center' }}>Kalender Hijriyah</h3>
 
       <div style={{ marginBottom: '20px', textAlign: 'center' }}>
         <Dtpick value={tanggal} onChange={setTanggal} />
@@ -103,7 +118,7 @@ export default function Arab() {
         </div>
 
         <div style={{ marginTop: '10px', fontSize: '14px', color: '#555', textAlign: 'center' }}>
-          {tanggal} = {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
+          {tanggal} = {converted.day} {bulanHijriyah[converted.month - 1]} {converted.year} H
         </div>
       </div>
     </div>
@@ -181,7 +196,7 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* Hari ini */
+/* Hari ini = hijau tua */
 .hijri-cell.today {
   background: #2e7d32 !important;
   color: white;
@@ -203,8 +218,8 @@ style.textContent = `
   font-weight: 600;
 }
 
-/* 🔵 Tanggal Hijriyah yang dipilih (dari Masehi) */
-.hijri-cell.selected-hijri {
+/* Tanggal hasil konversi dari input Masehi */
+.hijri-cell.converted {
   background: #e3f2fd !important;
   color: #1565c0;
   border-radius: 6px;
