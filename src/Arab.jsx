@@ -39,11 +39,6 @@ export default function Arab() {
     today.getFullYear()
   );
 
-  // Tanggal khusus: 18 Agustus 2025 = 24 Safar 1447 H
-  const isSpecialDate = (hijriYear, hijriMonth, hijriDay) => {
-    return hijriYear === 1447 && hijriMonth === 2 && hijriDay === 24;
-  };
-
   const rows = [];
   let date = 1;
 
@@ -60,14 +55,16 @@ export default function Arab() {
         const isToday = thisJd === todayJd;
         const isMinggu = j === 0;
         const isJumat = j === 5;
-        const isTanggalKhusus = isSpecialDate(hijri.year, hijri.month, date);
+
+        // 🔵 Cek apakah tanggal ini adalah hasil konversi dari tanggal Masehi yang dipilih
+        const isCurrentHijri = hijri.day === date && hijri.month === hijri.month && hijri.year === hijri.year;
 
         const className = [
           'hijri-cell',
           isToday && 'today',
           isMinggu && 'minggu',
           isJumat && 'jumat',
-          isTanggalKhusus && 'special'
+          isCurrentHijri && 'current-hijri' // 🔵 Tanggal hasil konversi
         ].filter(Boolean).join(' ');
 
         cells.push(
@@ -112,7 +109,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi: Julian Day Number (Julian untuk kuno)
+// Fungsi: Julian Day Number
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -120,10 +117,10 @@ function julianDayNumber(day, month, year) {
     y -= 1;
     m += 12;
   }
-  let b = 0; // Julian calendar (sebelum 1582)
+  let b = 0;
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
     const a = Math.floor(y / 100);
-    b = 2 - a + Math.floor(a / 4); // Gregorian
+    b = 2 - a + Math.floor(a / 4);
   }
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
@@ -183,7 +180,18 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* Hari ini */
+/* 🔵 Tanggal Hijriyah yang sesuai dengan pilihan Masehi */
+.hijri-cell.current-hijri {
+  background: #e3f2fd !important;
+  color: #1565c0;
+  border-radius: 6px;
+  width: 90%;
+  height: 36px;
+  margin: auto;
+  font-weight: 600;
+}
+
+/* ✅ Hari ini */
 .hijri-cell.today {
   background: #2e7d32 !important;
   color: white;
@@ -193,26 +201,16 @@ style.textContent = `
   margin: 0 auto;
 }
 
-/* Minggu = merah */
+/* 🔴 Minggu = merah */
 .hijri-cell.minggu {
   color: #d32f2f !important;
   font-weight: 600;
 }
 
-/* Jumat = hijau muda */
+/* 🟢 Jumat = hijau muda */
 .hijri-cell.jumat {
   color: #388e3c !important;
   font-weight: 600;
-}
-
-/* 24 Safar 1447 H = biru muda */
-.hijri-cell.special {
-  background: #e3f2fd !important;
-  color: #1565c0;
-  border-radius: 6px;
-  width: 90%;
-  height: 36px;
-  margin: auto;
 }
 `;
 document.head.appendChild(style);
