@@ -3,7 +3,7 @@ import { julianDayNumber } from './History'; // Pastikan pakai JDN akurat
 
 export function masehiToHijri(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const jdn0 = 1948340; // 16 Juli 622 M (Julian) = 1 Muharram 1 H
+  const jdn0 = 1948440; // 16 Juli 622 M (Julian) = 1 Muharram 1 H
   const days = jdn - jdn0;
   const monthCount = Math.floor(days / 29.530588853);
   const hijriYear = Math.floor((monthCount + 1) / 12) + 1;
