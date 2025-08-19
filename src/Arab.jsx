@@ -12,15 +12,7 @@ export default function Arab() {
   const [tanggal, setTanggal] = useState(`${defaultDay} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][defaultMonth]} ${defaultYear}`);
   const [hijri, setHijri] = useState(null);
 
-  // ⏱️ Hitung hari ini dalam Hijriyah
-  const today = new Date();
-  const todayHijri = masehiToHijri(
-    today.getDate(),
-    today.getMonth() + 1,
-    today.getFullYear()
-  );
-
-  // Parse dan konversi tanggal yang dipilih
+  // Parse dan konversi
   useEffect(() => {
     const parts = tanggal.split(' ');
     const day = parseInt(parts[0], 10);
@@ -35,9 +27,22 @@ export default function Arab() {
 
   const totalDays = getHijriDaysInMonth(hijri.month, hijri.year);
 
-  // Cari hari pertama (0 = Minggu)
+  // Hitung hari pertama bulan Hijriyah
   const firstJd = julianDayNumber(1, hijri.month, hijri.year);
-  const firstDayOfWeek = (firstJd - 1721422) % 7;
+  const firstDayOfWeek = (firstJd - 1721422) % 7; // 0 = Minggu
+
+  // Hari ini (Masehi)
+  const today = new Date();
+  const todayJd = julianDayNumber(
+    today.getDate(),
+    today.getMonth() + 1,
+    today.getFullYear()
+  );
+
+  // Tanggal khusus: 18 Agustus 2025 = 24 Safar 1447 H
+  const isSpecialDate = (hijriYear, hijriMonth, hijriDay) => {
+    return hijriYear === 1447 && hijriMonth === 2 && hijriDay === 24;
+  };
 
   const rows = [];
   let date = 1;
@@ -50,23 +55,20 @@ export default function Arab() {
       } else if (date > totalDays) {
         cells.push(<div key={`empty-end-${j}`} className="hijri-cell empty"></div>);
       } else {
-        // ✅ Cek: apakah ini hari ini (dalam Hijriyah)?
-        const isToday =
-          hijri.month === todayHijri.month &&
-          hijri.year === todayHijri.year &&
-          date === todayHijri.day;
+        // Hitung JDN untuk tanggal ini
+        const thisJd = firstJd + date - 1;
+        const isToday = thisJd === todayJd;
+        const isMinggu = j === 0;
+        const isJumat = j === 5;
+        const isTanggalKhusus = isSpecialDate(hijri.year, hijri.month, date);
 
-        // Tentukan hari dalam seminggu
-        const dayOfWeek = (firstDayOfWeek + date - 1) % 7;
-
-        let className = 'hijri-cell';
-        if (isToday) {
-          className += ' today'; // biru muda
-        } else if (dayOfWeek === 0) {
-          className += ' minggu'; // merah
-        } else if (dayOfWeek === 5) {
-          className += ' jumat'; // hijau muda
-        }
+        const className = [
+          'hijri-cell',
+          isToday && 'today',
+          isMinggu && 'minggu',
+          isJumat && 'jumat',
+          isTanggalKhusus && 'special'
+        ].filter(Boolean).join(' ');
 
         cells.push(
           <div key={date} className={className}>
@@ -101,12 +103,16 @@ export default function Arab() {
         <div className="hijri-body">
           {rows}
         </div>
+
+        <div style={{ marginTop: '10px', fontSize: '14px', color: '#555', textAlign: 'center' }}>
+          {tanggal} = {hijri.day} {bulanHijriyah[hijri.month - 1]} {hijri.year} H
+        </div>
       </div>
     </div>
   );
 }
 
-// Fungsi bantuan: Julian Day Number (untuk grid, bukan penanda)
+// Fungsi: Julian Day Number (Julian untuk kuno)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -114,10 +120,10 @@ function julianDayNumber(day, month, year) {
     y -= 1;
     m += 12;
   }
-  let b = 0;
+  let b = 0; // Julian calendar (sebelum 1582)
   if (year > 1582 || (year === 1582 && month > 10) || (year === 1582 && month === 10 && day >= 15)) {
     const a = Math.floor(y / 100);
-    b = 2 - a + Math.floor(a / 4);
+    b = 2 - a + Math.floor(a / 4); // Gregorian
   }
   return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + b - 1524;
 }
@@ -134,7 +140,6 @@ style.textContent = `
   box-shadow: 0 4px 16px rgba(0,0,0,0.1);
   background: white;
 }
-
 .hijri-header {
   background: #0078D7;
   color: white;
@@ -143,71 +148,71 @@ style.textContent = `
   font-size: 16px;
   font-weight: 600;
 }
-
 .hijri-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f5f5f5;
   border-bottom: 1px solid #eee;
 }
-
 .hijri-cell {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: 40px;
   font-size: 13px;
   user-select: none;
-  cursor: default;
 }
-
 .hijri-cell.weekday {
   font-weight: 600;
   color: #555;
   font-size: 12px;
   padding: 6px 0;
 }
-
 .hijri-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-
 .hijri-cell.empty {
   background: transparent;
 }
-
-.hijri-cell:hover:not(.empty):not(.today) {
+.hijri-cell:hover:not(.empty) {
   background: #f0f0f0;
 }
-
 .date-num {
   font-weight: 600;
   font-size: 14px;
 }
 
-/* 🔹 Hari ini: biru muda */
+/* Hari ini */
 .hijri-cell.today {
-  background: #e3f2fd !important;
-  color: #1565c0;
+  background: #2e7d32 !important;
+  color: white;
   border-radius: 50%;
   width: 30px;
   height: 30px;
   margin: 0 auto;
-  font-weight: 600;
 }
 
-/* Minggu: merah */
+/* Minggu = merah */
 .hijri-cell.minggu {
-  color: #d32f2f;
+  color: #d32f2f !important;
   font-weight: 600;
 }
 
-/* Jumat: hijau muda */
+/* Jumat = hijau muda */
 .hijri-cell.jumat {
-  color: #2e7d32;
+  color: #388e3c !important;
   font-weight: 600;
+}
+
+/* 24 Safar 1447 H = biru muda */
+.hijri-cell.special {
+  background: #e3f2fd !important;
+  color: #1565c0;
+  border-radius: 6px;
+  width: 90%;
+  height: 36px;
+  margin: auto;
 }
 `;
 document.head.appendChild(style);
