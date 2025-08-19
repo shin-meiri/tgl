@@ -26,7 +26,7 @@ const ACUAN = {
   tahun: 1900,
   bulan: 1,
   tanggal: 1,
-  pasaranIndex: 4 // 1 Jan 1900 = Legi
+  pasaranIndex: 0 // 1 Jan 1900 = Legi
 };
 
 // Julian Day Number
@@ -50,7 +50,7 @@ function julianDayNumber(day, month, year) {
 // Hitung hari (Senin - Minggu)
 function hitungHari(day, month, year) {
   const jdn = julianDayNumber(day, month, year);
-  const baseJDN = 1721422; // 1 Jan 1 M = Senin
+  const baseJDN = 1721425; // 1 Jan 1 M = Senin
   const selisih = jdn - baseJDN;
   const hari = (selisih % 7 + 7) % 7;
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
