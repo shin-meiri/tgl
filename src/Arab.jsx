@@ -53,18 +53,19 @@ export default function Arab() {
         // Hitung JDN untuk tanggal ini
         const thisJd = firstJd + date - 1;
         const isToday = thisJd === todayJd;
+
+        // 🔹 Cek apakah tanggal ini = tanggal yang dipilih (dalam Hijriyah)
+        const isSelected = hijri && date === hijri.day && hijri.month === hijri.month && hijri.year === hijri.year;
+
         const isMinggu = j === 0;
         const isJumat = j === 5;
-
-        // 🔵 Cek apakah tanggal ini adalah hasil konversi dari tanggal Masehi yang dipilih
-        const isCurrentHijri = hijri.day === date && hijri.month === hijri.month && hijri.year === hijri.year;
 
         const className = [
           'hijri-cell',
           isToday && 'today',
           isMinggu && 'minggu',
           isJumat && 'jumat',
-          isCurrentHijri && 'current-hijri' // 🔵 Tanggal hasil konversi
+          isSelected && 'selected-hijri' // 🔵 Tanggal hijriyah yang dipilih
         ].filter(Boolean).join(' ');
 
         cells.push(
@@ -109,7 +110,7 @@ export default function Arab() {
   );
 }
 
-// Fungsi: Julian Day Number
+// Fungsi: Julian Day Number (akurat)
 function julianDayNumber(day, month, year) {
   let y = year;
   let m = month;
@@ -180,18 +181,7 @@ style.textContent = `
   font-size: 14px;
 }
 
-/* 🔵 Tanggal Hijriyah yang sesuai dengan pilihan Masehi */
-.hijri-cell.current-hijri {
-  background: #e3f2fd !important;
-  color: #1565c0;
-  border-radius: 6px;
-  width: 90%;
-  height: 36px;
-  margin: auto;
-  font-weight: 600;
-}
-
-/* ✅ Hari ini */
+/* Hari ini */
 .hijri-cell.today {
   background: #2e7d32 !important;
   color: white;
@@ -201,15 +191,26 @@ style.textContent = `
   margin: 0 auto;
 }
 
-/* 🔴 Minggu = merah */
+/* Minggu = merah */
 .hijri-cell.minggu {
   color: #d32f2f !important;
   font-weight: 600;
 }
 
-/* 🟢 Jumat = hijau muda */
+/* Jumat = hijau muda */
 .hijri-cell.jumat {
   color: #388e3c !important;
+  font-weight: 600;
+}
+
+/* 🔵 Tanggal Hijriyah yang dipilih (dari Masehi) */
+.hijri-cell.selected-hijri {
+  background: #e3f2fd !important;
+  color: #1565c0;
+  border-radius: 6px;
+  width: 90%;
+  height: 36px;
+  margin: auto;
   font-weight: 600;
 }
 `;
